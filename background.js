@@ -19,7 +19,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return
   }
   chrome.runtime.sendNativeMessage(host, { type: 'installed', game: msg.game }, (reply) => {
-    if (chrome.runtime.lastError || !Array.isArray(reply?.modIds)) {
+    if (chrome.runtime.lastError) {
+      sendResponse({ modIds: [], nativeMessagingError: true })
+      return
+    }
+    if (!Array.isArray(reply?.modIds)) {
       sendResponse({ modIds: [] })
       return
     }
