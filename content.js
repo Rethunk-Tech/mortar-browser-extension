@@ -10,14 +10,15 @@ if (!globalThis.mortarNxmWatch) {
   const skipped = new Set()
   const watched = new WeakSet()
 
-  // A tab opened just for this download is closed once Mortar has the link: at most two history entries, all of
-  // them this mod's own page (its description and its files tab). A tab with any other history stays open. Only
-  // the Navigation API lists entries with their addresses; without it nothing is closed.
+  // A tab opened just for this download is closed once Mortar has the link: every history entry is this mod's own
+  // page (its description, its files tab, the download page). A tab with any other history stays open. Only the
+  // Navigation API lists entries with their addresses, and only same-origin ones, so a history longer than its
+  // list came from elsewhere; without the API nothing is closed.
   const trailingSlash = /\/$/
   const modPath = location.pathname.match(/^\/[^/]+\/mods\/\d+/)?.[0]
   const throwaway = () => {
     const entries = globalThis.navigation?.entries?.()
-    if (!(modPath && entries) || history.length > 2 || entries.length !== history.length) {
+    if (!(modPath && entries) || entries.length !== history.length) {
       return false
     }
     return entries.every((e) => {
