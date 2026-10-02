@@ -166,11 +166,13 @@ if (!globalThis.mortarNxmWatch) {
 
   const markProfileFile = (reply) => {
     clearFileBadge()
-    if (new URL(location.href).searchParams.get('tab') !== 'files' || !reply?.open?.profile) {
+    if (new URL(location.href).searchParams.get('tab') !== 'files') {
       return
     }
-    const fileId = Number(reply.open.fileId)
-    const { version } = reply.open
+    const groups = globalThis.mortarFileLabelGroups?.(reply) || []
+    if (groups.length === 0) {
+      return
+    }
     const rows = [
       ...document.querySelectorAll('[data-file-id], [data-fileid], a[href*="/files/"]'),
     ].map((element) => element.closest('tr, li, article, [role="row"]') || element)
@@ -179,19 +181,40 @@ if (!globalThis.mortarNxmWatch) {
       [...candidate.querySelectorAll('[data-file-id], [data-fileid], a[href]')]
         .map(fileID)
         .find((id) => id !== undefined)
-    let matchedRow =
-      fileId > 0 ? rows.find((candidate) => rowFileID(candidate) === fileId) : undefined
-    if (!matchedRow && version) {
-      matchedRow = rows.find((candidate) => candidate.textContent?.includes(version))
-    }
-    if (!matchedRow || matchedRow.querySelector(`.${fileBadgeClass}`)) {
-      return
-    }
     ensureMarkerStyle()
-    const badge = document.createElement('span')
-    badge.className = `${badgeClass} ${fileBadgeClass}`
-    badge.textContent = `In ${reply.open.profile}`
-    matchedRow.prepend(badge)
+    const used = new WeakSet()
+    for (const group of groups) {
+      let matchedRow =
+        group.fileId > 0
+          ? rows.find((candidate) => !used.has(candidate) && rowFileID(candidate) === group.fileId)
+          : undefined
+      if (!matchedRow && group.version) {
+        matchedRow = rows.find(
+          (candidate) => !used.has(candidate) && candidate.textContent?.includes(group.version),
+        )
+      }
+      if (matchedRow && !matchedRow.querySelector(`.${fileBadgeClass}`)) {
+        used.add(matchedRow)
+        const badge = document.createElement('span')
+        badge.className = `${badgeClass} ${fileBadgeClass}`
+        badge.append('In ')
+        for (let i = 0; i < group.names.length; i += 1) {
+          if (i > 0) {
+            badge.append(', ')
+          }
+          const entry = group.names[i]
+          if (entry.active) {
+            const mark = document.createElement('span')
+            mark.className = 'mortar-file-active'
+            mark.textContent = entry.name
+            badge.append(mark)
+          } else {
+            badge.append(entry.name)
+          }
+        }
+        matchedRow.prepend(badge)
+      }
+    }
   }
 
   // The panel is rendered once per mod page, tab and mode: renders overlap across awaits, and each one changing
@@ -324,6 +347,12 @@ if (!globalThis.mortarNxmWatch) {
         padding: 2px 5px;
         position: relative;
         z-index: 1;
+      }
+      .${fileBadgeClass} .mortar-file-active {
+        background: #1d1b16;
+        border-radius: 2px;
+        color: #f0d78c;
+        padding: 0 3px;
       }
       .${hiddenClass} { display: none !important; }
       .${panelClass} {
