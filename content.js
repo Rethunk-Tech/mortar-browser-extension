@@ -14,10 +14,13 @@ if (!globalThis.mortarNxmWatch) {
   const modLink = /^\/[^/]+\/mods\/(\d+)(?:\/|$)/
   const modPagePath = /^\/[^/]+\/mods\/(\d+)(?:\/|$)/
   const pageVersionPattern = /\d+(?:\.\d+)+/
+  const numericFileID = /^\d+$/
+  const filePath = /\/files\/(\d+)(?:\/|$)/
   const modeKey = 'mode'
   const markerClass = 'mortar-installed-mod'
   const hiddenClass = 'mortar-hidden-mod'
   const badgeClass = 'mortar-installed-mod-badge'
+  const fileBadgeClass = 'mortar-installed-file-badge'
   const panelClass = 'mortar-mod-panel'
   const cardSelectors =
     '[data-testid*="mod-tile"], [data-testid*="mod-card"], .mod-tile, .mod-listing, article, li'
@@ -142,6 +145,52 @@ if (!globalThis.mortarNxmWatch) {
     return element?.textContent?.match(pageVersionPattern)?.[0] || ''
   }
 
+  const clearFileBadge = () => {
+    for (const badge of document.querySelectorAll(`.${fileBadgeClass}`)) {
+      badge.remove()
+    }
+  }
+
+  const fileID = (element) => {
+    const value = element.dataset.fileId || element.dataset.fileid
+    if (value && numericFileID.test(value)) {
+      return Number(value)
+    }
+    const href = element.getAttribute('href') || ''
+    const match = href.match(filePath)
+    return match ? Number(match[1]) : undefined
+  }
+
+  const markProfileFile = (reply) => {
+    clearFileBadge()
+    if (new URL(location.href).searchParams.get('tab') !== 'files' || !reply?.open?.profile) {
+      return
+    }
+    const fileId = Number(reply.open.fileId)
+    const { version } = reply.open
+    const rows = [
+      ...document.querySelectorAll('[data-file-id], [data-fileid], a[href*="/files/"]'),
+    ].map((element) => element.closest('tr, li, article, [role="row"]') || element)
+    const rowFileID = (candidate) =>
+      fileID(candidate) ||
+      [...candidate.querySelectorAll('[data-file-id], [data-fileid], a[href]')]
+        .map(fileID)
+        .find((id) => id !== undefined)
+    let matchedRow =
+      fileId > 0 ? rows.find((candidate) => rowFileID(candidate) === fileId) : undefined
+    if (!matchedRow && version) {
+      matchedRow = rows.find((candidate) => candidate.textContent?.includes(version))
+    }
+    if (!matchedRow || matchedRow.querySelector(`.${fileBadgeClass}`)) {
+      return
+    }
+    ensureMarkerStyle()
+    const badge = document.createElement('span')
+    badge.className = `${badgeClass} ${fileBadgeClass}`
+    badge.textContent = `In ${reply.open.profile}`
+    matchedRow.prepend(badge)
+  }
+
   const renderModPanel = async () => {
     const id = modPageID()
     if (id === undefined) {
@@ -160,6 +209,7 @@ if (!globalThis.mortarNxmWatch) {
         resolve(undefined)
       }
     })
+    markProfileFile(reply)
     if (mode !== selectedMode || !reply?.open?.profile) {
       return
     }
