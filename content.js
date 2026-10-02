@@ -22,6 +22,7 @@ if (!globalThis.mortarNxmWatch) {
   const badgeClass = 'mortar-installed-mod-badge'
   const fileBadgeClass = 'mortar-installed-file-badge'
   const panelClass = 'mortar-mod-panel'
+  const maxPanelProblems = 5
   const cardSelectors =
     '[data-testid*="mod-tile"], [data-testid*="mod-card"], .mod-tile, .mod-listing, article, li'
   let mode
@@ -226,6 +227,18 @@ if (!globalThis.mortarNxmWatch) {
     if (newerVersion(pageVersion(), installed)) {
       lines.push('Nexus has a newer version')
     }
+    const problems = await new Promise((resolve) => {
+      try {
+        chrome.runtime.sendMessage(
+          { type: 'modProblems', game: pageGame(), modId: id },
+          (response) => {
+            resolve(Array.isArray(response?.problems) ? response.problems : [])
+          },
+        )
+      } catch {
+        resolve([])
+      }
+    })
     const panel = existing || document.createElement('div')
     panel.className = panelClass
     panel.replaceChildren(document.createTextNode(lines.join(' · ')))
@@ -236,6 +249,30 @@ if (!globalThis.mortarNxmWatch) {
     link.href = `mortar://${game}/mod/${id}`
     link.textContent = 'Open in Mortar'
     panel.append(link)
+    const problemBox = document.createElement('div')
+    problemBox.className = 'mortar-mod-problems'
+    if (problems.length === 0) {
+      problemBox.textContent = `No problems in ${reply.open.profile}`
+    } else {
+      const problemTitle = document.createElement('div')
+      problemTitle.textContent = `Problems in ${reply.open.profile}`
+      problemBox.append(problemTitle)
+      const list = document.createElement('ul')
+      for (const problem of problems.slice(0, maxPanelProblems)) {
+        const item = document.createElement('li')
+        item.textContent = problem.text
+        list.append(item)
+      }
+      problemBox.append(list)
+      if (problems.length > maxPanelProblems) {
+        problemBox.append(
+          document.createTextNode(
+            `+${problems.length - maxPanelProblems} more — open Mortar to see them`,
+          ),
+        )
+      }
+    }
+    panel.append(problemBox)
     if (!existing) {
       const title = document.querySelector('h1')
       title?.parentElement?.insertBefore(panel, title.nextSibling)
@@ -271,6 +308,8 @@ if (!globalThis.mortarNxmWatch) {
         margin: 8px 0;
         padding: 6px 10px;
       }
+      .${panelClass} .mortar-mod-problems { margin-top: 6px; }
+      .${panelClass} .mortar-mod-problems ul { margin: 2px 0 0 18px; padding: 0; }
     `
     document.documentElement.append(style)
   }

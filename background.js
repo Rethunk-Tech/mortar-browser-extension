@@ -15,23 +15,38 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 })
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if ((msg?.type !== 'installed' && msg?.type !== 'mod') || typeof msg.game !== 'string') {
+  if (
+    (msg?.type !== 'installed' && msg?.type !== 'mod' && msg?.type !== 'modProblems') ||
+    typeof msg.game !== 'string'
+  ) {
     return
   }
   const request =
-    msg.type === 'mod'
-      ? { type: 'mod', game: msg.game, modId: msg.modId }
-      : { type: 'installed', game: msg.game }
+    msg.type === 'installed'
+      ? { type: 'installed', game: msg.game }
+      : { type: msg.type, game: msg.game, modId: msg.modId }
+  let emptyReply
+  if (msg.type === 'installed') {
+    emptyReply = { modIds: [] }
+  } else if (msg.type === 'mod') {
+    emptyReply = { open: null, others: [] }
+  } else {
+    emptyReply = { problems: [] }
+  }
   chrome.runtime.sendNativeMessage(host, request, (reply) => {
     if (chrome.runtime.lastError) {
       sendResponse({
-        ...(msg.type === 'installed' ? { modIds: [] } : { open: null, others: [] }),
+        ...emptyReply,
         nativeMessagingError: true,
       })
       return
     }
     if (msg.type === 'installed') {
       sendResponse({ modIds: Array.isArray(reply?.modIds) ? reply.modIds : [] })
+      return
+    }
+    if (msg.type === 'modProblems') {
+      sendResponse({ problems: Array.isArray(reply?.problems) ? reply.problems : [] })
       return
     }
     sendResponse({
