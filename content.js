@@ -193,15 +193,36 @@ if (!globalThis.mortarNxmWatch) {
     matchedRow.prepend(badge)
   }
 
+  // The panel is rendered once per mod page, tab and mode: renders overlap across awaits, and each one changing
+  // the page would otherwise wake the observer into another render.
+  let panelRendering = false
+  let panelKey = ''
+  const removePanels = () => {
+    for (const el of document.querySelectorAll(`.${panelClass}`)) {
+      el.remove()
+    }
+  }
   const renderModPanel = async () => {
     const id = modPageID()
-    if (id === undefined) {
+    if (id === undefined || panelRendering) {
       return
     }
+    const key = `${id}|${mode}|${new URL(location.href).searchParams.get('tab') ?? ''}`
+    if (key === panelKey && document.querySelector(`.${panelClass}`)) {
+      return
+    }
+    panelRendering = true
+    try {
+      await drawModPanel(id)
+      panelKey = key
+    } finally {
+      panelRendering = false
+    }
+  }
+  const drawModPanel = async (id) => {
     const selectedMode = await currentMode()
-    const existing = document.querySelector(`.${panelClass}`)
     if (selectedMode === 'off') {
-      existing?.remove()
+      removePanels()
       return
     }
     const reply = await new Promise((resolve) => {
@@ -214,7 +235,7 @@ if (!globalThis.mortarNxmWatch) {
     markProfileFile(reply)
     const game = mortarGame()
     if (mode !== selectedMode || !reply?.open || game === '') {
-      existing?.remove()
+      removePanels()
       return
     }
     const installed = reply.open.version
@@ -239,6 +260,10 @@ if (!globalThis.mortarNxmWatch) {
         resolve([])
       }
     })
+    const [existing, ...extra] = document.querySelectorAll(`.${panelClass}`)
+    for (const el of extra) {
+      el.remove()
+    }
     const panel = existing || document.createElement('div')
     panel.className = panelClass
     panel.replaceChildren(document.createTextNode(lines.join(' · ')))
@@ -392,6 +417,7 @@ if (!globalThis.mortarNxmWatch) {
           : 'highlight'
       clearMarks()
       requestMark()
+      panelKey = ''
       renderModPanel().catch(() => false)
     }
   })
@@ -427,12 +453,33 @@ if (!globalThis.mortarNxmWatch) {
     renderModPanel().catch(() => false)
   }
 
+  const scanDelayMs = 150
+  const ownSelector = `.${panelClass}, .${badgeClass}, #mortar-installed-mod-style`
+  const isOwn = (node) =>
+    node instanceof Element
+      ? node.closest(ownSelector) !== null
+      : Boolean(node.parentElement?.closest(ownSelector))
+  // Changes Mortar makes to the page (the panel, badges, its style) never call for another scan.
+  const ownMutation = (record) =>
+    isOwn(record.target) ||
+    ([...record.addedNodes, ...record.removedNodes].length > 0 &&
+      [...record.addedNodes, ...record.removedNodes].every(isOwn))
+
   const watch = (root) => {
     if (watched.has(root)) {
       return
     }
     watched.add(root)
-    new MutationObserver(() => scan(root)).observe(root, {
+    let pending
+    new MutationObserver((records) => {
+      if (records.every(ownMutation) || pending !== undefined) {
+        return
+      }
+      pending = setTimeout(() => {
+        pending = undefined
+        scan(root)
+      }, scanDelayMs)
+    }).observe(root, {
       subtree: true,
       childList: true,
       attributes: true,
