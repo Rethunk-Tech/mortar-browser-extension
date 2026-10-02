@@ -12,10 +12,13 @@ if (!globalThis.mortarNxmWatch) {
   const installedCacheDuration = 60_000
   const numericModPath = /^\d+$/
   const modLink = /^\/[^/]+\/mods\/(\d+)(?:\/|$)/
+  const modPagePath = /^\/[^/]+\/mods\/(\d+)(?:\/|$)/
+  const pageVersionPattern = /\d+(?:\.\d+)+/
   const modeKey = 'mode'
   const markerClass = 'mortar-installed-mod'
   const hiddenClass = 'mortar-hidden-mod'
   const badgeClass = 'mortar-installed-mod-badge'
+  const panelClass = 'mortar-mod-panel'
   const cardSelectors =
     '[data-testid*="mod-tile"], [data-testid*="mod-card"], .mod-tile, .mod-listing, article, li'
   let mode
@@ -111,6 +114,74 @@ if (!globalThis.mortarNxmWatch) {
     return installedRequest
   }
 
+  const modPageID = () => {
+    const match = location.pathname.match(modPagePath)
+    return match ? Number(match[1]) : undefined
+  }
+
+  const versionParts = (value) =>
+    String(value || '')
+      .match(/\d+/g)
+      ?.map(Number) || []
+  const newerVersion = (page, installed) => {
+    const a = versionParts(page)
+    const b = versionParts(installed)
+    if (a.length === 0 || b.length === 0) {
+      return false
+    }
+    for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+      if ((a[i] || 0) !== (b[i] || 0)) {
+        return (a[i] || 0) > (b[i] || 0)
+      }
+    }
+    return false
+  }
+
+  const pageVersion = () => {
+    const element = document.querySelector('[data-testid*="version"], .mod-version, .version')
+    return element?.textContent?.match(pageVersionPattern)?.[0] || ''
+  }
+
+  const renderModPanel = async () => {
+    const id = modPageID()
+    if (id === undefined) {
+      return
+    }
+    const selectedMode = await currentMode()
+    const existing = document.querySelector(`.${panelClass}`)
+    if (selectedMode === 'off') {
+      existing?.remove()
+      return
+    }
+    const reply = await new Promise((resolve) => {
+      try {
+        chrome.runtime.sendMessage({ type: 'mod', game: pageGame(), modId: id }, resolve)
+      } catch {
+        resolve(undefined)
+      }
+    })
+    if (mode !== selectedMode || !reply?.open?.profile) {
+      return
+    }
+    const installed = reply.open.version
+    const lines = [
+      installed ? `In ${reply.open.profile}: v${installed}` : `Not in ${reply.open.profile}`,
+    ]
+    if (Array.isArray(reply.others) && reply.others.length > 0) {
+      lines.push(`Also in: ${reply.others.map((profile) => profile.profile).join(', ')}`)
+    }
+    if (newerVersion(pageVersion(), installed)) {
+      lines.push('Nexus has a newer version')
+    }
+    const panel = existing || document.createElement('div')
+    panel.className = panelClass
+    panel.textContent = lines.join(' · ')
+    if (!existing) {
+      const title = document.querySelector('h1')
+      title?.parentElement?.insertBefore(panel, title.nextSibling)
+    }
+  }
+
   const ensureMarkerStyle = () => {
     if (document.getElementById('mortar-installed-mod-style')) {
       return
@@ -132,6 +203,14 @@ if (!globalThis.mortarNxmWatch) {
         z-index: 1;
       }
       .${hiddenClass} { display: none !important; }
+      .${panelClass} {
+        background: #242424;
+        border-left: 3px solid #d2a84a;
+        color: #c7c7c7;
+        font: 13px/1.5 sans-serif;
+        margin: 8px 0;
+        padding: 6px 10px;
+      }
     `
     document.documentElement.append(style)
   }
@@ -214,6 +293,7 @@ if (!globalThis.mortarNxmWatch) {
           : 'highlight'
       clearMarks()
       requestMark()
+      renderModPanel().catch(() => false)
     }
   })
 
@@ -245,6 +325,7 @@ if (!globalThis.mortarNxmWatch) {
       }
     }
     requestMark()
+    renderModPanel().catch(() => false)
   }
 
   const watch = (root) => {
