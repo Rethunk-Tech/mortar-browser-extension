@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Mortar",
+  "version": "0.0.1",
+  "description": "Sends Nexus Mods Mod Manager Download links to the Mortar mod manager, so a burst of downloads from many tabs all arrive.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqe3SnpMoNtzpFRKV0eOAaBgMy8Mx35rDG+laj5z1skoFi9E4ktRYlItpNsxkQFHcKjGwyQD329OfTAgHR9ibrHyvCi9RWyhreZTXVb0Epjq3i4dPj3Lsi1R5Z50kY+SJMXQ0FDmlXJXkbANGzXdmQfzAJyYdE8WiJIbW6qFEUJ6XetzqDyiaqMs+VNOicsRs4GAwKoEjgaoJid/IjNgrMUoZ3m8/MUoyJ5TynmOJIJQ964h9VGKXZv3Qg/hHABqHKo7xkpPQadizyI4ogPyCcqD2xxzFTWO3ZeLlbpZCIqEnHwJT1hSydu6j/OKd2+6SoP7zdatMGXOg8sN3bzhtUwIDAQAB",
+  "permissions": ["nativeMessaging"],
+  "background": { "service_worker": "background.js", "scripts": ["background.js"] },
+  "content_scripts": [
+    { "matches": ["https://www.nexusmods.com/*"], "js": ["content.js"], "run_at": "document_idle" }
+  ],
+  "browser_specific_settings": {
+    "gecko": { "id": "mortar@rethunk.tech", "strict_min_version": "128.0" }
+  }
+}
