@@ -11,8 +11,12 @@ const refreshStatus = () => {
       return
     }
     const modIds = Array.isArray(reply?.modIds) ? reply.modIds : []
-    if (modIds.length === 0) {
+    if (reply?.connected !== true) {
       status.textContent = 'Mortar is not running or no profile is open'
+      return
+    }
+    if (modIds.length === 0) {
+      status.textContent = 'Mortar is running; this profile has no Nexus mods'
       return
     }
     status.textContent = `Connected to Mortar · ${modIds.length} mods in the open profile`

@@ -442,6 +442,8 @@ if (!globalThis.mortarNxmWatch) {
       if (!sent.has(a.href)) {
         sent.add(a.href)
         chrome.runtime.sendMessage({ link: a.href, close: throwaway() })
+        installedCache = { at: 0, ids: new Set() }
+        installedRequest = undefined
       }
     }
     for (const el of root.querySelectorAll('*')) {
