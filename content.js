@@ -47,6 +47,7 @@ if (!globalThis.mortarNxmWatch) {
   }
 
   const pageGame = () => location.pathname.split('/').find(Boolean) || ''
+  const mortarGame = () => (pageGame() === 'stardewvalley' ? 'stardew' : '')
 
   const isModListing = () => {
     const parts = location.pathname.split('/').filter(Boolean)
@@ -210,14 +211,16 @@ if (!globalThis.mortarNxmWatch) {
       }
     })
     markProfileFile(reply)
-    if (mode !== selectedMode || !reply?.open?.profile) {
+    const game = mortarGame()
+    if (mode !== selectedMode || !reply?.open || game === '') {
+      existing?.remove()
       return
     }
     const installed = reply.open.version
-    const lines = [
-      installed ? `In ${reply.open.profile}: v${installed}` : `Not in ${reply.open.profile}`,
-    ]
-    if (Array.isArray(reply.others) && reply.others.length > 0) {
+    const lines = reply.open.profile
+      ? [installed ? `In ${reply.open.profile}: v${installed}` : `Not in ${reply.open.profile}`]
+      : []
+    if (reply.open.profile && Array.isArray(reply.others) && reply.others.length > 0) {
       lines.push(`Also in: ${reply.others.map((profile) => profile.profile).join(', ')}`)
     }
     if (newerVersion(pageVersion(), installed)) {
@@ -225,7 +228,14 @@ if (!globalThis.mortarNxmWatch) {
     }
     const panel = existing || document.createElement('div')
     panel.className = panelClass
-    panel.textContent = lines.join(' · ')
+    panel.replaceChildren(document.createTextNode(lines.join(' · ')))
+    if (lines.length > 0) {
+      panel.append(document.createTextNode(' · '))
+    }
+    const link = document.createElement('a')
+    link.href = `mortar://${game}/mod/${id}`
+    link.textContent = 'Open in Mortar'
+    panel.append(link)
     if (!existing) {
       const title = document.querySelector('h1')
       title?.parentElement?.insertBefore(panel, title.nextSibling)
