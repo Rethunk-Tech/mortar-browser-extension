@@ -14,6 +14,20 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
   })
 })
 
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type !== 'installed' || typeof msg.game !== 'string') {
+    return
+  }
+  chrome.runtime.sendNativeMessage(host, { type: 'installed', game: msg.game }, (reply) => {
+    if (chrome.runtime.lastError || !Array.isArray(reply?.modIds)) {
+      sendResponse({ modIds: [] })
+      return
+    }
+    sendResponse({ modIds: reply.modIds })
+  })
+  return true
+})
+
 // Content scripts only reach pages loaded after the extension, so Nexus tabs already open get the script now.
 chrome.runtime.onInstalled.addListener(async () => {
   for (const tab of await chrome.tabs.query({ url: 'https://www.nexusmods.com/*' })) {

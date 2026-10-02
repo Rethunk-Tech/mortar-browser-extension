@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mortar</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font: 14px sans-serif;
+      }
+
+      body {
+        background: rgb(36 35 31);
+        color: rgb(244 240 232);
+        margin: 0;
+        min-width: 190px;
+        padding: 14px;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      select {
+        background: rgb(52 50 45);
+        border: 1px solid rgb(113 106 91);
+        border-radius: 4px;
+        color: inherit;
+        padding: 5px;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <label for="mode">Installed mods</label>
+    <select id="mode">
+      <option value="off">Off</option>
+      <option value="highlight">Highlight</option>
+      <option value="hide">Hide</option>
+    </select>
+    <script defer src="popup.js"></script>
+  </body>
+</html>
