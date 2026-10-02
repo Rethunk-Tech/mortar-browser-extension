@@ -8,6 +8,7 @@ if (!globalThis.mortarNxmWatch) {
   globalThis.mortarNxmWatch = true
   const sent = new Set()
   const skipped = new Set()
+  const advanced = new WeakSet()
   const watched = new WeakSet()
   const installedCacheDuration = 60_000
   const numericModPath = /^\d+$/
@@ -429,13 +430,18 @@ if (!globalThis.mortarNxmWatch) {
       return
     }
     // Mod manager download first opens a "Download mod file" dialog listing the file's requirements. Mortar
-    // resolves those itself, so the dialog's Download link (the one carrying nmm=1) is followed straight away.
-    for (const a of root.querySelectorAll(
-      '[role="dialog"] a.nxm-button-flamework[href*="nmm=1"]',
-    )) {
-      if (!skipped.has(a.href)) {
-        skipped.add(a.href)
-        a.click()
+    // resolves those itself, so the dialog's own Download link is followed straight away. Requirement rows carry
+    // Mod Manager Download links too, so only the link for this page's mod is followed, once per dialog.
+    const pageMod = modPageID()
+    const dialogs = pageMod === undefined ? [] : [...root.querySelectorAll('[role="dialog"]')]
+    for (const dialog of dialogs.filter((d) => !advanced.has(d))) {
+      const own = [...dialog.querySelectorAll('a.nxm-button-flamework[href*="nmm=1"]')].find(
+        (a) => modID(a.href) === pageMod && !skipped.has(a.href),
+      )
+      if (own) {
+        advanced.add(dialog)
+        skipped.add(own.href)
+        own.click()
       }
     }
     for (const a of root.querySelectorAll('a[href^="nxm://"]')) {
