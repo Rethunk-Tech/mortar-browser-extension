@@ -7,3 +7,13 @@ chrome.runtime.onMessage.addListener((msg) => {
     chrome.runtime.sendNativeMessage(host, { link: msg.link })
   }
 })
+
+// Content scripts only reach pages loaded after the extension, so Nexus tabs already open get the script now.
+chrome.runtime.onInstalled.addListener(async () => {
+  for (const tab of await chrome.tabs.query({ url: 'https://www.nexusmods.com/*' })) {
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id, allFrames: false },
+      files: ['content.js'],
+    })
+  }
+})
