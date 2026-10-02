@@ -7,6 +7,7 @@
 if (!globalThis.mortarNxmWatch) {
   globalThis.mortarNxmWatch = true
   const sent = new Set()
+  const skipped = new Set()
   const watched = new WeakSet()
 
   // A tab opened just for this download is closed once Mortar has the link: at most two history entries, all of
@@ -30,6 +31,16 @@ if (!globalThis.mortarNxmWatch) {
   const scan = (root) => {
     if (!chrome.runtime?.id) {
       return
+    }
+    // Mod manager download first opens a "Download mod file" dialog listing the file's requirements. Mortar
+    // resolves those itself, so the dialog's Download link (the one carrying nmm=1) is followed straight away.
+    for (const a of root.querySelectorAll(
+      '[role="dialog"] a.nxm-button-flamework[href*="nmm=1"]',
+    )) {
+      if (!skipped.has(a.href)) {
+        skipped.add(a.href)
+        a.click()
+      }
     }
     for (const a of root.querySelectorAll('a[href^="nxm://"]')) {
       if (!sent.has(a.href)) {
