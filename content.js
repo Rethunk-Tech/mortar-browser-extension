@@ -25,7 +25,12 @@ if (!globalThis.mortarNxmWatch) {
     })
   }
 
+  // A copy left in an open tab when the extension is reloaded or removed loses chrome.runtime; the new copy takes
+  // over, so the old one stays quiet.
   const scan = (root) => {
+    if (!chrome.runtime?.id) {
+      return
+    }
     for (const a of root.querySelectorAll('a[href^="nxm://"]')) {
       if (!sent.has(a.href)) {
         sent.add(a.href)
