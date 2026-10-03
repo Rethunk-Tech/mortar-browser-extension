@@ -15,7 +15,7 @@
   "content_scripts": [
     {
       "matches": ["https://www.nexusmods.com/*"],
-      "js": ["fileLabels.js", "modPanel.js", "content.js"],
+      "js": ["plural.js", "fileLabels.js", "modPanel.js", "content.js"],
       "run_at": "document_idle"
     }
   ],

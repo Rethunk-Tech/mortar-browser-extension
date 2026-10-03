@@ -1,7 +1,7 @@
 globalThis.mortarModPanelLines = (open, others, pageVer, newer) => {
   const installed = open.version
   const lines = open.profile
-    ? [installed ? `In ${open.profile}: v${installed}` : `Not in ${open.profile}`]
+    ? [installed ? `In ${open.profile}: version ${installed}` : `Not in ${open.profile}`]
     : []
   if (open.profile && Array.isArray(others) && others.length > 0) {
     lines.push(`Also in: ${others.map((profile) => profile.profile).join(', ')}`)
@@ -12,7 +12,7 @@ globalThis.mortarModPanelLines = (open, others, pageVer, newer) => {
   const requiredBy = Array.isArray(open.requiredBy) ? open.requiredBy : []
   if (open.profile && requiredBy.length > 0) {
     lines.push({
-      text: `Required by ${requiredBy.length} mods in ${open.profile}`,
+      text: `Required by ${globalThis.mortarPlural(requiredBy.length, 'mod', 'mods')} in ${open.profile}`,
       title: requiredBy.join(', '),
     })
   }

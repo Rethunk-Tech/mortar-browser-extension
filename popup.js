@@ -12,14 +12,19 @@ const refreshStatus = () => {
     }
     const modIds = Array.isArray(reply?.modIds) ? reply.modIds : []
     if (reply?.connected !== true) {
-      status.textContent = 'Mortar is not running or no profile is open'
+      if (reply?.connected === false) {
+        status.textContent = 'Open a profile in Mortar'
+      } else {
+        status.textContent = 'Open Mortar on a profile'
+      }
       return
     }
     if (modIds.length === 0) {
       status.textContent = 'Mortar is running; this profile has no Nexus mods'
       return
     }
-    status.textContent = `Connected to Mortar · ${modIds.length} mods in the open profile`
+    const modCount = globalThis.mortarPlural(modIds.length, 'mod', 'mods')
+    status.textContent = `Connected to Mortar · ${modCount} in the open profile`
   })
 }
 
