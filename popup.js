@@ -6,19 +6,12 @@ const normalized = (value) => (value === 'off' || value === 'hide' ? value : 'hi
 
 const refreshStatus = () => {
   chrome.runtime.sendMessage({ type: 'installed', game: 'stardewvalley' }, (reply) => {
-    if (chrome.runtime.lastError || reply?.nativeMessagingError === true) {
-      status.textContent = "Mortar's browser helper is not installed"
+    const problem = globalThis.mortarInstalledReplyStatus(reply, chrome.runtime.lastError)
+    if (problem) {
+      status.textContent = problem
       return
     }
-    const modIds = Array.isArray(reply?.modIds) ? reply.modIds : []
-    if (reply?.connected !== true) {
-      if (reply?.connected === false) {
-        status.textContent = 'Open a profile in Mortar'
-      } else {
-        status.textContent = 'Open Mortar on a profile'
-      }
-      return
-    }
+    const { modIds } = reply
     if (modIds.length === 0) {
       status.textContent = 'Mortar is running; this profile has no Nexus mods'
       return

@@ -20,6 +20,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const badgeClass = 'mortar-installed-mod-badge'
   const fileBadgeClass = 'mortar-installed-file-badge'
   const panelClass = 'mortar-mod-panel'
+  const listingStatusClass = 'mortar-listing-status'
   const maxPanelProblems = 5
   const cardSelectors =
     '[data-testid*="mod-tile"], [data-testid*="mod-card"], .mod-tile, .mod-listing, article, li'
@@ -91,22 +92,30 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     }
     clearMarks()
     installedRequest = new Promise((resolve) => {
-      const empty = () => {
+      const fail = (reply, lastError) => {
+        const message = globalThis.mortarInstalledReplyStatus(reply, lastError)
         installedCache = { at: Date.now(), ids: new Set() }
+        if (message) {
+          showListingStatus(message)
+        } else {
+          clearListingStatus()
+        }
         resolve(installedCache.ids)
       }
       try {
         chrome.runtime.sendMessage({ type: 'installed', game: pageGame() }, (reply) => {
-          if (chrome.runtime.lastError || !Array.isArray(reply?.modIds)) {
-            empty()
+          const problem = globalThis.mortarInstalledReplyStatus(reply, chrome.runtime.lastError)
+          if (problem) {
+            fail(reply, chrome.runtime.lastError)
             return
           }
           const ids = new Set(reply.modIds.filter((id) => Number.isInteger(id) && id > 0))
           installedCache = { at: Date.now(), ids }
+          clearListingStatus()
           resolve(ids)
         })
       } catch {
-        empty()
+        fail(undefined, true)
       }
     }).finally(() => {
       installedRequest = undefined
@@ -340,6 +349,22 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       tile.classList.remove(markerClass, hiddenClass)
       tile.querySelector(`.${badgeClass}`)?.remove()
     }
+  }
+
+  const clearListingStatus = () => {
+    document.querySelector(`.${listingStatusClass}`)?.remove()
+  }
+
+  const showListingStatus = (text) => {
+    if (!isModListing()) {
+      return
+    }
+    clearListingStatus()
+    ensureMarkerStyle()
+    const badge = document.createElement('div')
+    badge.className = `${badgeClass} ${listingStatusClass}`
+    badge.textContent = text
+    document.body.prepend(badge)
   }
 
   const modID = (href) => {

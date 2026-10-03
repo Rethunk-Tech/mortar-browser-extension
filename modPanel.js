@@ -60,7 +60,13 @@ globalThis.mortarModPanelLines = (open, others, pageVer, newer) => {
     ? [installed ? `In ${open.profile}: version ${installed}` : `Not in ${open.profile}`]
     : []
   if (open.profile && Array.isArray(others) && others.length > 0) {
-    lines.push(`Also in: ${others.map((profile) => profile.profile).join(', ')}`)
+    lines.push(
+      `Also in: ${others
+        .map((profile) =>
+          profile.version ? `${profile.profile} (version ${profile.version})` : profile.profile,
+        )
+        .join(', ')}`,
+    )
   }
   if (newer(pageVer, installed)) {
     lines.push('Nexus has a newer version')
@@ -70,20 +76,26 @@ globalThis.mortarModPanelLines = (open, others, pageVer, newer) => {
     lines.push(`Update available in ${updates} of your profiles`)
   }
   const requiredBy = Array.isArray(open.requiredBy) ? open.requiredBy : []
-  if (open.profile && requiredBy.length > 0) {
+  const requiredByNames = Array.isArray(open.requiredByNames) ? open.requiredByNames : []
+  const requiredByCount = Math.max(requiredBy.length, requiredByNames.length)
+  if (open.profile && requiredByCount > 0) {
+    const titleLabels =
+      requiredByNames.length > 0 ? requiredByNames : requiredBy.map((entry) => String(entry))
     lines.push({
-      text: `Required by ${globalThis.mortarPlural(requiredBy.length, 'mod', 'mods')} in ${open.profile}`,
-      title: requiredBy.join(', '),
+      text: `Required by ${globalThis.mortarPlural(requiredByCount, 'mod', 'mods')} in ${open.profile}`,
+      title: titleLabels.join(', '),
     })
   }
   if (open.pinned) {
-    lines.push('Pinned')
+    lines.push('Pinned in Mortar (this version stays)')
   }
   if (open.skipVersion) {
     lines.push(`Skipped version ${open.skipVersion}`)
   }
   if (Array.isArray(open.skipSources) && open.skipSources.length > 0) {
-    lines.push(`Skipped source: ${open.skipSources.join(', ')}`)
+    for (const source of open.skipSources) {
+      lines.push(`Skipped source: ${globalThis.mortarSkipSourceLabel(source)}`)
+    }
   }
   return lines
 }
