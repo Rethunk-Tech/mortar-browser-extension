@@ -152,7 +152,8 @@ describe('mortarMenuModData', () => {
       '1.1.0',
       [],
     )
-    expect(data.updateCount).toBe(3)
+    const mainOlderPlusBOlderPlusCMarked = 3
+    expect(data.updateCount).toBe(mainOlderPlusBOlderPlusCMarked)
     expect(data.nexusNewer).toBe(true)
   })
   test('not in the profile when there is no installed version', () => {

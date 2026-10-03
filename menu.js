@@ -150,12 +150,10 @@ const mortarProblemLines = (data) => {
   if (problems.length === 0) {
     return [mortarMenuLine('No problems')]
   }
-  const lines = problems
-    .slice(0, mortarMenuMaxProblems)
-    .map((problem) => ({
-      ...mortarMenuLine(typeof problem === 'string' ? problem : problem.text),
-      problem: true,
-    }))
+  const lines = problems.slice(0, mortarMenuMaxProblems).map((problem) => ({
+    ...mortarMenuLine(typeof problem === 'string' ? problem : problem.text),
+    problem: true,
+  }))
   if (problems.length > mortarMenuMaxProblems) {
     lines.push(
       mortarMenuLine(`+${problems.length - mortarMenuMaxProblems} more — open Mortar to see them`),
