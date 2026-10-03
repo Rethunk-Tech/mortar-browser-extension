@@ -15,6 +15,20 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 })
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (typeof msg?.link !== 'string' || !msg.link.startsWith('https://')) {
+    return
+  }
+  chrome.runtime.sendNativeMessage(host, { link: msg.link }, (reply) => {
+    if (chrome.runtime.lastError) {
+      sendResponse({ ok: false, error: String(chrome.runtime.lastError.message) })
+      return
+    }
+    sendResponse(reply ?? { ok: true })
+  })
+  return true
+})
+
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (
     (msg?.type !== 'installed' && msg?.type !== 'mod' && msg?.type !== 'modProblems') ||
     typeof msg.game !== 'string'

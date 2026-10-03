@@ -17,3 +17,13 @@ test('collection pages are listings for installed-mod markers', () => {
   expect(globalThis.mortarIsNexusModListing('/stardewvalley/mods')).toBe(true)
   expect(globalThis.mortarIsNexusModListing(`/stardewvalley/mods/${contentPatcher}`)).toBe(false)
 })
+
+test('mortarCollectionURL returns canonical collection links', () => {
+  expect(globalThis.mortarCollectionURL('/games/stardewvalley/collections/vanilla')).toBe(
+    'https://www.nexusmods.com/games/stardewvalley/collections/vanilla',
+  )
+  expect(
+    globalThis.mortarCollectionURL('/games/stardewvalley/collections/vanilla/revisions/3'),
+  ).toBe('https://www.nexusmods.com/games/stardewvalley/collections/vanilla')
+  expect(globalThis.mortarCollectionURL(`/stardewvalley/mods/${contentPatcher}`)).toBeUndefined()
+})

@@ -303,46 +303,22 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     }
   }
 
-  const ensureMarkerStyle = () => {
-    if (document.getElementById('mortar-installed-mod-style')) {
-      return
-    }
-    const style = document.createElement('style')
-    style.id = 'mortar-installed-mod-style'
-    style.textContent = `
-      .${markerClass} { outline: 2px solid #d2a84a !important; outline-offset: -2px; }
-      .${markerClass} { position: relative; }
-      .${badgeClass} {
-        background: #d2a84a;
-        border-radius: 3px;
-        color: #1d1b16;
-        display: inline-block;
-        font: 600 11px/1.4 sans-serif;
-        margin: 4px;
-        padding: 2px 5px;
-        position: relative;
-        z-index: 1;
-      }
-      .${fileBadgeClass} .mortar-file-active {
-        background: #1d1b16;
-        border-radius: 2px;
-        color: #f0d78c;
-        padding: 0 3px;
-      }
-      .${hiddenClass} { display: none !important; }
-      .${panelClass} {
-        background: #242424;
-        border-left: 3px solid #d2a84a;
-        color: #c7c7c7;
-        font: 13px/1.5 sans-serif;
-        margin: 8px 0;
-        padding: 6px 10px;
-      }
-      .${panelClass} .mortar-mod-problems { margin-top: 6px; }
-      .${panelClass} .mortar-mod-problems ul { margin: 2px 0 0 18px; padding: 0; }
-    `
-    document.documentElement.append(style)
-  }
+  const renderCollectionPanel = () =>
+    globalThis.mortarRenderCollectionPanel(document, location.pathname, {
+      panelClass,
+      collectionPanelClass: 'mortar-collection-panel',
+      currentMode,
+      ensureMarkerStyle,
+    })
+
+  const ensureMarkerStyle = () =>
+    globalThis.mortarEnsureInstalledModStyle(document, {
+      markerClass,
+      badgeClass,
+      fileBadgeClass,
+      hiddenClass,
+      panelClass,
+    })
 
   const clearMarks = () => {
     for (const tile of document.querySelectorAll(`.${markerClass}, .${hiddenClass}`)) {
@@ -439,6 +415,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       requestMark()
       panelKey = ''
       renderModPanel().catch(() => false)
+      renderCollectionPanel().catch(() => false)
     }
   })
 
@@ -478,10 +455,11 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     }
     requestMark()
     renderModPanel().catch(() => false)
+    renderCollectionPanel().catch(() => false)
   }
 
   const scanDelayMs = 150
-  const ownSelector = `.${panelClass}, .${badgeClass}, #mortar-installed-mod-style`
+  const ownSelector = `.${panelClass}, .${badgeClass}, #mortar-installed-mod-style, .mortar-collection-status`
   const isOwn = (node) =>
     node instanceof Element
       ? node.closest(ownSelector) !== null
