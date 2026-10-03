@@ -88,7 +88,10 @@ const mortarThisModLines = (data) => {
     )
   }
   if (data.pinned) {
-    lines.push(mortarMenuLine('Pinned in Mortar (this version stays)'))
+    const reason = typeof data.pinReason === 'string' ? data.pinReason.trim() : ''
+    lines.push(
+      mortarMenuLine(reason ? `Pinned: ${reason}` : 'Pinned in Mortar (this version stays)'),
+    )
   }
   if (data.skipVersion) {
     lines.push(mortarMenuLine(`Skipped version ${data.skipVersion}`))
@@ -228,6 +231,7 @@ globalThis.mortarMenuModData = (open, others, pageVer, problems) => {
     inProfile: Boolean(installed),
     version: installed || '',
     pinned: Boolean(open.pinned),
+    pinReason: open.pinReason || '',
     skipVersion: open.skipVersion || '',
     skipSources: Array.isArray(open.skipSources) ? open.skipSources : [],
     alsoIn: Array.isArray(others) ? others : [],

@@ -58,6 +58,20 @@ describe('mortarBuildSections', () => {
     )
     expect(byLabel['This mod']).toContain('Version 1.2.3 in this profile')
     expect(byLabel['This mod']).toContain('Pinned in Mortar (this version stays)')
+    const pinnedReason = sections({
+      connected: true,
+      kind: 'mod',
+      profileName: 'Main',
+      installed: true,
+      inProfile: true,
+      version: '1.0.0',
+      pinned: true,
+      pinReason: 'SVE stable',
+    })
+    const reasonLines = pinnedReason
+      .find((section) => section.label === 'This mod')
+      .lines.map((line) => line.text)
+    expect(reasonLines).toContain('Pinned: SVE stable')
     expect(byLabel.Updates).toEqual([
       'Nexus has a newer version',
       'Update available in 2 of your profiles',
