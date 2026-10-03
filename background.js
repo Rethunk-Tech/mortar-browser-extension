@@ -62,7 +62,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   for (const tab of await chrome.tabs.query({ url: 'https://www.nexusmods.com/*' })) {
     chrome.scripting.executeScript({
       target: { tabId: tab.id, allFrames: false },
-      files: ['fileLabels.js', 'content.js'],
+      files: ['fileLabels.js', 'modPanel.js', 'content.js'],
     })
   }
 })

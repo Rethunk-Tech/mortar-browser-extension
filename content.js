@@ -262,16 +262,12 @@ if (!globalThis.mortarNxmWatch) {
       removePanels()
       return
     }
-    const installed = reply.open.version
-    const lines = reply.open.profile
-      ? [installed ? `In ${reply.open.profile}: v${installed}` : `Not in ${reply.open.profile}`]
-      : []
-    if (reply.open.profile && Array.isArray(reply.others) && reply.others.length > 0) {
-      lines.push(`Also in: ${reply.others.map((profile) => profile.profile).join(', ')}`)
-    }
-    if (newerVersion(pageVersion(), installed)) {
-      lines.push('Nexus has a newer version')
-    }
+    const lines = globalThis.mortarModPanelLines(
+      reply.open,
+      reply.others,
+      pageVersion(),
+      newerVersion,
+    )
     const problems = await new Promise((resolve) => {
       try {
         chrome.runtime.sendMessage(
@@ -290,10 +286,7 @@ if (!globalThis.mortarNxmWatch) {
     }
     const panel = existing || document.createElement('div')
     panel.className = panelClass
-    panel.replaceChildren(document.createTextNode(lines.join(' · ')))
-    if (lines.length > 0) {
-      panel.append(document.createTextNode(' · '))
-    }
+    globalThis.mortarFillPanelLines(panel, lines)
     const link = document.createElement('a')
     link.href = `mortar://${game}/mod/${id}`
     link.textContent = 'Open in Mortar'
