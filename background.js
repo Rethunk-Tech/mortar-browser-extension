@@ -1,4 +1,41 @@
+importScripts('updates.js')
+
 const host = 'tech.rethunk.mortar'
+
+const applyUpdatesBadge = (reply, error) => {
+  const view = globalThis.mortarUpdatesBadge(reply, error)
+  chrome.action.setBadgeText({ text: view.text })
+  chrome.action.setBadgeBackgroundColor({ color: view.background })
+  if (typeof chrome.action.setBadgeTextColor === 'function') {
+    chrome.action.setBadgeTextColor({ color: view.color })
+  }
+  chrome.storage.session.set({
+    updatesReply: error ? null : reply,
+    updatesError: Boolean(error),
+  })
+}
+
+const refreshUpdates = () => {
+  chrome.runtime.sendNativeMessage(host, { type: 'updates', game: 'stardewvalley' }, (reply) => {
+    applyUpdatesBadge(reply, chrome.runtime.lastError)
+  })
+}
+
+chrome.alarms.create('updates', { periodInMinutes: 30 })
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'updates') {
+    refreshUpdates()
+  }
+})
+chrome.tabs.onActivated.addListener((info) => {
+  chrome.tabs.get(info.tabId, (tab) => {
+    const url = tab?.url
+    if (typeof url === 'string' && url.includes('nexusmods.com')) {
+      refreshUpdates()
+    }
+  })
+})
+refreshUpdates()
 
 // A failed delivery rejects, which the browser lists on the extension's errors page; the page's own nxm launch
 // still runs, so nothing is lost that would have arrived without the extension. The tab closes only after Mortar

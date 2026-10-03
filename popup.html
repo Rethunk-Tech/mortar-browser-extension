@@ -39,6 +39,36 @@
         line-height: 1.35;
         margin: 10px 0 0;
       }
+
+      #updates-heading {
+        border-bottom: 1px solid var(--accent, rgb(214 177 122));
+        font-size: 14px;
+        font-weight: 600;
+        margin: 16px 0 8px;
+        padding-bottom: 6px;
+      }
+
+      #updates {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      #updates li {
+        margin: 0 0 8px;
+      }
+
+      #updates a {
+        color: inherit;
+        text-decoration: underline;
+      }
+
+      #updates-empty {
+        color: rgb(196 188 172);
+        font-size: 12px;
+        line-height: 1.35;
+        margin: 0;
+      }
     </style>
   </head>
   <body>
@@ -49,7 +79,11 @@
       <option value="hide">Hide mods already in Mortar</option>
     </select>
     <p id="status"></p>
+    <h2 id="updates-heading">Updates</h2>
+    <ul id="updates"></ul>
+    <p id="updates-empty"></p>
     <script defer src="plural.js"></script>
+    <script defer src="updates.js"></script>
     <script defer src="popup.js"></script>
   </body>
 </html>

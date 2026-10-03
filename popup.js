@@ -32,3 +32,33 @@ mode.addEventListener('change', () => {
 })
 
 refreshStatus()
+
+const updatesList = document.querySelector('#updates')
+const updatesEmpty = document.querySelector('#updates-empty')
+const updatesHeading = document.querySelector('#updates-heading')
+
+chrome.storage.session.get(['updatesReply', 'updatesError'], (stored) => {
+  const view = globalThis.mortarUpdatesBadge(stored?.updatesReply, stored?.updatesError)
+  document.documentElement.style.setProperty('--accent', view.background)
+  updatesHeading.textContent = view.profile ? `Updates in ${view.profile}` : 'Updates'
+  updatesList.replaceChildren()
+  if (view.status === 'unreachable') {
+    updatesEmpty.textContent = 'Mortar is not running'
+    return
+  }
+  if (view.rows.length === 0) {
+    updatesEmpty.textContent = 'No updates'
+    return
+  }
+  updatesEmpty.textContent = ''
+  for (const row of view.rows) {
+    const item = document.createElement('li')
+    const link = document.createElement('a')
+    const { href, name, installed, latest } = row
+    link.href = href
+    link.target = '_blank'
+    link.textContent = `${name} ${installed} → ${latest}`
+    item.append(link)
+    updatesList.append(item)
+  }
+})
