@@ -103,6 +103,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       }
       try {
         chrome.runtime.sendMessage({ type: 'installed', game: pageGame() }, (reply) => {
+          globalThis.mortarSetAccent(reply?.accent)
           const problem = globalThis.mortarInstalledReplyStatus(reply, chrome.runtime.lastError)
           if (problem) {
             fail(reply, chrome.runtime.lastError)
@@ -237,6 +238,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
         resolve(undefined)
       }
     })
+    globalThis.mortarSetAccent(reply?.accent)
     markProfileFile(reply)
     const game = mortarGame()
     if (mode !== selectedMode || game === '') {
@@ -467,6 +469,25 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     })
     scan(root)
   }
+
+  // Re-reading the accent on return to the tab and on menu open keeps the menu in step with Mortar's Appearance
+  // setting without a page reload.
+  globalThis.mortarRefreshAccent = () => {
+    try {
+      chrome.runtime.sendMessage({ type: 'installed', game: pageGame() }, (reply) => {
+        if (!chrome.runtime.lastError) {
+          globalThis.mortarSetAccent(reply?.accent)
+        }
+      })
+    } catch {
+      // The extension was reloaded under this page; the next page load picks the accent up.
+    }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      globalThis.mortarRefreshAccent()
+    }
+  })
 
   watch(document)
 }

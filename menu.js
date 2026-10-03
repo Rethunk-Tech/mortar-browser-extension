@@ -1,18 +1,19 @@
-const mortarMarkSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="20" height="20" aria-hidden="true"><rect x="6" y="12" width="24" height="11" rx="2" fill="#D6B17A"/><rect x="34" y="12" width="24" height="11" rx="2" fill="#D6B17A"/><rect x="6" y="27" width="10" height="11" rx="2" fill="#D6B17A"/><rect x="20" y="27" width="24" height="11" rx="2" fill="#D6B17A"/><rect x="48" y="27" width="10" height="11" rx="2" fill="#D6B17A"/><rect x="6" y="42" width="24" height="11" rx="2" fill="#D6B17A"/><rect x="34" y="42" width="24" height="11" rx="2" fill="#D6B17A"/></svg>`
+const mortarMarkSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="20" height="20" aria-hidden="true"><rect x="6" y="12" width="24" height="11" rx="2"/><rect x="34" y="12" width="24" height="11" rx="2"/><rect x="6" y="27" width="10" height="11" rx="2"/><rect x="20" y="27" width="24" height="11" rx="2"/><rect x="48" y="27" width="10" height="11" rx="2"/><rect x="6" y="42" width="24" height="11" rx="2"/><rect x="34" y="42" width="24" height="11" rx="2"/></svg>`
 
 const mortarMenuMaxProblems = 5
 
 const mortarMenuStyle = `
-:host { all: initial; }
+:host { all: initial; --mortar-accent: #D6B17A; }
 .wrap { position: relative; display: inline-block; font: 13px system-ui, sans-serif; }
 .btn {
   width: 32px; height: 32px; padding: 0; margin: 0;
   border-radius: 6px; background: rgb(40,40,48);
   border: 1px solid rgba(255,255,255,0.14);
   display: inline-flex; align-items: center; justify-content: center;
-  cursor: pointer; position: relative; color: #D6B17A;
+  cursor: pointer; position: relative; color: var(--mortar-accent);
 }
 .btn svg { display: block; }
+svg rect { fill: var(--mortar-accent); }
 .btn.dim { opacity: 0.45; }
 .dot {
   position: absolute; top: 2px; right: 2px;
@@ -20,7 +21,7 @@ const mortarMenuStyle = `
   pointer-events: none;
 }
 .dot.green { background: #0CDF64; }
-.dot.sand { background: #D6B17A; }
+.dot.amber { background: #F3B416; }
 .dot.red { background: #E5484D; }
 .menu {
   display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 2147483647;
@@ -50,15 +51,20 @@ const mortarMenuStyle = `
 }
 .body { margin: 0 0 4px; color: rgba(255,255,255,0.9); }
 .body:last-child { margin-bottom: 0; }
+.body.problem::before {
+  content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 6px;
+  border-radius: 50%; background: #E5484D; vertical-align: middle;
+}
 .footer { margin-top: 12px; }
 .open-btn {
   width: 100%; height: 32px; border: 0; border-radius: 6px;
-  background: #D6B17A; color: #1b1a17;
+  background: var(--mortar-accent); color: #1b1a17;
   font: 13px system-ui, sans-serif; font-weight: 600; cursor: pointer;
 }
 .open-btn:disabled { cursor: default; opacity: 0.6; }
 .status { margin-top: 8px; color: rgba(225,225,230,0.7); }
 .disconnected { margin: 8px 0 0; color: rgba(225,225,230,0.7); }
+.intro { margin-top: 8px; }
 `
 
 const mortarMenuLine = (text, title) => (title ? { text, title } : { text })
@@ -75,8 +81,8 @@ const mortarThisModLines = (data) => {
     lines.push(
       mortarMenuLine(
         data.installed && data.version
-          ? `In ${data.profileName}: version ${data.version}`
-          : `Not in ${data.profileName}`,
+          ? `Version ${data.version} in this profile`
+          : 'Not in this profile',
       ),
     )
   }
@@ -131,7 +137,7 @@ const mortarRequiredLines = (data) => {
     ? globalThis.mortarPlural(requiredCount, 'mod', 'mods')
     : `${requiredCount} ${requiredCount === 1 ? 'mod' : 'mods'}`
   return [
-    mortarMenuLine(`Required by ${countLabel} in ${data.profileName}`, names.join(', ')),
+    mortarMenuLine(`Required by ${countLabel}`, names.join(', ')),
     ...names.map((name) => mortarMenuLine(name)),
   ]
 }
@@ -142,11 +148,14 @@ const mortarProblemLines = (data) => {
   }
   const problems = Array.isArray(data.problems) ? data.problems : []
   if (problems.length === 0) {
-    return [mortarMenuLine(`No problems in ${data.profileName}`)]
+    return [mortarMenuLine('No problems')]
   }
   const lines = problems
     .slice(0, mortarMenuMaxProblems)
-    .map((problem) => mortarMenuLine(typeof problem === 'string' ? problem : problem.text))
+    .map((problem) => ({
+      ...mortarMenuLine(typeof problem === 'string' ? problem : problem.text),
+      problem: true,
+    }))
   if (problems.length > mortarMenuMaxProblems) {
     lines.push(
       mortarMenuLine(`+${problems.length - mortarMenuMaxProblems} more — open Mortar to see them`),
@@ -163,7 +172,7 @@ globalThis.mortarStatusDot = (data) => {
     return 'red'
   }
   if (data.updateAvailable) {
-    return 'sand'
+    return 'amber'
   }
   if (data.installed) {
     return 'green'
@@ -276,7 +285,10 @@ const mortarRenderSections = (menu, sections) => {
     const box = mortarMenuEl('div', { class: 'section' })
     box.append(mortarMenuEl('div', { class: 'label', text: section.label }))
     for (const line of section.lines) {
-      const row = mortarMenuEl('p', { class: 'body', text: line.text })
+      const row = mortarMenuEl('p', {
+        class: line.problem ? 'body problem' : 'body',
+        text: line.text,
+      })
       if (line.title) {
         row.title = line.title
       }
@@ -293,6 +305,7 @@ const mortarBindMenu = (host, shadow, btn, menu) => {
     menu.classList.toggle('open', open)
     btn.setAttribute('aria-expanded', open ? 'true' : 'false')
     if (open) {
+      globalThis.mortarRefreshAccent?.()
       const [first] = mortarMenuFocusables(menu)
       ;(first || menu).focus()
     } else {
@@ -345,8 +358,31 @@ const mortarBindMenu = (host, shadow, btn, menu) => {
   return { close, onDocPointer }
 }
 
+// Mortar's accent colour, from the latest native-host reply; every menu on the page follows it.
+let mortarAccent = ''
+const mortarMenuHosts = new Set()
+const mortarAccentHex = /^#[0-9a-f]{6}$/i
+
+globalThis.mortarSetAccent = (hex) => {
+  if (typeof hex !== 'string' || !mortarAccentHex.test(hex) || hex === mortarAccent) {
+    return
+  }
+  mortarAccent = hex
+  for (const host of mortarMenuHosts) {
+    if (host.isConnected) {
+      host.style.setProperty('--mortar-accent', hex)
+    } else {
+      mortarMenuHosts.delete(host)
+    }
+  }
+}
+
 globalThis.mortarAttachMenu = (host, data, options = {}) => {
   host._mortarMenu?.disconnect?.()
+  mortarMenuHosts.add(host)
+  if (mortarAccent) {
+    host.style.setProperty('--mortar-accent', mortarAccent)
+  }
   const shadow = host.shadowRoot || host.attachShadow({ mode: 'open' })
   shadow.replaceChildren()
   shadow.append(mortarMenuEl('style', { text: mortarMenuStyle }))
@@ -388,7 +424,15 @@ globalThis.mortarAttachMenu = (host, data, options = {}) => {
     menu.append(
       mortarMenuEl('p', {
         class: 'disconnected',
-        text: 'Mortar is not running / not connected',
+        text: 'Mortar is not running.',
+      }),
+    )
+  }
+  if (connected && isCollection) {
+    menu.append(
+      mortarMenuEl('p', {
+        class: 'body intro',
+        text: 'Preview this collection in Mortar and choose which of its mods to add to a profile.',
       }),
     )
   }

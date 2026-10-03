@@ -59,16 +59,21 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       sendResponse({
         modIds: Array.isArray(reply?.modIds) ? reply.modIds : [],
         connected: reply?.connected === true,
+        accent: reply?.accent,
       })
       return
     }
     if (msg.type === 'modProblems') {
-      sendResponse({ problems: Array.isArray(reply?.problems) ? reply.problems : [] })
+      sendResponse({
+        problems: Array.isArray(reply?.problems) ? reply.problems : [],
+        accent: reply?.accent,
+      })
       return
     }
     sendResponse({
       open: reply?.open ?? null,
       others: Array.isArray(reply?.others) ? reply.others : [],
+      accent: reply?.accent,
     })
   })
   return true

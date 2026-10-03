@@ -56,7 +56,7 @@ describe('mortarBuildSections', () => {
     const byLabel = Object.fromEntries(
       sections(full).map((section) => [section.label, section.lines.map((line) => line.text)]),
     )
-    expect(byLabel['This mod']).toContain('In Main: version 1.2.3')
+    expect(byLabel['This mod']).toContain('Version 1.2.3 in this profile')
     expect(byLabel['This mod']).toContain('Pinned in Mortar (this version stays)')
     expect(byLabel.Updates).toEqual([
       'Nexus has a newer version',
@@ -78,9 +78,7 @@ describe('mortarBuildSections', () => {
       version: '1.0.0',
       problems: [],
     })
-    expect(model.find((section) => section.label === 'Problems').lines[0].text).toBe(
-      'No problems in Main',
-    )
+    expect(model.find((section) => section.label === 'Problems').lines[0].text).toBe('No problems')
   })
 })
 
@@ -113,7 +111,7 @@ describe('mortarStatusDot', () => {
         hasProblems: false,
         updateAvailable: true,
       }),
-    ).toBe('sand')
+    ).toBe('amber')
     expect(
       dot({
         connected: true,
@@ -139,5 +137,27 @@ describe('mortarMenuModData collection vs mod', () => {
     expect(data.connected).toBe(false)
     expect(sections(data)).toEqual([])
     expect(dot(data)).toBeNull()
+  })
+})
+
+describe('mortarMenuModData', () => {
+  test('counts profiles whose installed version is older than the page, and host-marked updates', () => {
+    globalThis.mortarNewerVersion = (page, installed) => page > installed
+    const data = globalThis.mortarMenuModData(
+      { profile: 'Main', version: '1.0.0' },
+      [
+        { profile: 'B', version: '0.9.0' },
+        { profile: 'C', version: '1.1.0', updateAvailable: true },
+      ],
+      '1.1.0',
+      [],
+    )
+    expect(data.updateCount).toBe(3)
+    expect(data.nexusNewer).toBe(true)
+  })
+  test('not in the profile when there is no installed version', () => {
+    const data = globalThis.mortarMenuModData({ profile: 'Main', version: '' }, [], '1.0.0', [])
+    expect(data.inProfile).toBe(false)
+    expect(globalThis.mortarStatusDot(data)).toBe(null)
   })
 })
