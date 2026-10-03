@@ -42,7 +42,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       return
     }
     if (msg.type === 'installed') {
-      sendResponse({ modIds: Array.isArray(reply?.modIds) ? reply.modIds : [] })
+      sendResponse({
+        modIds: Array.isArray(reply?.modIds) ? reply.modIds : [],
+        connected: reply?.connected === true,
+      })
       return
     }
     if (msg.type === 'modProblems') {
