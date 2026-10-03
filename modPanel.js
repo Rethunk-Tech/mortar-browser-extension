@@ -1,3 +1,59 @@
+const mortarNexusModPath = /^\/[^/]+\/mods\/(\d+)(?:\/|$)/
+const mortarNexusNumericMod = /^\d+$/
+globalThis.mortarNexusModID = (pathname) => {
+  const match = String(pathname || '').match(mortarNexusModPath)
+  return match ? Number(match[1]) : undefined
+}
+globalThis.mortarIsNexusModListing = (pathname) => {
+  const parts = String(pathname || '')
+    .split('/')
+    .filter(Boolean)
+  if (parts[0] === 'games' && parts[2] === 'collections' && parts[1]) {
+    return true
+  }
+  if (parts.length < 2 || (parts[1] !== 'mods' && parts[1] !== 'search')) {
+    return false
+  }
+  return !(parts[1] === 'mods' && mortarNexusNumericMod.test(parts[2] || ''))
+}
+
+const mortarVersionParts = (value) =>
+  String(value || '')
+    .match(/\d+/g)
+    ?.map(Number) || []
+globalThis.mortarNewerVersion = (page, installed) => {
+  const a = mortarVersionParts(page)
+  const b = mortarVersionParts(installed)
+  if (a.length === 0 || b.length === 0) {
+    return false
+  }
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+    if ((a[i] || 0) !== (b[i] || 0)) {
+      return (a[i] || 0) > (b[i] || 0)
+    }
+  }
+  return false
+}
+
+const mortarOwnedUpdateCount = (open, others, pageVer, newer) => {
+  const owned = []
+  if (open.profile && open.version) {
+    owned.push(open)
+  }
+  for (const profile of Array.isArray(others) ? others : []) {
+    if (profile?.profile && profile.version) {
+      owned.push(profile)
+    }
+  }
+  let updates = 0
+  for (const profile of owned) {
+    if (profile.updateAvailable || newer(pageVer, profile.version)) {
+      updates += 1
+    }
+  }
+  return updates
+}
+
 globalThis.mortarModPanelLines = (open, others, pageVer, newer) => {
   const installed = open.version
   const lines = open.profile
@@ -8,6 +64,10 @@ globalThis.mortarModPanelLines = (open, others, pageVer, newer) => {
   }
   if (newer(pageVer, installed)) {
     lines.push('Nexus has a newer version')
+  }
+  const updates = mortarOwnedUpdateCount(open, others, pageVer, newer)
+  if (updates > 0) {
+    lines.push(`Update available in ${updates} of your profiles`)
   }
   const requiredBy = Array.isArray(open.requiredBy) ? open.requiredBy : []
   if (open.profile && requiredBy.length > 0) {

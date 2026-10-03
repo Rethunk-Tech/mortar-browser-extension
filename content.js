@@ -4,16 +4,13 @@
 // Mutation observers, not a timer, find the link: background tabs throttle timers to as little as once a minute.
 // The background script also injects this file into Nexus tabs that were open before the extension loaded, so a
 // tab can run it twice; the flag keeps one copy.
-if (!globalThis.mortarNxmWatch) {
+if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   globalThis.mortarNxmWatch = true
   const sent = new Set()
   const skipped = new Set()
   const advanced = new WeakSet()
   const watched = new WeakSet()
   const installedCacheDuration = 60_000
-  const numericModPath = /^\d+$/
-  const modLink = /^\/[^/]+\/mods\/(\d+)(?:\/|$)/
-  const modPagePath = /^\/[^/]+\/mods\/(\d+)(?:\/|$)/
   const pageVersionPattern = /\d+(?:\.\d+)+/
   const numericFileID = /^\d+$/
   const filePath = /\/files\/(\d+)(?:\/|$)/
@@ -48,16 +45,13 @@ if (!globalThis.mortarNxmWatch) {
     })
   }
 
-  const pageGame = () => location.pathname.split('/').find(Boolean) || ''
+  const pageGame = () => {
+    const parts = location.pathname.split('/').filter(Boolean)
+    return (parts[0] === 'games' ? parts[1] : parts[0]) || ''
+  }
   const mortarGame = () => (pageGame() === 'stardewvalley' ? 'stardew' : '')
 
-  const isModListing = () => {
-    const parts = location.pathname.split('/').filter(Boolean)
-    if (parts.length < 2 || (parts[1] !== 'mods' && parts[1] !== 'search')) {
-      return false
-    }
-    return !(parts[1] === 'mods' && numericModPath.test(parts[2] || ''))
-  }
+  const isModListing = () => globalThis.mortarIsNexusModListing(location.pathname)
 
   const readMode = () =>
     new Promise((resolve) => {
@@ -120,28 +114,7 @@ if (!globalThis.mortarNxmWatch) {
     return installedRequest
   }
 
-  const modPageID = () => {
-    const match = location.pathname.match(modPagePath)
-    return match ? Number(match[1]) : undefined
-  }
-
-  const versionParts = (value) =>
-    String(value || '')
-      .match(/\d+/g)
-      ?.map(Number) || []
-  const newerVersion = (page, installed) => {
-    const a = versionParts(page)
-    const b = versionParts(installed)
-    if (a.length === 0 || b.length === 0) {
-      return false
-    }
-    for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
-      if ((a[i] || 0) !== (b[i] || 0)) {
-        return (a[i] || 0) > (b[i] || 0)
-      }
-    }
-    return false
-  }
+  const modPageID = () => globalThis.mortarNexusModID(location.pathname)
 
   const pageVersion = () => {
     const element = document.querySelector('[data-testid*="version"], .mod-version, .version')
@@ -266,7 +239,7 @@ if (!globalThis.mortarNxmWatch) {
       reply.open,
       reply.others,
       pageVersion(),
-      newerVersion,
+      globalThis.mortarNewerVersion,
     )
     const problems = await new Promise((resolve) => {
       try {
@@ -375,8 +348,7 @@ if (!globalThis.mortarNxmWatch) {
       if (url.origin !== location.origin) {
         return
       }
-      const match = url.pathname.match(modLink)
-      return match ? Number(match[1]) : undefined
+      return globalThis.mortarNexusModID(url.pathname)
     } catch {
       return
     }
