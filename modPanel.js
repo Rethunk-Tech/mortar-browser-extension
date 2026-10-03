@@ -122,27 +122,6 @@ globalThis.mortarModPanelLines = (open, others, pageVer, newer) => {
   return lines
 }
 
-globalThis.mortarFillPanelLines = (panel, lines) => {
-  panel.replaceChildren()
-  for (let i = 0; i < lines.length; i += 1) {
-    if (i > 0) {
-      panel.append(document.createTextNode(' · '))
-    }
-    const line = lines[i]
-    if (typeof line === 'string') {
-      panel.append(document.createTextNode(line))
-    } else {
-      const mark = document.createElement('span')
-      mark.textContent = line.text
-      mark.title = line.title
-      panel.append(mark)
-    }
-  }
-  if (lines.length > 0) {
-    panel.append(document.createTextNode(' · '))
-  }
-}
-
 let mortarCollectionPanelURL = ''
 globalThis.mortarEnsureInstalledModStyle = (
   doc,
@@ -154,12 +133,12 @@ globalThis.mortarEnsureInstalledModStyle = (
   const style = doc.createElement('style')
   style.id = 'mortar-installed-mod-style'
   style.textContent = `
-      .${markerClass} { outline: 2px solid #d2a84a !important; outline-offset: -2px; }
+      .${markerClass} { outline: 2px solid #0CDF64 !important; outline-offset: -2px; }
       .${markerClass} { position: relative; }
       .${badgeClass} {
-        background: #d2a84a;
+        background: #0CDF64;
         border-radius: 3px;
-        color: #1d1b16;
+        color: #1b1a17;
         display: inline-block;
         font: 600 11px/1.4 sans-serif;
         margin: 4px;
@@ -168,33 +147,13 @@ globalThis.mortarEnsureInstalledModStyle = (
         z-index: 1;
       }
       .${fileBadgeClass} .mortar-file-active {
-        background: #1d1b16;
+        background: #1b1a17;
         border-radius: 2px;
-        color: #f0d78c;
+        color: #D6B17A;
         padding: 0 3px;
       }
       .${hiddenClass} { display: none !important; }
-      .${panelClass} {
-        background: #242424;
-        border-left: 3px solid #d2a84a;
-        color: #c7c7c7;
-        font: 13px/1.5 sans-serif;
-        margin: 8px 0;
-        padding: 6px 10px;
-      }
-      .${panelClass} .mortar-mod-problems { margin-top: 6px; }
-      .${panelClass} .mortar-mod-problems ul { margin: 2px 0 0 18px; padding: 0; }
-      .${panelClass} button {
-        background: none;
-        border: none;
-        color: #d2a84a;
-        cursor: pointer;
-        font: inherit;
-        padding: 0;
-        text-decoration: underline;
-      }
-      .${panelClass} button:disabled { cursor: default; opacity: 0.6; }
-      .${panelClass} .mortar-collection-status { margin-top: 4px; }
+      .${panelClass} { display: inline-block; margin: 8px 0; vertical-align: middle; }
     `
   doc.documentElement.append(style)
 }
@@ -219,33 +178,33 @@ globalThis.mortarSyncCollectionPanel = (
   remove()
   const panel = doc.createElement('div')
   panel.className = `${panelClass} ${collectionPanelClass}`
-  const btn = doc.createElement('button')
-  btn.type = 'button'
-  btn.textContent = 'Open in Mortar'
-  const status = doc.createElement('div')
-  status.className = 'mortar-collection-status'
-  btn.addEventListener('click', () => {
-    status.textContent = ''
-    btn.disabled = true
-    try {
-      sendLink(collectionURL, (reply, lastError) => {
-        btn.disabled = false
-        if (lastError) {
-          status.textContent = String(lastError)
-          return
+  const menu = globalThis.mortarAttachMenu(
+    panel,
+    { connected: true, kind: 'collection' },
+    {
+      onOpen: () => {
+        menu.setStatus('')
+        menu.setBusy(true)
+        try {
+          sendLink(collectionURL, (reply, lastError) => {
+            menu.setBusy(false)
+            if (lastError) {
+              menu.setStatus(String(lastError))
+              return
+            }
+            if (reply?.ok === false && reply.error) {
+              menu.setStatus(String(reply.error))
+              return
+            }
+            menu.setStatus('Sent to Mortar')
+          })
+        } catch (error) {
+          menu.setBusy(false)
+          menu.setStatus(error instanceof Error ? error.message : String(error))
         }
-        if (reply?.ok === false && reply.error) {
-          status.textContent = String(reply.error)
-          return
-        }
-        status.textContent = 'Sent to Mortar'
-      })
-    } catch (error) {
-      btn.disabled = false
-      status.textContent = error instanceof Error ? error.message : String(error)
-    }
-  })
-  panel.append(btn, status)
+      },
+    },
+  )
   doc.querySelector('h1')?.parentElement?.insertBefore(panel, doc.querySelector('h1')?.nextSibling)
   mortarCollectionPanelURL = collectionURL
 }

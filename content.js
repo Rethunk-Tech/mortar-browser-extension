@@ -21,7 +21,6 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const fileBadgeClass = 'mortar-installed-file-badge'
   const panelClass = 'mortar-mod-panel'
   const listingStatusClass = 'mortar-listing-status'
-  const maxPanelProblems = 5
   const cardSelectors =
     '[data-testid*="mod-tile"], [data-testid*="mod-card"], .mod-tile, .mod-listing, article, li'
   let mode
@@ -240,63 +239,39 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     })
     markProfileFile(reply)
     const game = mortarGame()
-    if (mode !== selectedMode || !reply?.open || game === '') {
+    if (mode !== selectedMode || game === '') {
       removePanels()
       return
     }
-    const lines = globalThis.mortarModPanelLines(
-      reply.open,
-      reply.others,
-      pageVersion(),
-      globalThis.mortarNewerVersion,
-    )
-    const problems = await new Promise((resolve) => {
-      try {
-        chrome.runtime.sendMessage(
-          { type: 'modProblems', game: pageGame(), modId: id },
-          (response) => {
-            resolve(Array.isArray(response?.problems) ? response.problems : [])
-          },
-        )
-      } catch {
-        resolve([])
-      }
-    })
+    const connected = Boolean(reply?.open)
+    const problems = connected
+      ? await new Promise((resolve) => {
+          try {
+            chrome.runtime.sendMessage(
+              { type: 'modProblems', game: pageGame(), modId: id },
+              (response) => {
+                resolve(Array.isArray(response?.problems) ? response.problems : [])
+              },
+            )
+          } catch {
+            resolve([])
+          }
+        })
+      : []
     const [existing, ...extra] = document.querySelectorAll(`.${panelClass}`)
     for (const el of extra) {
       el.remove()
     }
     const panel = existing || document.createElement('div')
     panel.className = panelClass
-    globalThis.mortarFillPanelLines(panel, lines)
-    const link = document.createElement('a')
-    link.href = `mortar://${game}/mod/${id}`
-    link.textContent = 'Open in Mortar'
-    panel.append(link)
-    const problemBox = document.createElement('div')
-    problemBox.className = 'mortar-mod-problems'
-    if (problems.length === 0) {
-      problemBox.textContent = `No problems in ${reply.open.profile}`
-    } else {
-      const problemTitle = document.createElement('div')
-      problemTitle.textContent = `Problems in ${reply.open.profile}`
-      problemBox.append(problemTitle)
-      const list = document.createElement('ul')
-      for (const problem of problems.slice(0, maxPanelProblems)) {
-        const item = document.createElement('li')
-        item.textContent = problem.text
-        list.append(item)
-      }
-      problemBox.append(list)
-      if (problems.length > maxPanelProblems) {
-        problemBox.append(
-          document.createTextNode(
-            `+${problems.length - maxPanelProblems} more — open Mortar to see them`,
-          ),
-        )
-      }
-    }
-    panel.append(problemBox)
+    const data = globalThis.mortarMenuModData(reply?.open, reply?.others, pageVersion(), problems)
+    globalThis.mortarAttachMenu(panel, data, {
+      onOpen: () => {
+        const link = document.createElement('a')
+        link.href = `mortar://${game}/mod/${id}`
+        link.click()
+      },
+    })
     if (!existing) {
       const title = document.querySelector('h1')
       title?.parentElement?.insertBefore(panel, title.nextSibling)
