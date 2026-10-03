@@ -37,7 +37,7 @@ const updatesList = document.querySelector('#updates')
 const updatesEmpty = document.querySelector('#updates-empty')
 const updatesHeading = document.querySelector('#updates-heading')
 
-chrome.storage.session.get(['updatesReply', 'updatesError'], (stored) => {
+const paintPopupUpdates = (stored) => {
   const view = globalThis.mortarUpdatesBadge(stored?.updatesReply, stored?.updatesError)
   document.documentElement.style.setProperty('--accent', view.background)
   updatesHeading.textContent = view.profile ? `Updates in ${view.profile}` : 'Updates'
@@ -61,4 +61,10 @@ chrome.storage.session.get(['updatesReply', 'updatesError'], (stored) => {
     item.append(link)
     updatesList.append(item)
   }
-})
+}
+
+chrome.storage.session.get(['updatesReply', 'updatesError'], paintPopupUpdates)
+
+globalThis.mortarReloadPopupUpdates = () => {
+  chrome.storage.session.get(['updatesReply', 'updatesError'], paintPopupUpdates)
+}
