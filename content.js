@@ -267,6 +267,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     const panel = existing || document.createElement('div')
     panel.className = panelClass
     const data = globalThis.mortarMenuModData(reply?.open, reply?.others, pageVersion(), problems)
+    data.requirements = connected ? await globalThis.mortarFetchRequirements(pageGame(), id) : []
     globalThis.mortarAttachMenu(panel, data, {
       onOpen: () => {
         const link = document.createElement('a')

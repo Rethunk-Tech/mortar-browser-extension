@@ -55,6 +55,7 @@ svg rect { fill: var(--mortar-accent); }
   content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 6px;
   border-radius: 50%; background: #E5484D; vertical-align: middle;
 }
+.body a { color: inherit; }
 .footer { margin-top: 12px; }
 .open-btn {
   width: 100%; height: 32px; border: 0; border-radius: 6px;
@@ -187,6 +188,7 @@ globalThis.mortarBuildSections = (data) => {
   mortarPushSection(sections, 'Updates', mortarUpdateLines(data))
   mortarPushSection(sections, 'Other profiles', mortarOtherProfileLines(data))
   mortarPushSection(sections, 'Required by', mortarRequiredLines(data))
+  mortarPushSection(sections, 'Requirements', globalThis.mortarRequirementLines?.(data) || [])
   mortarPushSection(sections, 'Problems', mortarProblemLines(data))
   return sections
 }
@@ -285,8 +287,12 @@ const mortarRenderSections = (menu, sections) => {
     for (const line of section.lines) {
       const row = mortarMenuEl('p', {
         class: line.problem ? 'body problem' : 'body',
-        text: line.text,
       })
+      if (line.href) {
+        row.append(mortarMenuEl('a', { href: line.href, target: '_blank', text: line.text }))
+      } else {
+        row.textContent = line.text
+      }
       if (line.title) {
         row.title = line.title
       }

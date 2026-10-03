@@ -67,7 +67,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (
-    (msg?.type !== 'installed' && msg?.type !== 'mod' && msg?.type !== 'modProblems') ||
+    (msg?.type !== 'installed' &&
+      msg?.type !== 'mod' &&
+      msg?.type !== 'modProblems' &&
+      msg?.type !== 'requirements') ||
     typeof msg.game !== 'string'
   ) {
     return
@@ -81,6 +84,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     emptyReply = { modIds: [] }
   } else if (msg.type === 'mod') {
     emptyReply = { open: null, others: [] }
+  } else if (msg.type === 'requirements') {
+    emptyReply = { requirements: [] }
   } else {
     emptyReply = { problems: [] }
   }
@@ -107,10 +112,33 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       })
       return
     }
+    if (msg.type === 'requirements') {
+      sendResponse({
+        requirements: Array.isArray(reply?.requirements) ? reply.requirements : [],
+        accent: reply?.accent,
+      })
+      return
+    }
     sendResponse({
       open: reply?.open ?? null,
       others: Array.isArray(reply?.others) ? reply.others : [],
       accent: reply?.accent,
+    })
+  })
+  return true
+})
+
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type !== 'checkNow') {
+    return
+  }
+  chrome.runtime.sendNativeMessage(host, { type: 'updates', game: 'stardewvalley' }, (reply) => {
+    applyUpdatesBadge(reply, chrome.runtime.lastError)
+    sendResponse({
+      updates: reply?.updates,
+      profile: reply?.profile,
+      accent: reply?.accent,
+      nativeMessagingError: Boolean(chrome.runtime.lastError),
     })
   })
   return true
@@ -121,7 +149,15 @@ chrome.runtime.onInstalled.addListener(async () => {
   for (const tab of await chrome.tabs.query({ url: 'https://www.nexusmods.com/*' })) {
     chrome.scripting.executeScript({
       target: { tabId: tab.id, allFrames: false },
-      files: ['fileLabels.js', 'modPanel.js', 'content.js'],
+      files: [
+        'plural.js',
+        'fileLabels.js',
+        'modPanel.js',
+        'collectionCount.js',
+        'menu.js',
+        'menuRequirements.js',
+        'content.js',
+      ],
     })
   }
 })
