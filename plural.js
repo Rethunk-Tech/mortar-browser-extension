@@ -23,6 +23,10 @@ globalThis.mortarConnectionState = (reply, lastError) => {
   return reply.connected === true ? 'ready' : 'noProfile'
 }
 
+// The Nexus domains Mortar manages, as the native host reports them; Stardew Valley until a reply says more.
+globalThis.mortarSupportedGames = (reply) =>
+  Array.isArray(reply?.games) && reply.games.length > 0 ? reply.games : ['stardewvalley']
+
 globalThis.mortarInstallHint =
   "Mortar isn't installed. Install Mortar and open it once to connect this browser."
 

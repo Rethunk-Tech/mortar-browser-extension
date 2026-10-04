@@ -19,14 +19,15 @@ Sends Nexus Mods Mod Manager Download clicks to the Mortar desktop mod manager a
 
 Mortar is a desktop mod manager for Stardew Valley. This extension connects your browser to it while you browse Nexus Mods.
 
-- Mod Manager Download buttons are relayed to Mortar. Open as many mod tabs as you like and click away; every click arrives, instead of the browser handing the nxm:// links to the desktop one at a time and dropping some.
+- Mod Manager Download buttons are relayed to Mortar. Open as many mod tabs as you like and click away; every click arrives, instead of the browser handing the nxm:// links to the desktop one at a time and dropping some. Nexus first shows a "Download mod file" dialog listing the file's requirements; when Mortar is installed and the connection is on, the extension clicks that dialog's own Download link for you so the link reaches Mortar. Mortar shows the requirements itself.
 - Mods and files already in your open Mortar profile are marked on Nexus pages, so you can tell what you have. Choose highlight, hide or off in the toolbar popup.
-- Mod pages show which files are installed, requirements and known problems for the mod, as reported by Mortar.
+- A Mortar section in the filter sidebar of Stardew Valley mod listings has three filters that gray out mods already in your profile, mods marked obsolete, and mods the SMAPI compatibility list marks broken.
+- Mod pages show which files are installed, requirements and known problems for the mod, as reported by Mortar. Collection pages have an Open in Mortar button.
 - The toolbar badge and popup show how many of your profile's mods have updates, checked every 30 minutes.
 
-The extension never downloads anything itself and never opens Nexus pages on its own. Downloads start only from Nexus's own Mod Manager Download button.
+The extension only adds its buttons and marks on Nexus pages for games Mortar manages (Stardew Valley today). It never downloads anything itself and never opens Nexus pages on its own. Downloads start only from Nexus's own Mod Manager Download button.
 
-It needs the Mortar desktop app (https://github.com/Rethunk-AI/mortar). Without Mortar running, pages are left untouched and the popup says Mortar is not running.
+It needs the Mortar desktop app (https://github.com/Rethunk-AI/mortar). If Mortar is not installed, the Mortar button and filter section say "Mortar isn't installed" and how to connect, and the popup says the same; nothing is clicked for you. If Mortar is installed but not running, they say "Mortar isn't running"; if no profile is open, "Open a profile in Mortar"; if the connection is switched off in Mortar's settings, nothing is drawn on pages.
 
 ## Single purpose
 
@@ -36,11 +37,21 @@ Relay Nexus Mods "Mod Manager Download" clicks to the Mortar desktop mod manager
 
 - `nativeMessaging`: the only channel to the Mortar desktop app (native host `tech.rethunk.mortar`, on the user's own machine). It carries download links to Mortar and asks it which mods are installed and which have updates.
 - `scripting`: when the extension is installed or updated, injects its content scripts into Nexus Mods tabs that were already open (content scripts alone only reach pages loaded afterwards).
-- `storage`: keeps the user's choice (highlight, hide or off) and per-game "hide mods in my profile" filter in local storage, and keeps the last update check in session storage so the popup and badge render without a new request.
+- `storage`: keeps the user's choice (highlight, hide or off) and the three per-game listing filters (in my profile, obsolete, broken) in local storage, and keeps the last update check in session storage so the popup and badge render without a new request.
 - `alarms`: schedules the update check every 30 minutes so the toolbar badge stays current.
-- Host permission `https://www.nexusmods.com/*`: the content scripts must read Nexus mod and listing pages (mod ids, download links) to mark mods and to intercept Mod Manager Download clicks. No other site is accessed.
+- Host permission `https://www.nexusmods.com/*`: the content scripts must read Nexus mod and listing pages (mod ids, download links) to mark mods, to follow the Download link in Nexus's "Download mod file" dialog, and to relay Mod Manager Download links. No other site is accessed.
 
 Remote code: none. All code ships in the package.
+
+## Notes for reviewers
+
+- Install the Mortar desktop app from https://github.com/Rethunk-AI/mortar; it registers the native messaging host. Open a Stardew Valley mod page on nexusmods.com.
+- Without the app the popup says "Mortar isn't installed. Install Mortar and open it once to connect this browser." and the Open Mortar button is hidden. With the app installed but closed it says "Mortar isn't running".
+- The extension clicks the "Download mod file" dialog's Download link only when Mortar is installed and its extension connection is on.
+
+## Store ID prerequisite
+
+Mortar's native host manifest allows only the extension's origin. The store assigns its own item id, so before publishing: add the id to `storeChromeIDs` in `internal/nativehost/nativehost.go`, and strip `key` from the store zip in `.github/workflows/release.yml` (the store signs with its own key).
 
 ## Data use disclosures (Privacy practices tab)
 

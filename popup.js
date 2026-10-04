@@ -7,7 +7,9 @@ const normalized = (value) => (value === 'off' || value === 'hide' ? value : 'hi
 const paintStatus = (reply, lastError) => {
   const state = globalThis.mortarConnectionState(reply, lastError)
   const problem = globalThis.mortarInstalledReplyStatus(reply, lastError)
-  document.querySelector('#mortar-open-app').classList.toggle('primary', state === 'notRunning')
+  const open = document.querySelector('#mortar-open-app')
+  open.hidden = state === 'missing'
+  open.classList.toggle('primary', state === 'notRunning')
   if (problem) {
     status.textContent = state === 'missing' ? globalThis.mortarInstallHint : problem
     return
@@ -17,7 +19,7 @@ const paintStatus = (reply, lastError) => {
     status.textContent = `Connected to Mortar · ${profile || 'the open profile'} has no Nexus mods`
     return
   }
-  const modCount = globalThis.mortarPlural(modIds.length, 'mod', 'mods')
+  const modCount = globalThis.mortarPlural(modIds.length, 'Nexus mod', 'Nexus mods')
   status.textContent = `Connected to Mortar · ${modCount} in ${profile || 'the open profile'}`
 }
 

@@ -90,23 +90,24 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
 
   const installedIDs = () => {
     const now = Date.now()
-    if (now - installedCache.at < installedCacheDuration) {
+    if (installedCache.game === pageGame() && now - installedCache.at < installedCacheDuration) {
       return Promise.resolve(installedCache.ids)
     }
     if (installedRequest) {
       return installedRequest
     }
+    const game = pageGame()
     installedRequest = new Promise((resolve) => {
       const settle = (reply, lastError) => {
         const usable = globalThis.mortarInstalledReplyStatus(reply, lastError) === ''
         const ids = usable
           ? new Set(reply.modIds.filter((id) => Number.isInteger(id) && id > 0))
           : undefined
-        installedCache = globalThis.mortarInstalledListingState(reply, lastError, ids)
+        installedCache = { ...globalThis.mortarInstalledListingState(reply, lastError, ids), game }
         resolve(installedCache.ids)
       }
       try {
-        chrome.runtime.sendMessage({ type: 'installed', game: pageGame() }, (reply) => {
+        chrome.runtime.sendMessage({ type: 'installed', game }, (reply) => {
           globalThis.mortarSetAccent(reply?.accent)
           settle(reply, chrome.runtime.lastError)
         })
@@ -187,9 +188,13 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   // the page would otherwise wake the observer into another render.
   let panelRendering = false
   let panelKey = ''
+  const removePanel = (el) => {
+    el._mortarMenu?.disconnect()
+    el.remove()
+  }
   const removePanels = () => {
     for (const el of document.querySelectorAll(`.${panelClass}`)) {
-      el.remove()
+      removePanel(el)
     }
   }
   const renderModPanel = async () => {
@@ -240,7 +245,8 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     globalThis.mortarSetAccent(reply?.accent)
     const state = globalThis.mortarConnectionState(reply)
     const game = mortarGame()
-    if (mode !== selectedMode || game === '' || state === 'off') {
+    const supported = globalThis.mortarSupportedGames(reply).includes(pageGame())
+    if (mode !== selectedMode || game === '' || !supported || state === 'off') {
       removePanels()
       clearFileBadge()
       return
@@ -249,7 +255,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     markProfileFile(lastModReply)
     const [existing, ...extra] = document.querySelectorAll(`.${panelClass}`)
     for (const el of extra) {
-      el.remove()
+      removePanel(el)
     }
     const panel = existing || document.createElement('div')
     panel.className = panelClass
@@ -279,9 +285,9 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       ensureMarkerStyle,
       installedIDs,
       installedCache: () => installedCache,
-      appOff: async () => {
+      unavailable: async () => {
         await installedIDs()
-        return installedCache.state === 'off'
+        return installedCache.state === 'off' || !installedCache.games.includes(pageGame())
       },
     })
 
@@ -299,7 +305,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const modID = (href) => {
     try {
       const url = new URL(href, location.href)
-      if (url.origin !== location.origin) {
+      if (url.origin !== location.origin || url.pathname.split('/')[1] !== pageGame()) {
         return
       }
       return globalThis.mortarNexusModID(url.pathname)
@@ -367,14 +373,8 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     }
   })
 
-  // A copy left in an open tab when the extension is reloaded or removed loses chrome.runtime; the new copy takes
-  // over, so the old one stays quiet.
-  const scan = (root) => {
-    if (!chrome.runtime?.id) {
-      return
-    }
-    // Mod manager download first opens a "Download mod file" dialog listing the file's requirements. Mortar
-    // resolves those itself, so the dialog's own Download link is followed straight away, once per dialog.
+  // Only a Mortar that can take the link gets it: without one the dialog's requirement list stays for the user.
+  const advanceDialogs = async (root) => {
     const pageMod = modPageID()
     const dialogs = pageMod === undefined ? [] : [...root.querySelectorAll('[role="dialog"]')]
     for (const dialog of dialogs.filter((d) => !advanced.has(d))) {
@@ -384,12 +384,28 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
           globalThis.mortarIsOwnDialogDownload(new URL(a.href, location.href), pageMod) &&
           !skipped.has(a.href),
       )
-      if (own) {
-        advanced.add(dialog)
-        skipped.add(own.href)
-        own.click()
+      if (!own) {
+        continue
       }
+      await installedIDs()
+      if (advanced.has(dialog) || ['missing', 'off'].includes(installedCache.state)) {
+        continue
+      }
+      advanced.add(dialog)
+      skipped.add(own.href)
+      own.click()
     }
+  }
+
+  // A copy left in an open tab when the extension is reloaded or removed loses chrome.runtime; the new copy takes
+  // over, so the old one stays quiet.
+  const scan = (root) => {
+    if (!chrome.runtime?.id) {
+      return
+    }
+    // Mod manager download first opens a "Download mod file" dialog listing the file's requirements. Mortar
+    // resolves those itself, so the dialog's own Download link is followed straight away, once per dialog.
+    advanceDialogs(root).catch(() => false)
     for (const a of root.querySelectorAll('a[href^="nxm://"]')) {
       if (!sent.has(a.href)) {
         sent.add(a.href)
@@ -457,22 +473,15 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     scan(root)
   }
 
-  // Re-reading the accent on return to the tab keeps the menu in step with Mortar's Appearance setting without a
-  // page reload.
-  globalThis.mortarRefreshAccent = () => {
-    try {
-      chrome.runtime.sendMessage({ type: 'installed', game: pageGame() }, (reply) => {
-        if (!chrome.runtime.lastError) {
-          globalThis.mortarSetAccent(reply?.accent)
-        }
-      })
-    } catch {
-      // The extension was reloaded under this page; the next page load picks the accent up.
-    }
-  }
+  // Mortar's profile, installed mods and Appearance setting change while the tab is in the background, so coming
+  // back re-reads all of it.
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      globalThis.mortarRefreshAccent()
+      installedCache = emptyInstalledCache()
+      panelKey = ''
+      requestMark()
+      renderModPanel().catch(() => false)
+      renderCollectionPanel().catch(() => false)
     }
   })
   watch(document)

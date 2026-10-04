@@ -91,7 +91,6 @@ const refreshUpdates = () => {
   checkUpdates().catch(() => false)
 }
 
-chrome.alarms.create('updates', { periodInMinutes: 30 })
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'updates') {
     refreshUpdates()
@@ -105,7 +104,13 @@ chrome.tabs.onActivated.addListener((info) => {
     }
   })
 })
-refreshUpdates()
+
+// The alarm and first check are set up when the browser or extension starts, not on every service-worker wake.
+const startUpdates = () => {
+  chrome.alarms.create('updates', { periodInMinutes: 30 })
+  refreshUpdates()
+}
+chrome.runtime.onStartup.addListener(startUpdates)
 
 // The tab closes only after Mortar took the link; a failed delivery leaves the page's own nxm launch to run, so
 // nothing is lost that would have arrived without the extension.
@@ -145,6 +150,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 // Content scripts only reach pages loaded after the extension, so Nexus tabs already open get the script now.
 chrome.runtime.onInstalled.addListener(async () => {
+  startUpdates()
   for (const tab of await chrome.tabs.query({ url: 'https://www.nexusmods.com/*' })) {
     chrome.scripting.executeScript({
       target: { tabId: tab.id, allFrames: false },

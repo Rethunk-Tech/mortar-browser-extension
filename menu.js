@@ -1,4 +1,13 @@
-const mortarMarkSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="20" height="20" aria-hidden="true"><rect x="6" y="12" width="24" height="11" rx="2"/><rect x="34" y="12" width="24" height="11" rx="2"/><rect x="6" y="27" width="10" height="11" rx="2"/><rect x="20" y="27" width="24" height="11" rx="2"/><rect x="48" y="27" width="10" height="11" rx="2"/><rect x="6" y="42" width="24" height="11" rx="2"/><rect x="34" y="42" width="24" height="11" rx="2"/></svg>`
+// The logo's bricks as [x, y, width]; every brick is 11 tall with 2 radius.
+const mortarMarkBricks = [
+  [6, 12, 24],
+  [34, 12, 24],
+  [6, 27, 10],
+  [20, 27, 24],
+  [48, 27, 10],
+  [6, 42, 24],
+  [34, 42, 24],
+]
 
 const mortarMenuMaxProblems = 5
 
@@ -294,7 +303,30 @@ const mortarMenuFocusables = (root) =>
 
 const mortarMarkNode = () => {
   const wrap = mortarMenuEl('span', { 'aria-hidden': 'true' })
-  wrap.innerHTML = mortarMarkSVG
+  const svgNS = 'http://www.w3.org/2000/svg'
+  const svg = document.createElementNS(svgNS, 'svg')
+  for (const [name, value] of [
+    ['viewBox', '0 0 64 64'],
+    ['width', '20'],
+    ['height', '20'],
+    ['aria-hidden', 'true'],
+  ]) {
+    svg.setAttribute(name, value)
+  }
+  for (const [x, y, width] of mortarMarkBricks) {
+    const rect = document.createElementNS(svgNS, 'rect')
+    for (const [name, value] of [
+      ['x', x],
+      ['y', y],
+      ['width', width],
+      ['height', 11],
+      ['rx', 2],
+    ]) {
+      rect.setAttribute(name, String(value))
+    }
+    svg.append(rect)
+  }
+  wrap.append(svg)
   return wrap
 }
 
@@ -468,7 +500,7 @@ globalThis.mortarAttachMenu = (host, data, options = {}) => {
     type: 'button',
     text: 'Open in Mortar',
   })
-  const statusEl = mortarMenuEl('p', { class: 'status' })
+  const statusEl = mortarMenuEl('p', { class: 'status', role: 'status' })
   const footer = mortarMenuEl(
     'div',
     { class: 'footer' },

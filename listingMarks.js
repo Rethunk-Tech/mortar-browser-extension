@@ -80,16 +80,24 @@ globalThis.mortarMarkInstalledListing = async (ctx) => {
     return
   }
   const cache = ctx.installedCache()
-  if (cache.state === 'off') {
+  if (cache.state === 'off' || !cache.games.includes(ctx.pageGame())) {
     mortarListingOff(ctx)
     return
   }
-  const control = globalThis.mortarHideInProfileControl({
-    connected: cache.connected,
-    profileOpen: cache.profileOpen,
-    enabled: ctx.filters.installed,
-    status: cache.status,
-  })
+  const removing = selectedMode === 'hide'
+  const control = removing
+    ? {
+        disabled: true,
+        hide: false,
+        removed: true,
+        title: 'Hide mode removes these; switch to Highlight in the toolbar popup',
+      }
+    : globalThis.mortarHideInProfileControl({
+        connected: cache.connected,
+        profileOpen: cache.profileOpen,
+        enabled: ctx.filters.installed,
+        status: cache.status,
+      })
   const tiles = globalThis.mortarCollectInstalledTiles({
     root: ctx.document,
     ids,
@@ -109,7 +117,7 @@ globalThis.mortarMarkInstalledListing = async (ctx) => {
     document: ctx.document,
     tiles,
     gray: control.hide,
-    remove: selectedMode === 'hide',
+    remove: removing,
     updates: cache.updates,
     markerClass: ctx.markerClass,
     hiddenClass: ctx.hiddenClass,
@@ -127,14 +135,14 @@ globalThis.mortarMarkInstalledListing = async (ctx) => {
     enabled: ctx.filters.broken && !cache.nativeFail,
     dimClass: globalThis.mortarDimClasses.brokenClass,
     dim: (tile) => {
-      const link = tile.querySelector('[data-e2eid="mod-tile-title"]')
+      const link = globalThis.mortarTileTitleLink(tile)
       return Boolean(link) && cache.broken.has(ctx.modID(link.href))
     },
   })
   globalThis.mortarSyncHideInProfileControl(
     globalThis.mortarEnsureHideInProfileControl(ctx.document, ctx.hideControlId, ctx.onHideChange),
     { ...control, status: cache.status },
-    ctx.document.querySelectorAll(`.${ctx.hiddenClass}`).length,
+    removing ? tiles.size : ctx.document.querySelectorAll(`.${ctx.hiddenClass}`).length,
     {
       obsolete: { enabled: ctx.filters.obsolete, count: obsoleteCount },
       broken: {

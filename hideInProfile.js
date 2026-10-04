@@ -104,12 +104,15 @@ const mortarFilterRows = [
   },
 ]
 
+// Listeners belong to one content-script copy, so bound rows are tracked per copy, not on the shared DOM.
+const mortarBoundRows = new WeakSet()
+
 const mortarBindFilterRow = (row, onChange) => {
   const box = row.querySelector('[role="checkbox"]')
-  if (!box || box.dataset.mortarBound === 'true') {
+  if (!box || mortarBoundRows.has(row)) {
     return
   }
-  box.dataset.mortarBound = 'true'
+  mortarBoundRows.add(row)
   const toggle = () => {
     if (box.getAttribute('aria-disabled') !== 'true') {
       onChange(row.dataset.mortarRow, box.getAttribute('aria-checked') !== 'true')
@@ -167,6 +170,10 @@ globalThis.mortarEnsureHideInProfileControl = (root, hideControlId, onChange) =>
       count.dataset.mortarCount = 'true'
       text.append(el('span', c.name, name), count)
       label.append(text)
+      const reason = el('p', c.count)
+      reason.dataset.mortarReason = 'true'
+      reason.hidden = true
+      label.append(reason)
       row.append(checkbox, label)
       return row
     }
@@ -191,7 +198,7 @@ globalThis.mortarEnsureHideInProfileControl = (root, hideControlId, onChange) =>
   return wrap
 }
 
-const mortarSyncFilterRow = (row, { checked, disabled, title, count }) => {
+const mortarSyncFilterRow = (row, { checked, disabled, title, count, removed }) => {
   if (!row) {
     return
   }
@@ -208,9 +215,16 @@ const mortarSyncFilterRow = (row, { checked, disabled, title, count }) => {
   }
   row.toggleAttribute('data-disabled', disabled)
   row.title = title || row.dataset.mortarHint || ''
+  const reason = row.querySelector('[data-mortar-reason]')
+  if (reason) {
+    const text = disabled ? title || '' : ''
+    reason.textContent = text
+    reason.hidden = text === ''
+  }
   const label = row.querySelector('[data-mortar-count]')
   if (label) {
-    label.textContent = count > 0 ? globalThis.mortarHiddenModsCountLabel(count) : ''
+    const text = removed ? `(${count} hidden)` : globalThis.mortarHiddenModsCountLabel(count)
+    label.textContent = count > 0 ? text : ''
   }
 }
 
@@ -230,6 +244,7 @@ globalThis.mortarSyncHideInProfileControl = (wrap, controlState, hiddenCount, ro
     disabled: controlState.disabled,
     title: controlState.title,
     count: hiddenCount,
+    removed: controlState.removed === true,
   })
   for (const [key, row] of Object.entries(rows)) {
     mortarSyncFilterRow(wrap.querySelector(`[data-mortar-row="${key}"]`), {
@@ -244,7 +259,7 @@ globalThis.mortarSyncHideInProfileControl = (wrap, controlState, hiddenCount, ro
 // Dims every listing tile that dim(tile) picks while enabled, and returns how many it dimmed.
 globalThis.mortarApplyDimMarks = ({ root, enabled, dimClass, dim }) => {
   let count = 0
-  for (const tile of root.querySelectorAll('[data-e2eid="mod-tile"]')) {
+  for (const tile of root.querySelectorAll(globalThis.mortarTileSelector)) {
     const on = enabled && dim(tile)
     tile.classList.toggle(dimClass, on)
     if (on) {
@@ -254,10 +269,14 @@ globalThis.mortarApplyDimMarks = ({ root, enabled, dimClass, dim }) => {
   return count
 }
 
+// Falls back to the tile's first mod link when Nexus renames its title attribute.
+globalThis.mortarTileTitleLink = (tile) =>
+  tile.querySelector('[data-e2eid="mod-tile-title"]') || tile.querySelector('a[href*="/mods/"]')
+
 globalThis.mortarTileObsolete = (tile) =>
   globalThis.mortarObsoleteText(
-    tile.querySelector('[data-e2eid="mod-tile-title"]')?.textContent || '',
-    tile.querySelector('[data-e2eid="mod-tile-summary"]')?.textContent || '',
+    globalThis.mortarTileTitleLink(tile)?.textContent || '',
+    (tile.querySelector('[data-e2eid="mod-tile-summary"]') || tile).textContent || '',
   )
 
 globalThis.mortarReadHideInProfile = (
@@ -325,6 +344,7 @@ globalThis.mortarInstalledListingState = (reply, lastError, ids) => {
     profileOpen: connected && reply?.profile !== '',
     profile: typeof reply?.profile === 'string' ? reply.profile : '',
     updates: new Set(Array.isArray(reply?.updateIds) ? reply.updateIds : []),
+    games: globalThis.mortarSupportedGames(reply),
     state: globalThis.mortarConnectionState(reply, lastError),
     status: globalThis.mortarInstalledReplyStatus(reply, lastError),
   }

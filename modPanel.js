@@ -169,6 +169,7 @@ globalThis.mortarSyncCollectionPanel = (
 ) => {
   const remove = () => {
     for (const el of doc.querySelectorAll(`.${collectionPanelClass}`)) {
+      el._mortarMenu?.disconnect()
       el.remove()
     }
     mortarCollectionPanelURL = ''
@@ -209,7 +210,7 @@ globalThis.mortarSyncCollectionPanel = (
 globalThis.mortarRenderCollectionPanel = async (
   doc,
   pathname,
-  { panelClass, collectionPanelClass, currentMode, ensureMarkerStyle, appOff },
+  { panelClass, collectionPanelClass, currentMode, ensureMarkerStyle, unavailable },
 ) => {
   const selectedMode = await currentMode()
   const collectionURL = globalThis.mortarCollectionURL(pathname)
@@ -217,7 +218,7 @@ globalThis.mortarRenderCollectionPanel = async (
     panelClass,
     collectionPanelClass,
     collectionURL,
-    modeOff: selectedMode === 'off' || (collectionURL !== undefined && (await appOff())),
+    modeOff: selectedMode === 'off' || (collectionURL !== undefined && (await unavailable())),
     ensureStyle: ensureMarkerStyle,
     sendLink: (link, done) => {
       try {
