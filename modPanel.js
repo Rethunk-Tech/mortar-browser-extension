@@ -4,6 +4,12 @@ globalThis.mortarNexusModID = (pathname) => {
   const match = String(pathname || '').match(mortarNexusModPath)
   return match ? Number(match[1]) : undefined
 }
+// A download dialog's own Download link: the page's mod by path, or Nexus's file download endpoint, which names only
+// the file. Requirement rows link to their mods' pages, so neither form picks up a requirement.
+const mortarFileDownloadPath = /^\/api\/files\/\d+\/download$/
+globalThis.mortarIsOwnDialogDownload = (url, pageMod) =>
+  globalThis.mortarNexusModID(url.pathname) === pageMod || mortarFileDownloadPath.test(url.pathname)
+
 globalThis.mortarCollectionURL = (pathname) => {
   const parts = String(pathname || '')
     .split('/')

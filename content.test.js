@@ -108,3 +108,12 @@ test('broken ids from the installed reply dim matching tiles', () => {
     true,
   )
 })
+
+test('download dialog follows its own link in either Nexus form, never a requirement', () => {
+  const pageMod = 23_374
+  const own = (href) =>
+    globalThis.mortarIsOwnDialogDownload(new URL(href, 'https://www.nexusmods.com'), pageMod)
+  expect(own('/api/files/5596342520200/download?nmm=1')).toBe(true)
+  expect(own('/stardewvalley/mods/23374?tab=files&file_id=1&nmm=1')).toBe(true)
+  expect(own('/stardewvalley/mods/2400?tab=files&file_id=1&nmm=1')).toBe(false)
+})

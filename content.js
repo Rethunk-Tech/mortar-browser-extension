@@ -408,13 +408,15 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       return
     }
     // Mod manager download first opens a "Download mod file" dialog listing the file's requirements. Mortar
-    // resolves those itself, so the dialog's own Download link is followed straight away. Requirement rows carry
-    // Mod Manager Download links too, so only the link for this page's mod is followed, once per dialog.
+    // resolves those itself, so the dialog's own Download link is followed straight away, once per dialog.
     const pageMod = modPageID()
     const dialogs = pageMod === undefined ? [] : [...root.querySelectorAll('[role="dialog"]')]
     for (const dialog of dialogs.filter((d) => !advanced.has(d))) {
       const own = [...dialog.querySelectorAll('a.nxm-button-flamework[href*="nmm=1"]')].find(
-        (a) => modID(a.href) === pageMod && !skipped.has(a.href),
+        (a) =>
+          new URL(a.href, location.href).origin === location.origin &&
+          globalThis.mortarIsOwnDialogDownload(new URL(a.href, location.href), pageMod) &&
+          !skipped.has(a.href),
       )
       if (own) {
         advanced.add(dialog)
