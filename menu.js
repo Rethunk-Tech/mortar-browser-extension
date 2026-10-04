@@ -481,7 +481,7 @@ globalThis.mortarAttachMenu = (host, data, options = {}) => {
         text:
           data?.state === 'missing'
             ? globalThis.mortarInstallHint
-            : globalThis.mortarInstalledReplyStatus({ state: data?.state }),
+            : globalThis.mortarStateText(data?.state),
       }),
     )
   }

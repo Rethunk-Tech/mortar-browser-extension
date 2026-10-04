@@ -66,7 +66,7 @@ test('hide-in-profile filter stays off when Mortar is disconnected or no profile
   expect(disconnected.connected).toBe(false)
   expect(disconnected.profileOpen).toBe(false)
   const open = globalThis.mortarInstalledListingState(
-    { connected: true, profile: 'Main' },
+    { protocol: 1, connected: true, profile: 'Main' },
     undefined,
     new Set([contentPatcher]),
   )
@@ -184,4 +184,9 @@ test('supported games come from the host reply, Stardew until one arrives', () =
   expect(globalThis.mortarSupportedGames(undefined)).toEqual(['stardewvalley'])
   expect(globalThis.mortarSupportedGames({ games: [] })).toEqual(['stardewvalley'])
   expect(globalThis.mortarSupportedGames({ games: ['skyrim'] })).toEqual(['skyrim'])
+})
+
+// Mortar's Problems check marks the same words (internal/problems authorStatusWord in Rethunk-Tech/mortar).
+test('obsolete words match Mortar', () => {
+  expect(globalThis.mortarObsoleteWord.source).toBe('\\b(obsolete|deprecated|depreciated)\\b')
 })

@@ -11,11 +11,38 @@ globalThis.mortarSkipSourceLabel = (source) => {
   return String(source || '')
 }
 
-// How far the extension is from Mortar's data: 'missing' (no native host), then the host's own state ('off',
-// 'notRunning', 'noProfile', 'ready'). A reply without a state counts as ready only when it says connected.
+// The native-messaging protocol this extension speaks, sent with every message, and the range of Mortar protocols
+// it understands. A Mortar from before the protocol was versioned sends none and counts as 0.
+globalThis.mortarProtocol = 1
+const mortarProtocolMin = 1
+const mortarProtocolMax = 1
+
+// 'mortarOld' or 'extensionOld' when the two sides do not speak a common protocol, else ''. Mortar's own verdict on
+// this extension's protocol wins; otherwise Mortar's protocol is checked against this extension's range.
+globalThis.mortarProtocolMismatch = (reply) => {
+  if (reply?.protocolError === 'extensionTooOld') {
+    return 'extensionOld'
+  }
+  if (reply?.protocolError === 'extensionTooNew') {
+    return 'mortarOld'
+  }
+  const protocol = Number.isInteger(reply?.protocol) ? reply.protocol : 0
+  if (protocol < mortarProtocolMin) {
+    return 'mortarOld'
+  }
+  return protocol > mortarProtocolMax ? 'extensionOld' : ''
+}
+
+// How far the extension is from Mortar's data: 'missing' (no native host), a protocol mismatch ('mortarOld',
+// 'extensionOld'), then the host's own state ('off', 'notRunning', 'noProfile', 'ready'). A reply without a state
+// counts as ready only when it says connected.
 globalThis.mortarConnectionState = (reply, lastError) => {
   if (lastError || !reply || reply.nativeMessagingError === true) {
     return 'missing'
+  }
+  const mismatch = globalThis.mortarProtocolMismatch(reply)
+  if (mismatch !== '') {
+    return mismatch
   }
   if (['off', 'notRunning', 'noProfile', 'ready'].includes(reply.state)) {
     return reply.state
@@ -35,20 +62,28 @@ const mortarStateCopy = {
   off: 'Browser extension connection is off in Mortar',
   notRunning: "Mortar isn't running",
   noProfile: 'Open a profile in Mortar',
+  mortarOld: 'Update Mortar: it is too old for this browser extension',
+  extensionOld: 'Update the browser extension: it is too old for this Mortar',
 }
+
+globalThis.mortarStateText = (state) => mortarStateCopy[state] ?? ''
 
 globalThis.mortarInstalledReplyStatus = (reply, lastError) => {
   const state = globalThis.mortarConnectionState(reply, lastError)
   if (state !== 'ready') {
-    return mortarStateCopy[state]
+    return globalThis.mortarStateText(state)
   }
   return Array.isArray(reply?.modIds) ? '' : 'Mortar could not read this profile'
 }
 
 // What the collection panel says after handing the collection link to Mortar.
 globalThis.mortarLinkResultText = (reply, lastError) => {
-  if (lastError || !reply || reply.nativeMessagingError === true) {
+  const state = globalThis.mortarConnectionState(reply, lastError)
+  if (state === 'missing') {
     return globalThis.mortarInstallHint
+  }
+  if (state === 'mortarOld' || state === 'extensionOld') {
+    return globalThis.mortarStateText(state)
   }
   return reply.ok === true ? 'Sent to Mortar' : "Mortar couldn't open this collection"
 }

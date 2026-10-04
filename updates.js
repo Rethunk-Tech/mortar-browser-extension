@@ -6,7 +6,7 @@ const mortarUpdateRowText = ({ name, installed, latest }) => {
 }
 
 globalThis.mortarUpdatesBadge = (reply, error) => {
-  if (error || !reply || !Array.isArray(reply.updates)) {
+  if (error || !Array.isArray(reply?.updates) || globalThis.mortarProtocolMismatch(reply) !== '') {
     return {
       text: '',
       background: '#D6B17A',

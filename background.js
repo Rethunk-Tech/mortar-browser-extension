@@ -49,7 +49,7 @@ const send = (message) =>
       if (!port) {
         connect()
       }
-      port.postMessage(message)
+      port.postMessage({ ...message, protocol: globalThis.mortarProtocol })
       pending.push({ resolve, reject })
       armIdle()
     } catch (error) {

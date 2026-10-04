@@ -5,6 +5,7 @@ import './updates.js'
 test('updates reply becomes badge text, colour, and popup rows', () => {
   const counted = globalThis.mortarUpdatesBadge(
     {
+      protocol: 1,
       accent: '#aabbcc',
       profile: 'Default',
       updates: [
@@ -42,7 +43,7 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
   })
 
   const empty = globalThis.mortarUpdatesBadge(
-    { accent: '#111111', profile: 'Co-op', updates: [] },
+    { protocol: 1, accent: '#111111', profile: 'Co-op', updates: [] },
     false,
   )
   expect(empty.text).toBe('')
@@ -51,7 +52,7 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
   expect(empty.background).toBe('#111111')
 
   const missingAccent = globalThis.mortarUpdatesBadge(
-    { updates: [{ modId: 1, name: 'A', installed: '1', latest: '2' }] },
+    { protocol: 1, updates: [{ modId: 1, name: 'A', installed: '1', latest: '2' }] },
     false,
   )
   expect(missingAccent.background).toBe('#D6B17A')
@@ -73,6 +74,7 @@ test('update rows print only the versions that are known', () => {
   const rows = globalThis
     .mortarUpdatesBadge(
       {
+        protocol: 1,
         state: 'ready',
         updates: [
           { modId: 1, name: 'A', installed: '', latest: '2.0' },

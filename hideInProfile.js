@@ -334,7 +334,8 @@ globalThis.mortarApplyFilterChanges = (changes, game, filters) => {
 
 globalThis.mortarInstalledListingState = (reply, lastError, ids) => {
   const nativeFail = Boolean(lastError) || reply?.nativeMessagingError === true
-  const connected = !nativeFail && reply?.connected === true
+  const connected =
+    !nativeFail && reply?.connected === true && globalThis.mortarProtocolMismatch(reply) === ''
   return {
     at: Date.now(),
     ids: ids || new Set(),
