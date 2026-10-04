@@ -7,8 +7,8 @@ Copy for the Mortar extension (`browser-extension/`, Manifest V3). Every claim b
 - Name: Mortar
 - Category: Productivity (Chrome has no games-tools category; Productivity fits a companion to a desktop app)
 - Language: English
-- Homepage URL: https://github.com/Rethunk-AI/mortar
-- Support URL: https://github.com/Rethunk-AI/mortar/issues
+- Homepage URL: https://github.com/Rethunk-Tech/mortar
+- Support URL: https://github.com/Rethunk-Tech/mortar/issues
 - Privacy policy URL: required by Chrome because the extension handles page content. Host the "Privacy policy text" below at a stable URL (for example the rendered copy of this section in the repository) and enter it.
 
 ## Short description (132 characters max)
@@ -27,7 +27,7 @@ Mortar is a desktop mod manager for Stardew Valley. This extension connects your
 
 The extension only adds its buttons and marks on Nexus pages for games Mortar manages (Stardew Valley today). It never downloads anything itself and never opens Nexus pages on its own. Downloads start only from Nexus's own Mod Manager Download button.
 
-It needs the Mortar desktop app (https://github.com/Rethunk-AI/mortar). If Mortar is not installed, the Mortar button and filter section say "Mortar isn't installed" and how to connect, and the popup says the same; nothing is clicked for you. If Mortar is installed but not running, they say "Mortar isn't running"; if no profile is open, "Open a profile in Mortar"; if the connection is switched off in Mortar's settings, nothing is drawn on pages.
+It needs the Mortar desktop app (https://github.com/Rethunk-Tech/mortar). If Mortar is not installed, the Mortar button and filter section say "Mortar isn't installed" and how to connect, and the popup says the same; nothing is clicked for you. If Mortar is installed but not running, they say "Mortar isn't running"; if no profile is open, "Open a profile in Mortar"; if the connection is switched off in Mortar's settings, nothing is drawn on pages.
 
 ## Single purpose
 
@@ -45,7 +45,7 @@ Remote code: none. All code ships in the package.
 
 ## Notes for reviewers
 
-- Install the Mortar desktop app from https://github.com/Rethunk-AI/mortar; it registers the native messaging host. Open a Stardew Valley mod page on nexusmods.com.
+- Install the Mortar desktop app from https://github.com/Rethunk-Tech/mortar; it registers the native messaging host. Open a Stardew Valley mod page on nexusmods.com.
 - Without the app the popup says "Mortar isn't installed. Install Mortar and open it once to connect this browser." and the Open Mortar button is hidden. With the app installed but closed it says "Mortar isn't running".
 - The extension clicks the "Download mod file" dialog's Download link only when Mortar is installed and its extension connection is on.
 

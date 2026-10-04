@@ -12,8 +12,8 @@ Until the listing is live, each tagged release carries `mortar-browser-extension
 - Add-on URL slug: mortar (https://addons.mozilla.org/firefox/addon/mortar/)
 - Tags: download (AMO has no gaming or mod-manager tag)
 - Categories: Games & Entertainment (primary); Download Management is the alternative
-- Homepage: https://github.com/Rethunk-AI/mortar
-- Support site: https://github.com/Rethunk-AI/mortar/issues
+- Homepage: https://github.com/Rethunk-Tech/mortar
+- Support site: https://github.com/Rethunk-Tech/mortar/issues
 - License: the repository's license (confirm in the repository before submitting)
 - Requires payment: no
 
@@ -31,7 +31,7 @@ Mortar is a desktop mod manager for Stardew Valley. This add-on connects Firefox
 - Mod pages show installed files, requirements and known problems as reported by Mortar. Collection pages have an Open in Mortar button.
 - The toolbar badge and popup list the mods in your profile that have updates, checked every 30 minutes.
 
-The add-on only adds its buttons and marks for games Mortar manages (Stardew Valley today). It never downloads anything itself and never opens Nexus pages on its own. It only works on https://www.nexusmods.com and needs the Mortar desktop app (https://github.com/Rethunk-AI/mortar) on the same computer. If Mortar is not installed, its button and filter section say "Mortar isn't installed" and how to connect, and nothing is clicked for you; if it is installed but closed they say "Mortar isn't running".
+The add-on only adds its buttons and marks for games Mortar manages (Stardew Valley today). It never downloads anything itself and never opens Nexus pages on its own. It only works on https://www.nexusmods.com and needs the Mortar desktop app (https://github.com/Rethunk-Tech/mortar) on the same computer. If Mortar is not installed, its button and filter section say "Mortar isn't installed" and how to connect, and nothing is clicked for you; if it is installed but closed they say "Mortar isn't running".
 
 ## Permissions (shown at install and justified in review notes)
 
@@ -50,8 +50,8 @@ The manifest declares `browser_specific_settings.gecko.data_collection_permissio
 ## Notes for reviewers
 
 - No remote code, no minification, no build step: the zip holds the source files as in `browser-extension/` (tests excluded).
-- To test: install the Mortar desktop app from https://github.com/Rethunk-AI/mortar (the app registers the native messaging host), then open a Stardew Valley mod page on nexusmods.com. Without the app the popup shows "Mortar isn't installed. Install Mortar and open it once to connect this browser.", its Open Mortar button is hidden, and the page button and filter section show the same hint. The add-on clicks the download dialog's Download link only when the app is installed and its extension connection is on.
-- Source: https://github.com/Rethunk-AI/mortar/tree/main/browser-extension
+- To test: install the Mortar desktop app from https://github.com/Rethunk-Tech/mortar (the app registers the native messaging host), then open a Stardew Valley mod page on nexusmods.com. Without the app the popup shows "Mortar isn't installed. Install Mortar and open it once to connect this browser.", its Open Mortar button is hidden, and the page button and filter section show the same hint. The add-on clicks the download dialog's Download link only when the app is installed and its extension connection is on.
+- Source: https://github.com/Rethunk-Tech/mortar/tree/main/browser-extension
 
 ## Screenshots
 
