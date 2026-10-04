@@ -33,6 +33,10 @@ globalThis.mortarIsNexusModListing = (pathname) => {
   if (parts[0] === 'games' && parts[2] === 'collections' && parts[1]) {
     return true
   }
+  // Nexus lists a game's mods at /games/<game>/mods as well as the older /<game>/mods.
+  if (parts[0] === 'games') {
+    parts.shift()
+  }
   if (parts.length < 2 || (parts[1] !== 'mods' && parts[1] !== 'search')) {
     return false
   }

@@ -17,6 +17,8 @@ test('collection tiles use the same /game/mods/id links as listings', () => {
 test('collection pages are listings for installed-mod markers', () => {
   expect(globalThis.mortarIsNexusModListing('/games/stardewvalley/collections/vanilla')).toBe(true)
   expect(globalThis.mortarIsNexusModListing('/stardewvalley/mods')).toBe(true)
+  expect(globalThis.mortarIsNexusModListing('/games/stardewvalley/mods')).toBe(true)
+  expect(globalThis.mortarIsNexusModListing('/games/stardewvalley/mods/')).toBe(true)
   expect(globalThis.mortarIsNexusModListing(`/stardewvalley/mods/${contentPatcher}`)).toBe(false)
 })
 
