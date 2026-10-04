@@ -90,8 +90,9 @@ globalThis.mortarEnsureHideInProfileControl = (root, hideControlId, onChange) =>
     const text = el('p', c.text)
     const count = el('span', c.count)
     count.dataset.mortarHideCount = 'true'
-    text.append(el('span', c.name, 'Hide installed'), count)
-    wrap.dataset.mortarHint = 'Hides mods that are in the profile open in Mortar'
+    text.append(el('span', c.name, 'Gray out installed'), count)
+    wrap.dataset.mortarHint =
+      'Dims mods that are in the profile open in Mortar; hover one to see it clearly'
     label.append(text)
     row.append(checkbox, label)
     const body = el('div', c.body)

@@ -91,7 +91,8 @@ globalThis.mortarEnsureInstalledModStyle = (
         color: #D6B17A;
         padding: 0 3px;
       }
-      .${hiddenClass} { display: none !important; }
+      .${hiddenClass} { opacity: 0.35; filter: grayscale(1); transition: opacity 120ms, filter 120ms; }
+      .${hiddenClass}:hover { opacity: 0.85; filter: grayscale(0.4); }
       .${panelClass} { display: inline-block; margin: 8px 0; vertical-align: middle; }
     `
   doc.documentElement.append(style)
