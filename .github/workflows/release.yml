@@ -25,7 +25,6 @@ jobs:
 
       - name: Gate
         run: |
-          bun install --frozen-lockfile
           bun run gate
           npx --yes web-ext@10.7.0 lint
 
