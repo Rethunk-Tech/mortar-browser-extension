@@ -14,6 +14,8 @@ concurrency:
 
 jobs:
   gate:
+    # Dependabot PRs are never merged (the bump is applied by hand on main, where this runs), so CI on them is spent minutes.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
