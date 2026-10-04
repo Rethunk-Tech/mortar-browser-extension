@@ -156,6 +156,7 @@ chrome.runtime.onInstalled.addListener(async () => {
         'collectionCount.js',
         'menu.js',
         'menuRequirements.js',
+        'hideInProfile.js',
         'content.js',
       ],
     })

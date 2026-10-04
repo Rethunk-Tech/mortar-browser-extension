@@ -21,12 +21,14 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const fileBadgeClass = 'mortar-installed-file-badge'
   const panelClass = 'mortar-mod-panel'
   const listingStatusClass = 'mortar-listing-status'
+  const hideControlId = 'mortar-hide-in-profile'
   const cardSelectors =
     '[data-testid*="mod-tile"], [data-testid*="mod-card"], .mod-tile, .mod-listing, article, li'
   let mode
+  let hideInProfile = false
   let markScheduled = false
   let installedRequest
-  let installedCache = { at: 0, ids: new Set() }
+  let installedCache = { at: 0, ids: new Set(), connected: false, profileOpen: false }
 
   // A tab opened just for this download is closed once Mortar has the link: every history entry is this mod's own
   // page (its description, its files tab, the download page). A tab with any other history stays open. Only the
@@ -93,7 +95,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     installedRequest = new Promise((resolve) => {
       const fail = (reply, lastError) => {
         const message = globalThis.mortarInstalledReplyStatus(reply, lastError)
-        installedCache = { at: Date.now(), ids: new Set() }
+        installedCache = globalThis.mortarInstalledListingState(reply, lastError)
         if (message) {
           showListingStatus(message)
         } else {
@@ -110,7 +112,11 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
             return
           }
           const ids = new Set(reply.modIds.filter((id) => Number.isInteger(id) && id > 0))
-          installedCache = { at: Date.now(), ids }
+          installedCache = globalThis.mortarInstalledListingState(
+            reply,
+            chrome.runtime.lastError,
+            ids,
+          )
           clearListingStatus()
           resolve(ids)
         })
@@ -334,43 +340,35 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   }
 
   const tileFor = (link) => link.closest(cardSelectors) || link
-
-  const markInstalled = async () => {
-    if (!isModListing()) {
-      return
-    }
-    const selectedMode = await currentMode()
-    if (selectedMode === 'off') {
+  const listingMarkCtx = () => ({
+    document,
+    isModListing,
+    hideControlId,
+    currentMode,
+    pageGame,
+    storage: chrome.storage?.local,
+    installedIDs,
+    installedCache: () => installedCache,
+    mode: () => mode,
+    hideInProfile: () => hideInProfile,
+    setHideInProfile: (value) => {
+      hideInProfile = value
+    },
+    modID,
+    tileFor,
+    ensureMarkerStyle,
+    markerClass,
+    hiddenClass,
+    badgeClass,
+    onHideChange: (checked) => {
+      hideInProfile = checked
+      globalThis.mortarWriteHideInProfile(chrome.storage?.local, pageGame(), hideInProfile)
       clearMarks()
-      return
-    }
-    const ids = await installedIDs()
-    if (mode !== selectedMode) {
-      return
-    }
-    const tiles = new Set()
-    for (const link of document.querySelectorAll('a[href]')) {
-      const id = modID(link.href)
-      if (id !== undefined && ids.has(id)) {
-        tiles.add(tileFor(link))
-      }
-    }
-    if (tiles.size === 0) {
-      return
-    }
-    ensureMarkerStyle()
-    for (const tile of tiles) {
-      tile.classList.add(markerClass)
-      if (selectedMode === 'hide') {
-        tile.classList.add(hiddenClass)
-      } else if (!tile.querySelector(`.${badgeClass}`)) {
-        const badge = document.createElement('span')
-        badge.className = badgeClass
-        badge.textContent = 'In profile'
-        tile.prepend(badge)
-      }
-    }
-  }
+      requestMark()
+    },
+  })
+
+  const markInstalled = () => globalThis.mortarMarkInstalledListing(listingMarkCtx())
 
   const requestMark = () => {
     if (markScheduled) {
@@ -384,7 +382,16 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   }
 
   chrome.storage?.onChanged?.addListener((changes, area) => {
-    if (area === 'local' && changes[modeKey]) {
+    if (area !== 'local') {
+      return
+    }
+    const hideKey = globalThis.mortarHideInProfileStorageKey(pageGame())
+    if (changes[hideKey]) {
+      hideInProfile = changes[hideKey].newValue === true
+      clearMarks()
+      requestMark()
+    }
+    if (changes[modeKey]) {
       mode =
         changes[modeKey].newValue === 'hide' || changes[modeKey].newValue === 'off'
           ? changes[modeKey].newValue
@@ -422,7 +429,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       if (!sent.has(a.href)) {
         sent.add(a.href)
         chrome.runtime.sendMessage({ link: a.href, close: throwaway() })
-        installedCache = { at: 0, ids: new Set() }
+        installedCache = { at: 0, ids: new Set(), connected: false, profileOpen: false }
         installedRequest = undefined
       }
     }
@@ -437,7 +444,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   }
 
   const scanDelayMs = 150
-  const ownSelector = `.${panelClass}, .${badgeClass}, #mortar-installed-mod-style, .mortar-collection-status`
+  const ownSelector = `.${panelClass}, .${badgeClass}, #mortar-installed-mod-style, .mortar-collection-status, #${hideControlId}`
   const isOwn = (node) =>
     node instanceof Element
       ? node.closest(ownSelector) !== null
@@ -489,6 +496,5 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       globalThis.mortarRefreshAccent()
     }
   })
-
   watch(document)
 }
