@@ -33,7 +33,8 @@ test('collection link result never shows a raw host error', () => {
 
 test('a protocol mismatch names the side to update', () => {
   const state = globalThis.mortarConnectionState
-  expect(state({ state: 'ready', connected: true })).toBe('mortarOld')
+  expect(state({ state: 'ready', connected: true })).toBe('ready')
+  expect(state({ protocol: 0, state: 'ready', connected: true })).toBe('mortarOld')
   expect(state({ protocol: 2, state: 'ready', connected: true })).toBe('extensionOld')
   expect(state({ protocol: 2, protocolError: 'extensionTooOld' })).toBe('extensionOld')
   expect(state({ protocol: 1, protocolError: 'extensionTooNew' })).toBe('mortarOld')

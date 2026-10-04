@@ -19,9 +19,9 @@ Each release at https://github.com/Rethunk-Tech/mortar-browser-extension/release
 The extension and Mortar exchange JSON messages over native messaging. Every message the extension sends carries `protocol` (this extension's protocol number), and every Mortar reply carries Mortar's own `protocol`. Each side accepts a range of the other's numbers:
 
 - Mortar refuses a message whose protocol is outside its range and replies `protocolError: "extensionTooOld"` or `"extensionTooNew"`; its Settings › Downloads connection row says the extension is too old or too new for this Mortar.
-- The extension checks Mortar's `protocol` against its own range (a reply without one counts as 0) and shows "Update Mortar" or "Update the browser extension" in its popup and on Nexus pages.
+- The extension checks Mortar's `protocol` against its own range (a reply without one, from a Mortar that predates the field, counts as 1) and shows "Update Mortar" or "Update the browser extension" in its popup and on Nexus pages.
 
-Both sides speak protocol 1 and accept 1..1. A change to a message's shape bumps the number on both sides.
+Both sides speak protocol 1 and accept 1..1. A message or reply without `protocol` counts as 1, which is what extension 0.1.1 and the Mortar releases before the field speak; only an explicit number outside the range is a mismatch. A change to a message's shape bumps the number on both sides.
 
 ## Develop
 

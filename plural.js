@@ -12,7 +12,7 @@ globalThis.mortarSkipSourceLabel = (source) => {
 }
 
 // The native-messaging protocol this extension speaks, sent with every message, and the range of Mortar protocols
-// it understands. A Mortar from before the protocol was versioned sends none and counts as 0.
+// it understands. A Mortar from before the protocol was versioned sends none and already speaks protocol 1.
 globalThis.mortarProtocol = 1
 const mortarProtocolMin = 1
 const mortarProtocolMax = 1
@@ -26,7 +26,7 @@ globalThis.mortarProtocolMismatch = (reply) => {
   if (reply?.protocolError === 'extensionTooNew') {
     return 'mortarOld'
   }
-  const protocol = Number.isInteger(reply?.protocol) ? reply.protocol : 0
+  const protocol = reply?.protocol ?? 1
   if (protocol < mortarProtocolMin) {
     return 'mortarOld'
   }
