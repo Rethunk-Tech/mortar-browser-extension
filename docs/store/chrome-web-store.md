@@ -1,6 +1,6 @@
 # Chrome Web Store listing
 
-Copy for the Mortar extension (`browser-extension/`, Manifest V3). Every claim below was checked against `browser-extension/manifest.json`, `background.js`, `content.js`, `modPanel.js`, `popup.js` and `hideInProfile.js`.
+Copy for the Mortar extension (Manifest V3). Every claim below was checked against `manifest.json`, `background.js`, `content.js`, `modPanel.js`, `popup.js` and `hideInProfile.js`.
 
 ## Listing fields
 
@@ -8,7 +8,7 @@ Copy for the Mortar extension (`browser-extension/`, Manifest V3). Every claim b
 - Category: Productivity (Chrome has no games-tools category; Productivity fits a companion to a desktop app)
 - Language: English
 - Homepage URL: https://github.com/Rethunk-Tech/mortar
-- Support URL: https://github.com/Rethunk-Tech/mortar/issues
+- Support URL: https://github.com/Rethunk-Tech/mortar-browser-extension/issues
 - Privacy policy URL: required by Chrome because the extension handles page content. Host the "Privacy policy text" below at a stable URL (for example the rendered copy of this section in the repository) and enter it.
 
 ## Short description (132 characters max)
@@ -51,7 +51,7 @@ Remote code: none. All code ships in the package.
 
 ## Store ID prerequisite
 
-Mortar's native host manifest allows only the extension's origin. The store assigns its own item id, so before publishing: add the id to `storeChromeIDs` in `internal/nativehost/nativehost.go`, and strip `key` from the store zip in `.github/workflows/release.yml` (the store signs with its own key).
+Mortar's native host manifest allows only the extension's origin. The store assigns its own item id, so before publishing: add the id to `storeChromeIDs` in Mortar's `internal/nativehost/nativehost.go`, and upload `mortar-browser-extension-chrome-web-store.zip` from the release, which `.github/workflows/release.yml` builds without `key` (the store signs with its own key).
 
 ## Data use disclosures (Privacy practices tab)
 

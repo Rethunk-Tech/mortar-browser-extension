@@ -4,7 +4,7 @@ Same extension as the Chrome listing ([chrome-web-store.md](chrome-web-store.md)
 
 ## Signed .xpi on each release
 
-Until the listing is live, each tagged release carries `mortar-browser-extension.xpi`, the same source signed by AMO on the unlisted channel, and the install instructions point Firefox users to it ahead of the temporary-add-on route. `release.yml` signs it with `web-ext sign --channel unlisted` (web-ext 10.7, https://extensionworkshop.com/documentation/develop/web-ext-command-reference/#web-ext-sign) using the organisation secrets `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` (the API key pair from https://addons.mozilla.org/developers/addon/api/key/); without them the release ships the zip only and the run says so. AMO signs each version once, so the extension's `version` must change every release, which `go run ./cmd/version` already does.
+Until the listing is live, each tagged release of https://github.com/Rethunk-Tech/mortar-browser-extension carries `mortar-browser-extension.xpi`, the same source signed by AMO on the unlisted channel, and the install instructions point Firefox users to it ahead of the temporary-add-on route. This repo's `release.yml` signs it with `web-ext sign --channel unlisted` (web-ext 10.7, https://extensionworkshop.com/documentation/develop/web-ext-command-reference/#web-ext-sign) using the organisation secrets `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` (the API key pair from https://addons.mozilla.org/developers/addon/api/key/); without them the release ships the zip only and the run says so. AMO signs each version once, so `manifest.json`'s `version` must change every release; the release refuses a tag that does not match it.
 
 ## Listing fields
 
@@ -13,7 +13,7 @@ Until the listing is live, each tagged release carries `mortar-browser-extension
 - Tags: download (AMO has no gaming or mod-manager tag)
 - Categories: Games & Entertainment (primary); Download Management is the alternative
 - Homepage: https://github.com/Rethunk-Tech/mortar
-- Support site: https://github.com/Rethunk-Tech/mortar/issues
+- Support site: https://github.com/Rethunk-Tech/mortar-browser-extension/issues
 - License: the repository's license (confirm in the repository before submitting)
 - Requires payment: no
 
@@ -49,9 +49,9 @@ The manifest declares `browser_specific_settings.gecko.data_collection_permissio
 
 ## Notes for reviewers
 
-- No remote code, no minification, no build step: the zip holds the source files as in `browser-extension/` (tests excluded).
+- No remote code, no minification, no build step: the zip holds the source files as in the repo root (tests, docs and tooling excluded).
 - To test: install the Mortar desktop app from https://github.com/Rethunk-Tech/mortar (the app registers the native messaging host), then open a Stardew Valley mod page on nexusmods.com. Without the app the popup shows "Mortar isn't installed. Install Mortar and open it once to connect this browser.", its Open Mortar button is hidden, and the page button and filter section show the same hint. The add-on clicks the download dialog's Download link only when the app is installed and its extension connection is on.
-- Source: https://github.com/Rethunk-Tech/mortar/tree/main/browser-extension
+- Source: https://github.com/Rethunk-Tech/mortar-browser-extension
 
 ## Screenshots
 

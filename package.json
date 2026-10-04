@@ -1,0 +1,15 @@
+{
+  "name": "mortar-browser-extension",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "biome check --error-on-warnings .",
+    "test": "bun test",
+    "webext": "bunx web-ext@10.7.0 lint",
+    "gate": "bun run lint && bun run test",
+    "build": "bunx web-ext@10.7.0 build --artifacts-dir dist --filename mortar-browser-extension.zip"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15"
+  }
+}
