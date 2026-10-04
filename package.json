@@ -2,11 +2,12 @@
   "name": "mortar-browser-extension",
   "private": true,
   "type": "module",
+  "packageManager": "bun@1.4.2",
   "scripts": {
     "lint": "biome check --error-on-warnings .",
     "test": "bun test",
     "webext": "bunx web-ext@10.7.0 lint",
-    "gate": "bun run lint && bun run test",
+    "gate": "bun run lint && bun run test && bun run webext",
     "build": "bunx web-ext@10.7.0 build --artifacts-dir dist --filename mortar-browser-extension.zip"
   },
   "devDependencies": {

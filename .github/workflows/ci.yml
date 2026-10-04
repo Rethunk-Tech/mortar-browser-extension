@@ -25,11 +25,5 @@ jobs:
       - name: Setup Bun
         uses: Rethunk-Tech/gh-actions/setup-bun@99dfb9093ab089d28f76d8036322a7c062259e76 # v1.13
 
-      - name: Biome
-        run: bun run lint
-
-      - name: Test
-        run: bun test
-
-      - name: web-ext lint
-        run: bun run webext
+      - name: Gate
+        run: bun run gate

@@ -12,7 +12,7 @@ Plain-JS Manifest V3 extension; no build step. Every content script shares one s
 
 ## Tests
 
-`bun run gate` (biome, `bun test`) and `bun run webext` (web-ext lint). CI runs the same.
+`bun run gate` (biome, `bun test`, web-ext lint); CI and the pre-push hook run the same command.
 
 ## Release
 

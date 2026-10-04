@@ -27,8 +27,7 @@ Needs `bun`, plus `lefthook` and `gitleaks` on PATH for the git hooks (`lefthook
 
 ```sh
 bun install
-bun run gate     # biome + bun test
-bun run webext   # web-ext lint
+bun run gate     # biome, bun test, web-ext lint
 bun run build    # dist/mortar-browser-extension.zip
 ```
 

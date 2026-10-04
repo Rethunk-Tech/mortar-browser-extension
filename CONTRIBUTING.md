@@ -4,7 +4,7 @@ This is the workflow for maintainers and agents working on the extension; the ru
 
 ## Before review
 
-Run `bun run gate` and `bun run webext`; the gate also runs as the lefthook pre-push hook. Nothing is merged on a red gate, and no hook is bypassed.
+Run `bun run gate` (biome, `bun test`, web-ext lint); it also runs as the lefthook pre-push hook. Nothing is merged on a red gate, and no hook is bypassed.
 
 ## Commits
 

@@ -9,6 +9,11 @@ on:
 permissions:
   contents: write
 
+# A release run is never cancelled part-way; a second tag push queues behind it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -24,9 +29,7 @@ jobs:
         uses: Rethunk-Tech/gh-actions/setup-bun@99dfb9093ab089d28f76d8036322a7c062259e76 # v1.13
 
       - name: Gate
-        run: |
-          bun run gate
-          bunx web-ext@10.7.0 lint
+        run: bun run gate
 
       - name: Tag matches manifest
         env:
