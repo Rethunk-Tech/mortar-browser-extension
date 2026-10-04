@@ -137,9 +137,7 @@ const mortarRequiredLines = (data) => {
     return []
   }
   const names = requiredNames.length > 0 ? requiredNames : requiredBy.map((entry) => String(entry))
-  const countLabel = globalThis.mortarPlural
-    ? globalThis.mortarPlural(requiredCount, 'mod', 'mods')
-    : `${requiredCount} ${requiredCount === 1 ? 'mod' : 'mods'}`
+  const countLabel = globalThis.mortarPlural(requiredCount, 'mod', 'mods')
   return [
     mortarMenuLine(`Required by ${countLabel}`, names.join(', ')),
     ...names.map((name) => mortarMenuLine(name)),

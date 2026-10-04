@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import './plural.js'
 import './menu.js'
 
 const sections = (...args) => globalThis.mortarBuildSections(...args)

@@ -49,23 +49,63 @@ globalThis.mortarIsNexusModListing = (pathname) => {
   return !(parts[1] === 'mods' && mortarNexusNumericMod.test(parts[2] || ''))
 }
 
-const mortarVersionParts = (value) =>
-  String(value || '')
-    .match(/\d+/g)
-    ?.map(Number) || []
-globalThis.mortarNewerVersion = (page, installed) => {
-  const a = mortarVersionParts(page)
-  const b = mortarVersionParts(installed)
-  if (a.length === 0 || b.length === 0) {
-    return false
+// The same ordering as Mortar's Go meta.CompareVersions: SMAPI semantic versions, a release outranking its
+// prereleases, prerelease parts compared as numbers when both are numeric, build metadata ignored.
+const mortarVersionPattern =
+  /^v?(\d+)\.(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/
+const mortarNumericPart = /^\d+$/
+
+const mortarParseVersion = (value) => {
+  const m = String(value || '')
+    .trim()
+    .match(mortarVersionPattern)
+  if (!m) {
+    return null
   }
-  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
-    if ((a[i] || 0) !== (b[i] || 0)) {
-      return (a[i] || 0) > (b[i] || 0)
+  const [, major, minor, patch, revision, pre] = m
+  return {
+    nums: [major, minor, patch || 0, revision || 0].map(Number),
+    pre: pre ? pre.split('.') : [],
+  }
+}
+
+const mortarComparePre = (a, b) => {
+  const na = mortarNumericPart.test(a)
+  const nb = mortarNumericPart.test(b)
+  if (na && nb) {
+    return Math.sign(Number(a) - Number(b))
+  }
+  if (na !== nb) {
+    return na ? -1 : 1
+  }
+  return Math.sign(a.toLowerCase().localeCompare(b.toLowerCase()))
+}
+
+const mortarCompareVersions = (a, b) => {
+  const x = mortarParseVersion(a)
+  const y = mortarParseVersion(b)
+  if (!(x && y)) {
+    return null
+  }
+  for (let i = 0; i < x.nums.length; i += 1) {
+    if (x.nums[i] !== y.nums[i]) {
+      return Math.sign(x.nums[i] - y.nums[i])
     }
   }
-  return false
+  if (x.pre.length === 0 || y.pre.length === 0) {
+    return Math.sign(y.pre.length - x.pre.length)
+  }
+  for (let i = 0; i < Math.min(x.pre.length, y.pre.length); i += 1) {
+    const c = mortarComparePre(x.pre[i], y.pre[i])
+    if (c !== 0) {
+      return c
+    }
+  }
+  return Math.sign(x.pre.length - y.pre.length)
 }
+
+globalThis.mortarNewerVersion = (page, installed) =>
+  (mortarCompareVersions(page, installed) ?? 0) > 0
 
 let mortarCollectionPanelURL = ''
 globalThis.mortarEnsureInstalledModStyle = (
