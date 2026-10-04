@@ -1,6 +1,6 @@
 # Firefox Add-ons (AMO) listing
 
-Same extension as the Chrome listing ([chrome-web-store.md](chrome-web-store.md)); the manifest carries the Firefox id `mortar@rethunk.tech` and `strict_min_version` 128.0, and the background declares `scripts` for Firefox's event page.
+Same extension as the Chrome listing ([chrome-web-store.md](chrome-web-store.md)); the manifest carries the Firefox id `mortar@rethunk.tech` and `strict_min_version` 140.0 (the first release with `data_collection_permissions`), and the background declares `scripts` for Firefox's event page.
 
 ## Listing fields
 
