@@ -17,7 +17,6 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const modeKey = 'mode'
   const markerClass = 'mortar-installed-mod'
   const hiddenClass = 'mortar-hidden-mod'
-  const obsoleteClass = 'mortar-obsolete-mod'
   const badgeClass = 'mortar-installed-mod-badge'
   const fileBadgeClass = 'mortar-installed-file-badge'
   const panelClass = 'mortar-mod-panel'
@@ -27,7 +26,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     '[data-e2eid="mod-tile"], [data-testid*="mod-tile"], [data-testid*="mod-card"], .mod-tile, .mod-listing, article, li'
   let mode
   // The Mortar section's checkboxes on mod listings, saved per game.
-  const filters = { installed: false, obsolete: false }
+  const filters = { installed: false, obsolete: false, broken: false }
   let markScheduled = false
   let installedRequest
   let installedCache = { at: 0, ids: new Set(), connected: false, profileOpen: false }
@@ -303,7 +302,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       badgeClass,
       fileBadgeClass,
       hiddenClass,
-      obsoleteClass,
+      ...globalThis.mortarDimClasses,
       panelClass,
     })
 
@@ -354,7 +353,6 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     installedCache: () => installedCache,
     mode: () => mode,
     filters,
-    obsoleteClass,
     modID,
     tileFor,
     ensureMarkerStyle,

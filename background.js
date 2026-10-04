@@ -100,6 +100,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg.type === 'installed') {
       sendResponse({
         modIds: Array.isArray(reply?.modIds) ? reply.modIds : [],
+        brokenIds: Array.isArray(reply?.brokenIds) ? reply.brokenIds : [],
         connected: reply?.connected === true,
         accent: reply?.accent,
       })

@@ -95,3 +95,16 @@ test('obsolete listing tiles follow Mortar author-marked rule', () => {
   expect(obsolete('New Fishing', 'Replaces the obsolete Old Fishing mod.')).toBe(false)
   expect(obsolete('Normal Mod', 'A normal summary.')).toBe(false)
 })
+
+test('broken ids from the installed reply dim matching tiles', () => {
+  const brokenModId = 42
+  const state = globalThis.mortarInstalledListingState(
+    { connected: false, brokenIds: [brokenModId] },
+    undefined,
+  )
+  expect(state.broken.has(brokenModId)).toBe(true)
+  expect(state.nativeFail).toBe(false)
+  expect(globalThis.mortarInstalledListingState({ nativeMessagingError: true }).nativeFail).toBe(
+    true,
+  )
+})
