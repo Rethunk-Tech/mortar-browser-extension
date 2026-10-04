@@ -23,6 +23,8 @@ Both sides speak protocol 1 and accept 1..1. A message or reply without `protoco
 
 ## Getting started
 
+Needs `bun`, plus `lefthook` and `gitleaks` on PATH for the git hooks (`lefthook install` once; pre-commit scans staged changes for secrets, pre-push runs the gate).
+
 ```sh
 bun install
 bun run gate     # biome + bun test

@@ -1,0 +1,49 @@
+name: Bug report
+description: Something in the extension does not work as it should.
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      description: Shown in the browser's extensions page.
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: input
+    id: mortar
+    attributes:
+      label: Mortar version
+      description: Shown in Mortar's Settings › About.
+      placeholder: 0.1.2
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Firefox
+        - Chrome
+        - Edge
+        - Another Chromium browser
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Nexus Mods page
+      description: The URL where it happened, if it is page-specific.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output
+      description: Errors from the page or extension console. Remove anything personal first.
+      render: text

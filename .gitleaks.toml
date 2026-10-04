@@ -1,0 +1,12 @@
+title = "gitleaks config"
+minVersion = "v8.25.0"
+
+[extend]
+useDefault = true
+
+# manifest.json "key" is the extension's public key; it pins the unpacked Chromium id Mortar's native host allows.
+[[allowlists]]
+condition = "AND"
+paths = ['''^manifest\.json$''']
+regexTarget = "line"
+regexes = ['''"key":''']

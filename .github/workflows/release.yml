@@ -26,7 +26,7 @@ jobs:
       - name: Gate
         run: |
           bun run gate
-          npx --yes web-ext@10.7.0 lint
+          bunx web-ext@10.7.0 lint
 
       - name: Tag matches manifest
         env:
@@ -43,7 +43,7 @@ jobs:
       - name: Zips
         run: |
           set -euo pipefail
-          npx --yes web-ext@10.7.0 build --artifacts-dir dist --filename mortar-browser-extension.zip
+          bunx web-ext@10.7.0 build --artifacts-dir dist --filename mortar-browser-extension.zip
           store="$RUNNER_TEMP/store"
           mkdir -p "$store"
           unzip -q dist/mortar-browser-extension.zip -d "$store"
@@ -65,7 +65,7 @@ jobs:
             exit 0
           fi
           if ! gh release download "$TAG" --repo "$GITHUB_REPOSITORY" -p mortar-browser-extension.xpi -D dist 2>/dev/null; then
-            npx --yes web-ext@10.7.0 sign --channel unlisted --artifacts-dir "$RUNNER_TEMP/xpi"
+            bunx web-ext@10.7.0 sign --channel unlisted --artifacts-dir "$RUNNER_TEMP/xpi"
             mv "$RUNNER_TEMP"/xpi/*.xpi dist/mortar-browser-extension.xpi
           fi
 
