@@ -28,7 +28,7 @@ Needs `bun`, plus `lefthook` and `gitleaks` on PATH for the git hooks (`lefthook
 ```sh
 bun install
 bun run gate     # biome, bun test, web-ext lint
-bun run build    # dist/mortar-browser-extension.zip
+bun run build    # dist/mortar-browser-extension.zip, and dist/firefox (the Firefox manifest web-ext lints and signs)
 ```
 
 Load the repo folder unpacked in Chrome, or with `about:debugging` in Firefox, to try a change. The manifest `key` pins the unpacked Chromium id that Mortar's native host allows.

@@ -384,16 +384,15 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
           globalThis.mortarIsOwnDialogDownload(new URL(a.href, location.href), pageMod) &&
           !skipped.has(a.href),
       )
-      if (!own) {
-        continue
+      if (own) {
+        await installedIDs()
+        // The dialog may have been handled, or Mortar found missing or off, while the installed list loaded.
+        if (!(advanced.has(dialog) || ['missing', 'off'].includes(installedCache.state))) {
+          advanced.add(dialog)
+          skipped.add(own.href)
+          own.click()
+        }
       }
-      await installedIDs()
-      if (advanced.has(dialog) || ['missing', 'off'].includes(installedCache.state)) {
-        continue
-      }
-      advanced.add(dialog)
-      skipped.add(own.href)
-      own.click()
     }
   }
 
