@@ -35,7 +35,7 @@ globalThis.mortarCollectionInProfileLine = (ids, installed, profileName) => {
       n += 1
     }
   }
-  return `${n} of ${ids.length} mods already in ${profileName}`
+  return `${n} of ${globalThis.mortarPlural(ids.length, 'mod', 'mods')} already in ${profileName}`
 }
 
 globalThis.mortarFillCollectionInProfile = async (doc, origin, game) => {

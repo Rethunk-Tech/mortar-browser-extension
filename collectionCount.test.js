@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import './plural.js'
 import './collectionCount.js'
 
 const contentPatcher = 1915
@@ -18,4 +19,10 @@ test('counts collection tiles against the installed id set', () => {
       'Main',
     ),
   ).toBe('2 of 3 mods already in Main')
+})
+
+test('one mod reads in the singular', () => {
+  expect(
+    globalThis.mortarCollectionInProfileLine([contentPatcher], new Set([contentPatcher]), 'Main'),
+  ).toBe('1 of 1 mod already in Main')
 })
