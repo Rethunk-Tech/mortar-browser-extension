@@ -2,10 +2,15 @@
 
 Same extension as the Chrome listing ([chrome-web-store.md](chrome-web-store.md)); the manifest carries the Firefox id `mortar@rethunk.tech` and `strict_min_version` 140.0 (the first release with `data_collection_permissions`), and the background declares `scripts` for Firefox's event page.
 
+## Signed .xpi on each release
+
+Until the listing is live, each tagged release carries `mortar-browser-extension.xpi`, the same source signed by AMO on the unlisted channel, and the install instructions point Firefox users to it ahead of the temporary-add-on route. `release.yml` signs it with `web-ext sign --channel unlisted` (web-ext 10.7, https://extensionworkshop.com/documentation/develop/web-ext-command-reference/#web-ext-sign) using the organisation secrets `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` (the API key pair from https://addons.mozilla.org/developers/addon/api/key/); without them the release ships the zip only and the run says so. AMO signs each version once, so the extension's `version` must change every release, which `go run ./cmd/version` already does.
+
 ## Listing fields
 
 - Name: Mortar
-- Add-on URL slug: mortar
+- Add-on URL slug: mortar-nexus-bridge (https://addons.mozilla.org/firefox/addon/mortar-nexus-bridge/)
+- Tags: download (AMO has no gaming or mod-manager tag)
 - Categories: Games & Entertainment (primary); Download Management is the alternative
 - Homepage: https://github.com/Rethunk-AI/mortar
 - Support site: https://github.com/Rethunk-AI/mortar/issues
