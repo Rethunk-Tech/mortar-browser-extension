@@ -1,4 +1,32 @@
 globalThis.mortarHideInProfileStorageKey = (game) => `hideModsInProfile:${game}`
+globalThis.mortarGrayObsoleteStorageKey = (game) => `grayObsoleteMods:${game}`
+
+// The words Mortar's Problems check reads as an author marking a mod dead (authorStatusWord in
+// internal/problems/author_marked.go; a Go test keeps the two lists equal).
+globalThis.mortarObsoleteWord = /\b(obsolete|deprecated|depreciated)\b/i
+const mortarSentenceEnd = /[.!?]/
+
+// Same rule as Mortar's statusMatch: the word counts anywhere in a mod's name, but in a summary only where it speaks
+// for the mod itself (at the start, "This mod/file ...", or a heading line), so "replaces the obsolete X" is not a hit.
+globalThis.mortarObsoleteText = (title, summary) => {
+  if (globalThis.mortarObsoleteWord.test(title || '')) {
+    return true
+  }
+  const text = summary || ''
+  const match = globalThis.mortarObsoleteWord.exec(text)
+  if (!match) {
+    return false
+  }
+  const prefix = text.slice(0, match.index).trim().toLowerCase()
+  if (prefix === '' || prefix.startsWith('this mod') || prefix.startsWith('this file')) {
+    return true
+  }
+  const line = text.slice(text.lastIndexOf('\n', match.index) + 1).trim()
+  return (
+    line.startsWith('#') ||
+    (line !== '' && line.toUpperCase() === line && !mortarSentenceEnd.test(line))
+  )
+}
 
 globalThis.mortarHideInProfileControl = ({ connected, profileOpen, enabled }) => {
   if (!connected) {
@@ -46,7 +74,41 @@ const mortarFilterClasses = {
 }
 const mortarTickPath = 'M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z'
 
-// The section goes right after the "Hide filters" block, before Nexus's first filter section.
+// The section goes right after the "Hide filters" block, before Nexus's first filter section. Each row is a
+// Headless-UI-shaped checkbox; onChange gets the row ('installed' or 'obsolete') and the new value.
+const mortarFilterRows = [
+  {
+    key: 'installed',
+    label: 'Gray out installed',
+    hint: 'Dims mods that are in the profile open in Mortar; hover one to see it clearly',
+  },
+  {
+    key: 'obsolete',
+    label: 'Gray out obsolete',
+    hint: 'Dims mods whose name or summary says obsolete, deprecated or depreciated',
+  },
+]
+
+const mortarBindFilterRow = (row, onChange) => {
+  const box = row.querySelector('[role="checkbox"]')
+  if (!box || box.dataset.mortarBound === 'true') {
+    return
+  }
+  box.dataset.mortarBound = 'true'
+  const toggle = () => {
+    if (box.getAttribute('aria-disabled') !== 'true') {
+      onChange(row.dataset.mortarRow, box.getAttribute('aria-checked') !== 'true')
+    }
+  }
+  row.addEventListener('click', toggle)
+  box.addEventListener('keydown', (event) => {
+    if (event.key === ' ' || event.key === 'Enter') {
+      event.preventDefault()
+      toggle()
+    }
+  })
+}
+
 globalThis.mortarEnsureHideInProfileControl = (root, hideControlId, onChange) => {
   const sidebar = globalThis.mortarFindNexusFilterSidebar(root, hideControlId)
   if (!sidebar) {
@@ -65,92 +127,121 @@ globalThis.mortarEnsureHideInProfileControl = (root, hideControlId, onChange) =>
       }
       return node
     }
+    const svgNS = 'http://www.w3.org/2000/svg'
+    const makeRow = ({ key, label: name, hint }) => {
+      const row = el('div', c.row)
+      row.dataset.mortarRow = key
+      row.dataset.mortarHint = hint
+      const checkbox = el('span', `${c.box} ${c.boxOff}`)
+      checkbox.setAttribute('role', 'checkbox')
+      checkbox.setAttribute('aria-checked', 'false')
+      checkbox.tabIndex = 0
+      const tick = root.createElementNS(svgNS, 'svg')
+      tick.setAttribute('viewBox', '0 0 24 24')
+      tick.setAttribute('role', 'presentation')
+      tick.setAttribute('class', `${c.tick} opacity-0`)
+      const path = root.createElementNS(svgNS, 'path')
+      path.setAttribute('d', mortarTickPath)
+      tick.append(path)
+      checkbox.append(tick)
+      const label = el('label', c.label)
+      label.id = `${hideControlId}-${key}-label`
+      checkbox.setAttribute('aria-labelledby', label.id)
+      const text = el('p', c.text)
+      const count = el('span', c.count)
+      count.dataset.mortarCount = 'true'
+      text.append(el('span', c.name, name), count)
+      label.append(text)
+      row.append(checkbox, label)
+      return row
+    }
     wrap = el('div')
     wrap.id = hideControlId
     const header = el('div', c.header)
     header.append(el('span', c.title, 'Mortar'))
-    const row = el('div', c.row)
-    const checkbox = el('span', `${c.box} ${c.boxOff}`)
-    checkbox.setAttribute('role', 'checkbox')
-    checkbox.setAttribute('aria-checked', 'false')
-    checkbox.tabIndex = 0
-    checkbox.id = `${hideControlId}-box`
-    const svgNS = 'http://www.w3.org/2000/svg'
-    const tick = root.createElementNS(svgNS, 'svg')
-    tick.setAttribute('viewBox', '0 0 24 24')
-    tick.setAttribute('role', 'presentation')
-    tick.setAttribute('class', `${c.tick} opacity-0`)
-    const path = root.createElementNS(svgNS, 'path')
-    path.setAttribute('d', mortarTickPath)
-    tick.append(path)
-    checkbox.append(tick)
-    const label = el('label', c.label)
-    label.id = `${hideControlId}-label`
-    checkbox.setAttribute('aria-labelledby', label.id)
-    const text = el('p', c.text)
-    const count = el('span', c.count)
-    count.dataset.mortarHideCount = 'true'
-    text.append(el('span', c.name, 'Gray out installed'), count)
-    wrap.dataset.mortarHint =
-      'Dims mods that are in the profile open in Mortar; hover one to see it clearly'
-    label.append(text)
-    row.append(checkbox, label)
+    const rows = el('div', 'space-y-2')
+    rows.append(...mortarFilterRows.map(makeRow))
     const body = el('div', c.body)
-    body.append(row)
+    body.append(rows)
     wrap.append(header, body)
     const firstSection = [...sidebar.children].find((child) => child.matches('button'))
     sidebar.insertBefore(wrap, firstSection || null)
   }
-  const box = wrap.querySelector('[role="checkbox"]')
-  if (box && box.dataset.mortarBound !== 'true') {
-    box.dataset.mortarBound = 'true'
-    const toggle = () => {
-      if (box.getAttribute('aria-disabled') !== 'true') {
-        onChange(box.getAttribute('aria-checked') !== 'true')
-      }
-    }
-    wrap.querySelector('[class*="group/checkbox"]').addEventListener('click', toggle)
-    box.addEventListener('keydown', (event) => {
-      if (event.key === ' ' || event.key === 'Enter') {
-        event.preventDefault()
-        toggle()
-      }
-    })
+  for (const row of wrap.querySelectorAll('[data-mortar-row]')) {
+    mortarBindFilterRow(row, onChange)
   }
   return wrap
 }
 
-globalThis.mortarSyncHideInProfileControl = (wrap, controlState, hiddenCount) => {
-  if (!wrap) {
+const mortarSyncFilterRow = (row, { checked, disabled, title, count }) => {
+  if (!row) {
     return
   }
   const c = mortarFilterClasses
-  const row = wrap.querySelector('[class*="group/checkbox"]')
-  const box = wrap.querySelector('[role="checkbox"]')
+  const box = row.querySelector('[role="checkbox"]')
   if (box) {
-    box.setAttribute('aria-checked', controlState.hide ? 'true' : 'false')
-    box.className = `${c.box} ${controlState.hide ? c.boxOn : c.boxOff}`
-    box.toggleAttribute('data-checked', controlState.hide)
-    box.setAttribute('aria-disabled', controlState.disabled ? 'true' : 'false')
+    box.setAttribute('aria-checked', checked ? 'true' : 'false')
+    box.className = `${c.box} ${checked ? c.boxOn : c.boxOff}`
+    box.toggleAttribute('data-checked', checked)
+    box.setAttribute('aria-disabled', disabled ? 'true' : 'false')
     box
       .querySelector('svg')
-      ?.setAttribute('class', `${c.tick} ${controlState.hide ? 'opacity-100' : 'opacity-0'}`)
+      ?.setAttribute('class', `${c.tick} ${checked ? 'opacity-100' : 'opacity-0'}`)
   }
-  row?.toggleAttribute('data-disabled', controlState.disabled)
-  wrap.title = controlState.title || wrap.dataset.mortarHint || ''
-  const count = wrap.querySelector('[data-mortar-hide-count]')
-  if (count) {
-    count.textContent = hiddenCount > 0 ? globalThis.mortarHiddenModsCountLabel(hiddenCount) : ''
+  row.toggleAttribute('data-disabled', disabled)
+  row.title = title || row.dataset.mortarHint || ''
+  const label = row.querySelector('[data-mortar-count]')
+  if (label) {
+    label.textContent = count > 0 ? globalThis.mortarHiddenModsCountLabel(count) : ''
   }
 }
 
-globalThis.mortarReadHideInProfile = (storage, game) =>
+// controlState is the installed row's state; obsolete is { enabled, count } for the obsolete row, which needs no
+// Mortar connection.
+globalThis.mortarSyncHideInProfileControl = (wrap, controlState, hiddenCount, obsolete) => {
+  if (!wrap) {
+    return
+  }
+  mortarSyncFilterRow(wrap.querySelector('[data-mortar-row="installed"]'), {
+    checked: controlState.hide,
+    disabled: controlState.disabled,
+    title: controlState.title,
+    count: hiddenCount,
+  })
+  mortarSyncFilterRow(wrap.querySelector('[data-mortar-row="obsolete"]'), {
+    checked: obsolete?.enabled === true,
+    disabled: false,
+    title: '',
+    count: obsolete?.count ?? 0,
+  })
+}
+
+// Dims every listing tile whose title or summary marks it obsolete, and returns how many it dimmed.
+globalThis.mortarApplyObsoleteMarks = ({ root, enabled, obsoleteClass }) => {
+  let count = 0
+  for (const tile of root.querySelectorAll('[data-e2eid="mod-tile"]')) {
+    const title = tile.querySelector('[data-e2eid="mod-tile-title"]')?.textContent || ''
+    const summary = tile.querySelector('[data-e2eid="mod-tile-summary"]')?.textContent || ''
+    const dim = enabled && globalThis.mortarObsoleteText(title, summary)
+    tile.classList.toggle(obsoleteClass, dim)
+    if (dim) {
+      count += 1
+    }
+  }
+  return count
+}
+
+globalThis.mortarReadHideInProfile = (
+  storage,
+  game,
+  keyFor = globalThis.mortarHideInProfileStorageKey,
+) =>
   new Promise((resolve) => {
     if (!(game && storage)) {
       resolve(false)
       return
     }
-    const key = globalThis.mortarHideInProfileStorageKey(game)
+    const key = keyFor(game)
     try {
       storage.get({ [key]: false }, (result) => {
         resolve(result?.[key] === true)
@@ -160,15 +251,47 @@ globalThis.mortarReadHideInProfile = (storage, game) =>
     }
   })
 
-globalThis.mortarWriteHideInProfile = (storage, game, value) => {
+globalThis.mortarWriteHideInProfile = (
+  storage,
+  game,
+  value,
+  keyFor = globalThis.mortarHideInProfileStorageKey,
+) => {
   if (!(game && storage)) {
     return
   }
   try {
-    storage.set({ [globalThis.mortarHideInProfileStorageKey(game)]: value === true })
+    storage.set({ [keyFor(game)]: value === true })
   } catch {
     // Storage is unavailable in this tab; the checkbox still applies until reload.
   }
+}
+
+// Saves one listing filter row ('installed' or 'obsolete') for the page's game.
+globalThis.mortarWriteListingFilter = (storage, game, row, checked) =>
+  globalThis.mortarWriteHideInProfile(
+    storage,
+    game,
+    checked,
+    row === 'obsolete'
+      ? globalThis.mortarGrayObsoleteStorageKey
+      : globalThis.mortarHideInProfileStorageKey,
+  )
+
+// Copies another tab's change to a listing filter into filters; true when one changed.
+globalThis.mortarApplyFilterChanges = (changes, game, filters) => {
+  let changed = false
+  for (const [row, keyFor] of [
+    ['installed', globalThis.mortarHideInProfileStorageKey],
+    ['obsolete', globalThis.mortarGrayObsoleteStorageKey],
+  ]) {
+    const change = changes[keyFor(game)]
+    if (change) {
+      filters[row] = change.newValue === true
+      changed = true
+    }
+  }
+  return changed
 }
 
 globalThis.mortarInstalledListingState = (reply, lastError, ids) => {
@@ -211,10 +334,18 @@ globalThis.mortarApplyListingHideMarks = ({
 globalThis.mortarMarkInstalledListing = async (ctx) => {
   if (!ctx.isModListing()) {
     ctx.document.getElementById(ctx.hideControlId)?.remove()
+    for (const tile of ctx.document.querySelectorAll(`.${ctx.obsoleteClass}`)) {
+      tile.classList.remove(ctx.obsoleteClass)
+    }
     return
   }
   const selectedMode = await ctx.currentMode()
-  ctx.setHideInProfile(await globalThis.mortarReadHideInProfile(ctx.storage, ctx.pageGame()))
+  ctx.filters.installed = await globalThis.mortarReadHideInProfile(ctx.storage, ctx.pageGame())
+  ctx.filters.obsolete = await globalThis.mortarReadHideInProfile(
+    ctx.storage,
+    ctx.pageGame(),
+    globalThis.mortarGrayObsoleteStorageKey,
+  )
   const ids = await ctx.installedIDs()
   if (ctx.mode() !== selectedMode) {
     return
@@ -223,7 +354,7 @@ globalThis.mortarMarkInstalledListing = async (ctx) => {
   const control = globalThis.mortarHideInProfileControl({
     connected: cache.connected,
     profileOpen: cache.profileOpen,
-    enabled: ctx.hideInProfile(),
+    enabled: ctx.filters.installed,
   })
   const hideTiles = control.hide || selectedMode === 'hide'
   const tiles = globalThis.mortarCollectInstalledTiles({
@@ -249,10 +380,16 @@ globalThis.mortarMarkInstalledListing = async (ctx) => {
     badgeClass: ctx.badgeClass,
     showBadge: selectedMode !== 'off',
   })
+  const obsoleteCount = globalThis.mortarApplyObsoleteMarks({
+    root: ctx.document,
+    enabled: ctx.filters.obsolete,
+    obsoleteClass: ctx.obsoleteClass,
+  })
   globalThis.mortarSyncHideInProfileControl(
     globalThis.mortarEnsureHideInProfileControl(ctx.document, ctx.hideControlId, ctx.onHideChange),
     control,
     ctx.document.querySelectorAll(`.${ctx.hiddenClass}`).length,
+    { enabled: ctx.filters.obsolete, count: obsoleteCount },
   )
 }
 

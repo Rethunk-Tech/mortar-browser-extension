@@ -17,6 +17,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const modeKey = 'mode'
   const markerClass = 'mortar-installed-mod'
   const hiddenClass = 'mortar-hidden-mod'
+  const obsoleteClass = 'mortar-obsolete-mod'
   const badgeClass = 'mortar-installed-mod-badge'
   const fileBadgeClass = 'mortar-installed-file-badge'
   const panelClass = 'mortar-mod-panel'
@@ -25,7 +26,8 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const cardSelectors =
     '[data-e2eid="mod-tile"], [data-testid*="mod-tile"], [data-testid*="mod-card"], .mod-tile, .mod-listing, article, li'
   let mode
-  let hideInProfile = false
+  // The Mortar section's checkboxes on mod listings, saved per game.
+  const filters = { installed: false, obsolete: false }
   let markScheduled = false
   let installedRequest
   let installedCache = { at: 0, ids: new Set(), connected: false, profileOpen: false }
@@ -301,6 +303,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       badgeClass,
       fileBadgeClass,
       hiddenClass,
+      obsoleteClass,
       panelClass,
     })
 
@@ -350,19 +353,17 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     installedIDs,
     installedCache: () => installedCache,
     mode: () => mode,
-    hideInProfile: () => hideInProfile,
-    setHideInProfile: (value) => {
-      hideInProfile = value
-    },
+    filters,
+    obsoleteClass,
     modID,
     tileFor,
     ensureMarkerStyle,
     markerClass,
     hiddenClass,
     badgeClass,
-    onHideChange: (checked) => {
-      hideInProfile = checked
-      globalThis.mortarWriteHideInProfile(chrome.storage?.local, pageGame(), hideInProfile)
+    onHideChange: (row, checked) => {
+      filters[row] = checked
+      globalThis.mortarWriteListingFilter(chrome.storage?.local, pageGame(), row, checked)
       clearMarks()
       requestMark()
     },
@@ -385,9 +386,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     if (area !== 'local') {
       return
     }
-    const hideKey = globalThis.mortarHideInProfileStorageKey(pageGame())
-    if (changes[hideKey]) {
-      hideInProfile = changes[hideKey].newValue === true
+    if (globalThis.mortarApplyFilterChanges(changes, pageGame(), filters)) {
       clearMarks()
       requestMark()
     }

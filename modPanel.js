@@ -64,7 +64,7 @@ globalThis.mortarNewerVersion = (page, installed) => {
 let mortarCollectionPanelURL = ''
 globalThis.mortarEnsureInstalledModStyle = (
   doc,
-  { markerClass, badgeClass, fileBadgeClass, hiddenClass, panelClass },
+  { markerClass, badgeClass, fileBadgeClass, hiddenClass, obsoleteClass, panelClass },
 ) => {
   if (doc.getElementById('mortar-installed-mod-style')) {
     return
@@ -91,8 +91,8 @@ globalThis.mortarEnsureInstalledModStyle = (
         color: #D6B17A;
         padding: 0 3px;
       }
-      .${hiddenClass} { opacity: 0.35; filter: grayscale(1); transition: opacity 120ms, filter 120ms; }
-      .${hiddenClass}:hover { opacity: 0.85; filter: grayscale(0.4); }
+      .${hiddenClass}, .${obsoleteClass} { opacity: 0.35; filter: grayscale(1); transition: opacity 120ms, filter 120ms; }
+      .${hiddenClass}:hover, .${obsoleteClass}:hover { opacity: 0.85; filter: grayscale(0.4); }
       .${panelClass} { display: inline-block; margin: 8px 0; vertical-align: middle; }
     `
   doc.documentElement.append(style)

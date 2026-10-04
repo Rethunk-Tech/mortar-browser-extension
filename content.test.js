@@ -84,3 +84,14 @@ test('mortarCollectionURL returns canonical collection links', () => {
   ).toBe('https://www.nexusmods.com/games/stardewvalley/collections/vanilla')
   expect(globalThis.mortarCollectionURL(`/stardewvalley/mods/${contentPatcher}`)).toBeUndefined()
 })
+
+test('obsolete listing tiles follow Mortar author-marked rule', () => {
+  const obsolete = globalThis.mortarObsoleteText
+  expect(obsolete('[OBSOLETE] Better Crafting', '')).toBe(true)
+  expect(obsolete('Tractor Mod (Deprecated)', 'Buy a tractor.')).toBe(true)
+  expect(obsolete('Some Mod', 'Depreciated: use Other Mod instead.')).toBe(true)
+  expect(obsolete('Some Mod', 'This mod is obsolete since 1.6.')).toBe(true)
+  expect(obsolete('Some Mod', 'Intro text.\nOBSOLETE')).toBe(true)
+  expect(obsolete('New Fishing', 'Replaces the obsolete Old Fishing mod.')).toBe(false)
+  expect(obsolete('Normal Mod', 'A normal summary.')).toBe(false)
+})
