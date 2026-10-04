@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import './modPanel.js'
 import './plural.js'
 import './menu.js'
 
@@ -157,7 +158,6 @@ describe('mortarMenuModData collection vs mod', () => {
 
 describe('mortarMenuModData', () => {
   test('counts profiles whose installed version is older than the page, and host-marked updates', () => {
-    globalThis.mortarNewerVersion = (page, installed) => page > installed
     const data = globalThis.mortarMenuModData(
       {
         open: { profile: 'Main', version: '1.0.0' },
