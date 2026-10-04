@@ -9,7 +9,7 @@ Until the listing is live, each tagged release carries `mortar-browser-extension
 ## Listing fields
 
 - Name: Mortar
-- Add-on URL slug: mortar-nexus-bridge (https://addons.mozilla.org/firefox/addon/mortar-nexus-bridge/)
+- Add-on URL slug: mortar (https://addons.mozilla.org/firefox/addon/mortar/)
 - Tags: download (AMO has no gaming or mod-manager tag)
 - Categories: Games & Entertainment (primary); Download Management is the alternative
 - Homepage: https://github.com/Rethunk-AI/mortar
