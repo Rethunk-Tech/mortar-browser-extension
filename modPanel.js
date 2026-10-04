@@ -10,6 +10,15 @@ const mortarFileDownloadPath = /^\/api\/files\/\d+\/download$/
 globalThis.mortarIsOwnDialogDownload = (url, pageMod) =>
   globalThis.mortarNexusModID(url.pathname) === pageMod || mortarFileDownloadPath.test(url.pathname)
 
+// The tiles Nexus draws for a mod on listings and collection pages; marks and counts look only inside these.
+globalThis.mortarTileSelector =
+  '[data-e2eid="mod-tile"], [data-testid*="mod-tile"], [data-testid*="mod-card"], .mod-tile'
+
+globalThis.mortarTileLinkSelector = globalThis.mortarTileSelector
+  .split(', ')
+  .map((tile) => `${tile} a[href]`)
+  .join(', ')
+
 globalThis.mortarCollectionURL = (pathname) => {
   const parts = String(pathname || '')
     .split('/')
@@ -110,7 +119,16 @@ globalThis.mortarNewerVersion = (page, installed) =>
 let mortarCollectionPanelURL = ''
 globalThis.mortarEnsureInstalledModStyle = (
   doc,
-  { markerClass, badgeClass, fileBadgeClass, hiddenClass, obsoleteClass, brokenClass, panelClass },
+  {
+    markerClass,
+    badgeClass,
+    fileBadgeClass,
+    hiddenClass,
+    removedClass,
+    obsoleteClass,
+    brokenClass,
+    panelClass,
+  },
 ) => {
   if (doc.getElementById('mortar-installed-mod-style')) {
     return
@@ -131,6 +149,7 @@ globalThis.mortarEnsureInstalledModStyle = (
         position: relative;
         z-index: 1;
       }
+      .${badgeClass}-update { background: #F3B416; }
       .${fileBadgeClass} .mortar-file-active {
         background: #1b1a17;
         border-radius: 2px;
@@ -138,6 +157,7 @@ globalThis.mortarEnsureInstalledModStyle = (
         padding: 0 3px;
       }
       .${hiddenClass}, .${obsoleteClass}, .${brokenClass} { opacity: 0.35; filter: grayscale(1); transition: opacity 120ms, filter 120ms; }
+      .${removedClass} { display: none !important; }
       .${hiddenClass}:hover, .${obsoleteClass}:hover, .${brokenClass}:hover { opacity: 0.85; filter: grayscale(0.4); }
       .${panelClass} { display: inline-block; margin: 8px 0; vertical-align: middle; }
     `
@@ -174,19 +194,11 @@ globalThis.mortarSyncCollectionPanel = (
         try {
           sendLink(collectionURL, (reply, lastError) => {
             menu.setBusy(false)
-            if (lastError) {
-              menu.setStatus(String(lastError))
-              return
-            }
-            if (reply?.ok === false && reply.error) {
-              menu.setStatus(String(reply.error))
-              return
-            }
-            menu.setStatus('Sent to Mortar')
+            menu.setStatus(globalThis.mortarLinkResultText(reply, lastError))
           })
         } catch (error) {
           menu.setBusy(false)
-          menu.setStatus(error instanceof Error ? error.message : String(error))
+          menu.setStatus(globalThis.mortarLinkResultText(undefined, String(error)))
         }
       },
     },
@@ -197,14 +209,15 @@ globalThis.mortarSyncCollectionPanel = (
 globalThis.mortarRenderCollectionPanel = async (
   doc,
   pathname,
-  { panelClass, collectionPanelClass, currentMode, ensureMarkerStyle },
+  { panelClass, collectionPanelClass, currentMode, ensureMarkerStyle, appOff },
 ) => {
   const selectedMode = await currentMode()
+  const collectionURL = globalThis.mortarCollectionURL(pathname)
   globalThis.mortarSyncCollectionPanel(doc, {
     panelClass,
     collectionPanelClass,
-    collectionURL: globalThis.mortarCollectionURL(pathname),
-    modeOff: selectedMode === 'off',
+    collectionURL,
+    modeOff: selectedMode === 'off' || (collectionURL !== undefined && (await appOff())),
     ensureStyle: ensureMarkerStyle,
     sendLink: (link, done) => {
       try {

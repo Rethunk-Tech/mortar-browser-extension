@@ -4,22 +4,29 @@ const status = document.querySelector('#status')
 
 const normalized = (value) => (value === 'off' || value === 'hide' ? value : 'highlight')
 
+const paintStatus = (reply, lastError) => {
+  const state = globalThis.mortarConnectionState(reply, lastError)
+  const problem = globalThis.mortarInstalledReplyStatus(reply, lastError)
+  document.querySelector('#mortar-open-app').classList.toggle('primary', state === 'notRunning')
+  if (problem) {
+    status.textContent = state === 'missing' ? globalThis.mortarInstallHint : problem
+    return
+  }
+  const { modIds, profile } = reply
+  if (modIds.length === 0) {
+    status.textContent = `Connected to Mortar · ${profile || 'the open profile'} has no Nexus mods`
+    return
+  }
+  const modCount = globalThis.mortarPlural(modIds.length, 'mod', 'mods')
+  status.textContent = `Connected to Mortar · ${modCount} in ${profile || 'the open profile'}`
+}
+
 const refreshStatus = () => {
   chrome.runtime.sendMessage({ type: 'installed', game: 'stardewvalley' }, (reply) => {
-    const problem = globalThis.mortarInstalledReplyStatus(reply, chrome.runtime.lastError)
-    if (problem) {
-      status.textContent = problem
-      return
-    }
-    const { modIds } = reply
-    if (modIds.length === 0) {
-      status.textContent = 'Mortar is running; this profile has no Nexus mods'
-      return
-    }
-    const modCount = globalThis.mortarPlural(modIds.length, 'mod', 'mods')
-    status.textContent = `Connected to Mortar · ${modCount} in the open profile`
+    paintStatus(reply, chrome.runtime.lastError)
   })
 }
+globalThis.mortarRefreshPopupStatus = refreshStatus
 
 chrome.storage.local.get({ [modeKey]: 'highlight' }, (result) => {
   if (!chrome.runtime.lastError) {
@@ -40,31 +47,22 @@ const updatesHeading = document.querySelector('#updates-heading')
 const paintPopupUpdates = (stored) => {
   const view = globalThis.mortarUpdatesBadge(stored?.updatesReply, stored?.updatesError)
   document.documentElement.style.setProperty('--accent', view.background)
-  updatesHeading.textContent = view.profile ? `Updates in ${view.profile}` : 'Updates'
   updatesList.replaceChildren()
-  if (view.status === 'unreachable') {
-    updatesEmpty.textContent = 'Mortar is not running'
-    return
-  }
-  if (view.rows.length === 0) {
-    updatesEmpty.textContent = 'No updates'
-    return
-  }
-  updatesEmpty.textContent = ''
+  // The status line above already says why there is nothing to list when Mortar is not connected.
+  const ready = view.state === 'ready'
+  updatesHeading.hidden = !ready
+  updatesHeading.textContent = view.profile ? `Updates in ${view.profile}` : 'Updates'
+  updatesEmpty.textContent = ready && view.rows.length === 0 ? 'No updates' : ''
   for (const row of view.rows) {
     const item = document.createElement('li')
     const link = document.createElement('a')
-    const { href, name, installed, latest } = row
-    link.href = href
+    link.href = row.href
     link.target = '_blank'
-    link.textContent = `${name} ${installed} → ${latest}`
+    link.textContent = row.text
     item.append(link)
     updatesList.append(item)
   }
 }
+globalThis.mortarPaintPopupUpdates = paintPopupUpdates
 
 chrome.storage.session.get(['updatesReply', 'updatesError'], paintPopupUpdates)
-
-globalThis.mortarReloadPopupUpdates = () => {
-  chrome.storage.session.get(['updatesReply', 'updatesError'], paintPopupUpdates)
-}

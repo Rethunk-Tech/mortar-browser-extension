@@ -1,10 +1,13 @@
 import { expect, test } from 'bun:test'
+import './plural.js'
 import './modPanel.js'
 import './hideInProfile.js'
+import './listingMarks.js'
 import './content.js'
 
 const contentPatcher = 1915
 const threeHidden = 3
+const tileModID = 7
 
 test('collection tiles use the same /game/mods/id links as listings', () => {
   expect(globalThis.mortarNexusModID(`/stardewvalley/mods/${contentPatcher}`)).toBe(contentPatcher)
@@ -32,7 +35,7 @@ test('hide-in-profile filter stays off when Mortar is disconnected or no profile
   ).toEqual({
     disabled: true,
     hide: false,
-    title: 'Mortar is not connected',
+    title: "Mortar isn't running",
   })
   expect(
     globalThis.mortarHideInProfileControl({
@@ -43,7 +46,7 @@ test('hide-in-profile filter stays off when Mortar is disconnected or no profile
   ).toEqual({
     disabled: true,
     hide: false,
-    title: 'No profile is open',
+    title: 'Open a profile in Mortar',
   })
   expect(
     globalThis.mortarHideInProfileControl({
@@ -52,9 +55,6 @@ test('hide-in-profile filter stays off when Mortar is disconnected or no profile
       enabled: true,
     }),
   ).toEqual({ disabled: false, hide: true, title: '' })
-  expect(globalThis.mortarListingTileHidden(true, true)).toBe(true)
-  expect(globalThis.mortarListingTileHidden(true, false)).toBe(false)
-  expect(globalThis.mortarListingTileHidden(false, true)).toBe(false)
   expect(globalThis.mortarHiddenModsCountLabel(threeHidden)).toBe('(3)')
   expect(globalThis.mortarHideInProfileStorageKey('stardewvalley')).toBe(
     'hideModsInProfile:stardewvalley',
@@ -116,4 +116,66 @@ test('download dialog follows its own link in either Nexus form, never a require
   expect(own('/api/files/5596342520200/download?nmm=1')).toBe(true)
   expect(own('/stardewvalley/mods/23374?tab=files&file_id=1&nmm=1')).toBe(true)
   expect(own('/stardewvalley/mods/2400?tab=files&file_id=1&nmm=1')).toBe(false)
+})
+
+test('listing marks: Hide removes tiles, gray dims them, Off clears everything', () => {
+  const classes = {
+    markerClass: 'in',
+    hiddenClass: 'gray',
+    removedClass: 'gone',
+    badgeClass: 'badge',
+  }
+  const makeTile = () => {
+    const names = new Set()
+    const children = []
+    return {
+      names,
+      children,
+      classList: {
+        toggle: (name, on) => (on ? names.add(name) : names.delete(name)),
+        add: (name) => names.add(name),
+        remove: (...list) => forEach(list, (name) => names.delete(name)),
+      },
+      querySelector: () => children[0],
+      prepend: (node) => children.unshift(node),
+    }
+  }
+  const forEach = (list, fn) => list.forEach(fn)
+  const doc = {
+    createElement: () => ({ textContent: '', classList: { toggle: () => undefined } }),
+  }
+  const tile = makeTile()
+  const apply = (extra) =>
+    globalThis.mortarApplyListingHideMarks({
+      document: doc,
+      tiles: new Map([[tile, tileModID]]),
+      gray: false,
+      remove: false,
+      updates: new Set(),
+      ...classes,
+      ...extra,
+    })
+  apply({ remove: true })
+  expect([...tile.names]).toEqual(['gone'])
+  apply({ gray: true })
+  expect([...tile.names].sort()).toEqual(['gray', 'in'])
+  apply({})
+  expect([...tile.names]).toEqual(['in'])
+  expect(tile.children[0].textContent).toBe('In profile')
+  apply({ updates: new Set([tileModID]) })
+  expect(tile.children[0].textContent).toBe('Update available')
+})
+
+test('only mod tiles are matched for marks', () => {
+  const tile = { id: 'tile' }
+  const link = { href: 'https://www.nexusmods.com/stardewvalley/mods/5' }
+  const stray = { href: 'https://www.nexusmods.com/stardewvalley/mods/5' }
+  const root = { querySelectorAll: () => [link, stray] }
+  const tiles = globalThis.mortarCollectInstalledTiles({
+    root,
+    ids: new Set([tileModID]),
+    modID: () => tileModID,
+    tileFor: (a) => (a === link ? tile : undefined),
+  })
+  expect([...tiles.entries()]).toEqual([[tile, tileModID]])
 })

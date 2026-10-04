@@ -17,19 +17,9 @@ globalThis.mortarRequirementLines = (data) => {
     }
   }
   if (present > 0) {
-    missing.push({ text: `${present} requirements in this profile` })
+    missing.push({
+      text: `${globalThis.mortarPlural(present, 'requirement', 'requirements')} in this profile`,
+    })
   }
   return missing
 }
-
-globalThis.mortarFetchRequirements = (game, modId) =>
-  new Promise((resolve) => {
-    try {
-      chrome.runtime.sendMessage({ type: 'requirements', game, modId }, (response) => {
-        globalThis.mortarSetAccent?.(response?.accent)
-        resolve(Array.isArray(response?.requirements) ? response.requirements : [])
-      })
-    } catch {
-      resolve([])
-    }
-  })

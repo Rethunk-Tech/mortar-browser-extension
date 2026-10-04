@@ -10,7 +10,7 @@
   },
   "background": {
     "service_worker": "background.js",
-    "scripts": ["background.js"]
+    "scripts": ["plural.js", "updates.js", "background.js"]
   },
   "content_scripts": [
     {
@@ -23,6 +23,7 @@
         "menu.js",
         "menuRequirements.js",
         "hideInProfile.js",
+        "listingMarks.js",
         "content.js"
       ],
       "run_at": "document_idle"

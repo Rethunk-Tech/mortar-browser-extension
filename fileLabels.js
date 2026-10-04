@@ -36,3 +36,23 @@ globalThis.mortarFileLabelGroups = (reply) => {
   }
   return groups
 }
+
+globalThis.mortarFileBadge = (doc, group, className) => {
+  const badge = doc.createElement('span')
+  badge.className = className
+  badge.append('In ')
+  group.names.forEach((entry, i) => {
+    if (i > 0) {
+      badge.append(', ')
+    }
+    if (entry.active) {
+      const mark = doc.createElement('span')
+      mark.className = 'mortar-file-active'
+      mark.textContent = `${entry.name} (open)`
+      badge.append(mark)
+    } else {
+      badge.append(entry.name)
+    }
+  })
+  return badge
+}

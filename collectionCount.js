@@ -14,7 +14,7 @@ const mortarCollectionLinkModID = (link, origin) => {
 globalThis.mortarCollectionPageModIDs = (root, origin) => {
   const ids = []
   const seen = new Set()
-  for (const link of root.querySelectorAll('a[href]')) {
+  for (const link of root.querySelectorAll(globalThis.mortarTileLinkSelector)) {
     const id = mortarCollectionLinkModID(link, origin)
     if (id !== undefined && !seen.has(id)) {
       seen.add(id)
@@ -38,50 +38,43 @@ globalThis.mortarCollectionInProfileLine = (ids, installed, profileName) => {
   return `${n} of ${globalThis.mortarPlural(ids.length, 'mod', 'mods')} already in ${profileName}`
 }
 
-globalThis.mortarFillCollectionInProfile = async (doc, origin, game) => {
+// The count row sits in the collection menu; it is written only when its text changes, because the menu's own
+// changes must not look like page changes.
+globalThis.mortarFillCollectionInProfile = async (
+  doc,
+  origin,
+  { installedIDs, installedCache },
+) => {
   const host = doc.querySelector('.mortar-collection-panel')
   if (!(host?._mortarMenu && host.shadowRoot)) {
     return
   }
-  const ids = globalThis.mortarCollectionPageModIDs(doc, origin)
   const menu = host.shadowRoot.querySelector('.menu')
   const footer = menu?.querySelector('.footer')
-  menu?.querySelector('.collection-count')?.remove()
-  if (!footer || ids.length === 0) {
+  if (!footer) {
     return
   }
-  const profileName =
-    (await new Promise((resolve) => {
-      try {
-        chrome.storage.session.get(['updatesReply'], (stored) => {
-          resolve(stored?.updatesReply?.profile || '')
-        })
-      } catch {
-        resolve('')
-      }
-    })) ||
-    host.shadowRoot.querySelector('.profile')?.textContent ||
-    ''
-  let installed = new Set()
-  try {
-    const reply = await new Promise((resolve) => {
-      chrome.runtime.sendMessage({ type: 'installed', game }, resolve)
-    })
-    globalThis.mortarSetAccent?.(reply?.accent)
-    if (Array.isArray(reply?.modIds)) {
-      installed = new Set(reply.modIds.filter((id) => Number.isInteger(id) && id > 0))
-    }
-  } catch {
-    return
-  }
-  const line = globalThis.mortarCollectionInProfileLine(ids, installed, profileName)
+  const installed = await installedIDs()
+  const cache = installedCache()
+  const line =
+    cache.connected && cache.profile
+      ? globalThis.mortarCollectionInProfileLine(
+          globalThis.mortarCollectionPageModIDs(doc, origin),
+          installed,
+          cache.profile,
+        )
+      : ''
+  const row = menu.querySelector('.collection-count')
   if (!line) {
-    return
+    row?.remove()
+  } else if (!row) {
+    const created = doc.createElement('p')
+    created.className = 'body collection-count'
+    created.textContent = line
+    footer.parentNode.insertBefore(created, footer)
+  } else if (row.textContent !== line) {
+    row.textContent = line
   }
-  const row = doc.createElement('p')
-  row.className = 'body collection-count'
-  row.textContent = line
-  footer.parentNode.insertBefore(row, footer)
 }
 
 if (
@@ -91,11 +84,7 @@ if (
   const inner = globalThis.mortarRenderCollectionPanel
   const wrapped = async (doc, pathname, opts) => {
     await inner(doc, pathname, opts)
-    const parts = String(pathname || '')
-      .split('/')
-      .filter(Boolean)
-    const game = (parts[0] === 'games' ? parts[1] : parts[0]) || ''
-    await globalThis.mortarFillCollectionInProfile?.(doc, doc?.location?.origin || '', game)
+    await globalThis.mortarFillCollectionInProfile?.(doc, doc?.location?.origin || '', opts)
   }
   wrapped._mortarCount = true
   globalThis.mortarRenderCollectionPanel = wrapped

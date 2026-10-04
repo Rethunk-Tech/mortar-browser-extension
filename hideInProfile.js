@@ -7,7 +7,7 @@ globalThis.mortarDimClasses = {
 }
 
 // Each listing filter row's storage key, saved per game.
-const mortarFilterKeys = {
+globalThis.mortarFilterKeys = {
   installed: globalThis.mortarHideInProfileStorageKey,
   obsolete: globalThis.mortarGrayObsoleteStorageKey,
   broken: (game) => `grayBrokenMods:${game}`,
@@ -40,17 +40,15 @@ globalThis.mortarObsoleteText = (title, summary) => {
   )
 }
 
-globalThis.mortarHideInProfileControl = ({ connected, profileOpen, enabled }) => {
+globalThis.mortarHideInProfileControl = ({ connected, profileOpen, enabled, status }) => {
   if (!connected) {
-    return { disabled: true, hide: false, title: 'Mortar is not connected' }
+    return { disabled: true, hide: false, title: status || "Mortar isn't running" }
   }
   if (!profileOpen) {
-    return { disabled: true, hide: false, title: 'No profile is open' }
+    return { disabled: true, hide: false, title: 'Open a profile in Mortar' }
   }
   return { disabled: false, hide: enabled === true, title: '' }
 }
-
-globalThis.mortarListingTileHidden = (installed, hide) => installed === true && hide === true
 
 globalThis.mortarHiddenModsCountLabel = (count) => `(${count})`
 
@@ -91,7 +89,7 @@ const mortarTickPath = 'M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z'
 const mortarFilterRows = [
   {
     key: 'installed',
-    label: 'Gray out installed',
+    label: 'Gray out mods in profile',
     hint: 'Dims mods that are in the profile open in Mortar; hover one to see it clearly',
   },
   {
@@ -178,8 +176,11 @@ globalThis.mortarEnsureHideInProfileControl = (root, hideControlId, onChange) =>
     header.append(el('span', c.title, 'Mortar'))
     const rows = el('div', 'space-y-2')
     rows.append(...mortarFilterRows.map(makeRow))
+    const status = el('p', c.count)
+    status.dataset.mortarStatus = 'true'
+    status.hidden = true
     const body = el('div', c.body)
-    body.append(rows)
+    body.append(status, rows)
     wrap.append(header, body)
     const firstSection = [...sidebar.children].find((child) => child.matches('button'))
     sidebar.insertBefore(wrap, firstSection || null)
@@ -217,6 +218,12 @@ const mortarSyncFilterRow = (row, { checked, disabled, title, count }) => {
 globalThis.mortarSyncHideInProfileControl = (wrap, controlState, hiddenCount, rows = {}) => {
   if (!wrap) {
     return
+  }
+  const line = wrap.querySelector('[data-mortar-status]')
+  const status = controlState.status ?? ''
+  if (line && line.textContent !== status) {
+    line.textContent = status
+    line.hidden = status === ''
   }
   mortarSyncFilterRow(wrap.querySelector('[data-mortar-row="installed"]'), {
     checked: controlState.hide,
@@ -291,12 +298,12 @@ globalThis.mortarWriteHideInProfile = (
 
 // Saves one listing filter row for the page's game.
 globalThis.mortarWriteListingFilter = (storage, game, row, checked) =>
-  globalThis.mortarWriteHideInProfile(storage, game, checked, mortarFilterKeys[row])
+  globalThis.mortarWriteHideInProfile(storage, game, checked, globalThis.mortarFilterKeys[row])
 
 // Copies another tab's change to a listing filter into filters; true when one changed.
 globalThis.mortarApplyFilterChanges = (changes, game, filters) => {
   let changed = false
-  for (const [row, keyFor] of Object.entries(mortarFilterKeys)) {
+  for (const [row, keyFor] of Object.entries(globalThis.mortarFilterKeys)) {
     const change = changes[keyFor(game)]
     if (change) {
       filters[row] = change.newValue === true
@@ -316,133 +323,9 @@ globalThis.mortarInstalledListingState = (reply, lastError, ids) => {
     nativeFail,
     connected,
     profileOpen: connected && reply?.profile !== '',
-  }
-}
-
-globalThis.mortarApplyListingHideMarks = ({
-  document,
-  tiles,
-  hideTiles,
-  markerClass,
-  hiddenClass,
-  badgeClass,
-  showBadge,
-}) => {
-  for (const tile of tiles) {
-    tile.classList.add(markerClass)
-    if (globalThis.mortarListingTileHidden(true, hideTiles)) {
-      tile.classList.add(hiddenClass)
-      tile.querySelector(`.${badgeClass}`)?.remove()
-    } else {
-      tile.classList.remove(hiddenClass)
-      if (showBadge && !tile.querySelector(`.${badgeClass}`)) {
-        const badge = document.createElement('span')
-        badge.className = badgeClass
-        badge.textContent = 'In profile'
-        tile.prepend(badge)
-      }
-    }
-  }
-}
-
-globalThis.mortarMarkInstalledListing = async (ctx) => {
-  if (!ctx.isModListing()) {
-    ctx.document.getElementById(ctx.hideControlId)?.remove()
-    for (const tile of ctx.document.querySelectorAll(
-      `.${globalThis.mortarDimClasses.obsoleteClass}, .${globalThis.mortarDimClasses.brokenClass}`,
-    )) {
-      tile.classList.remove(
-        globalThis.mortarDimClasses.obsoleteClass,
-        globalThis.mortarDimClasses.brokenClass,
-      )
-    }
-    return
-  }
-  const selectedMode = await ctx.currentMode()
-  for (const [row, keyFor] of Object.entries(mortarFilterKeys)) {
-    ctx.filters[row] = await globalThis.mortarReadHideInProfile(ctx.storage, ctx.pageGame(), keyFor)
-  }
-  const ids = await ctx.installedIDs()
-  if (ctx.mode() !== selectedMode) {
-    return
-  }
-  const cache = ctx.installedCache()
-  const control = globalThis.mortarHideInProfileControl({
-    connected: cache.connected,
-    profileOpen: cache.profileOpen,
-    enabled: ctx.filters.installed,
-  })
-  const hideTiles = control.hide || selectedMode === 'hide'
-  const tiles = globalThis.mortarCollectInstalledTiles({
-    root: ctx.document,
-    ids,
-    modID: ctx.modID,
-    tileFor: ctx.tileFor,
-  })
-  ctx.ensureMarkerStyle()
-  globalThis.mortarClearUnlistedMarks({
-    root: ctx.document,
-    tiles,
-    markerClass: ctx.markerClass,
-    hiddenClass: ctx.hiddenClass,
-    badgeClass: ctx.badgeClass,
-  })
-  globalThis.mortarApplyListingHideMarks({
-    document: ctx.document,
-    tiles,
-    hideTiles,
-    markerClass: ctx.markerClass,
-    hiddenClass: ctx.hiddenClass,
-    badgeClass: ctx.badgeClass,
-    showBadge: selectedMode !== 'off',
-  })
-  const obsoleteCount = globalThis.mortarApplyDimMarks({
-    root: ctx.document,
-    enabled: ctx.filters.obsolete,
-    dimClass: globalThis.mortarDimClasses.obsoleteClass,
-    dim: globalThis.mortarTileObsolete,
-  })
-  const brokenCount = globalThis.mortarApplyDimMarks({
-    root: ctx.document,
-    enabled: ctx.filters.broken && !cache.nativeFail,
-    dimClass: globalThis.mortarDimClasses.brokenClass,
-    dim: (tile) => {
-      const link = tile.querySelector('[data-e2eid="mod-tile-title"]')
-      return Boolean(link) && cache.broken.has(ctx.modID(link.href))
-    },
-  })
-  globalThis.mortarSyncHideInProfileControl(
-    globalThis.mortarEnsureHideInProfileControl(ctx.document, ctx.hideControlId, ctx.onHideChange),
-    control,
-    ctx.document.querySelectorAll(`.${ctx.hiddenClass}`).length,
-    {
-      obsolete: { enabled: ctx.filters.obsolete, count: obsoleteCount },
-      broken: {
-        enabled: ctx.filters.broken,
-        count: brokenCount,
-        disabled: cache.nativeFail,
-        title: cache.nativeFail ? 'Mortar is not installed' : '',
-      },
-    },
-  )
-}
-
-globalThis.mortarCollectInstalledTiles = ({ root, ids, modID, tileFor }) => {
-  const tiles = new Set()
-  for (const link of root.querySelectorAll('a[href]')) {
-    const id = modID(link.href)
-    if (id !== undefined && ids.has(id)) {
-      tiles.add(tileFor(link))
-    }
-  }
-  return tiles
-}
-
-globalThis.mortarClearUnlistedMarks = ({ root, tiles, markerClass, hiddenClass, badgeClass }) => {
-  for (const tile of root.querySelectorAll(`.${markerClass}, .${hiddenClass}`)) {
-    if (!tiles.has(tile)) {
-      tile.classList.remove(markerClass, hiddenClass)
-      tile.querySelector(`.${badgeClass}`)?.remove()
-    }
+    profile: typeof reply?.profile === 'string' ? reply.profile : '',
+    updates: new Set(Array.isArray(reply?.updateIds) ? reply.updateIds : []),
+    state: globalThis.mortarConnectionState(reply, lastError),
+    status: globalThis.mortarInstalledReplyStatus(reply, lastError),
   }
 }

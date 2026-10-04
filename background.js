@@ -1,6 +1,66 @@
-importScripts('updates.js')
+if (typeof importScripts === 'function') {
+  importScripts('plural.js', 'updates.js')
+}
 
 const host = 'tech.rethunk.mortar'
+// One native port serves every request: Mortar answers in order, so replies pair with requests first in, first out.
+// An idle port is closed so Mortar does not stay resident in the background.
+const portIdleMs = 60_000
+const pending = []
+let port
+let idleTimer
+
+const armIdle = () => {
+  clearTimeout(idleTimer)
+  idleTimer = setTimeout(() => {
+    if (pending.length > 0) {
+      armIdle()
+      return
+    }
+    port?.disconnect()
+    port = undefined
+  }, portIdleMs)
+}
+
+const connect = () => {
+  const next = chrome.runtime.connectNative(host)
+  next.onMessage.addListener((reply) => {
+    pending.shift()?.resolve(reply)
+    armIdle()
+  })
+  next.onDisconnect.addListener(() => {
+    if (port !== next) {
+      return
+    }
+    const reason = new Error(
+      next.error?.message ?? chrome.runtime.lastError?.message ?? 'native host disconnected',
+    )
+    port = undefined
+    for (const waiter of pending.splice(0)) {
+      waiter.reject(reason)
+    }
+  })
+  port = next
+}
+
+const send = (message) =>
+  new Promise((resolve, reject) => {
+    try {
+      if (!port) {
+        connect()
+      }
+      port.postMessage(message)
+      pending.push({ resolve, reject })
+      armIdle()
+    } catch (error) {
+      reject(error)
+    }
+  })
+
+const failure = (error) => ({
+  nativeMessagingError: true,
+  error: String(error?.message ?? error),
+})
 
 const applyUpdatesBadge = (reply, error) => {
   const view = globalThis.mortarUpdatesBadge(reply, error)
@@ -9,16 +69,26 @@ const applyUpdatesBadge = (reply, error) => {
   if (typeof chrome.action.setBadgeTextColor === 'function') {
     chrome.action.setBadgeTextColor({ color: view.color })
   }
-  chrome.storage.session.set({
-    updatesReply: error ? null : reply,
-    updatesError: Boolean(error),
-  })
+}
+
+// The stored reply is what the popup paints; it is written before the caller is answered so a repaint never reads
+// the previous check.
+const checkUpdates = async () => {
+  let reply
+  let error
+  try {
+    reply = await send({ type: 'updates', game: 'stardewvalley' })
+  } catch (caught) {
+    error = caught
+  }
+  applyUpdatesBadge(reply, error)
+  const stored = { updatesReply: error ? null : reply, updatesError: Boolean(error) }
+  await chrome.storage.session.set(stored)
+  return stored
 }
 
 const refreshUpdates = () => {
-  chrome.runtime.sendNativeMessage(host, { type: 'updates', game: 'stardewvalley' }, (reply) => {
-    applyUpdatesBadge(reply, chrome.runtime.lastError)
-  })
+  checkUpdates().catch(() => false)
 }
 
 chrome.alarms.create('updates', { periodInMinutes: 30 })
@@ -37,112 +107,40 @@ chrome.tabs.onActivated.addListener((info) => {
 })
 refreshUpdates()
 
-// A failed delivery rejects, which the browser lists on the extension's errors page; the page's own nxm launch
-// still runs, so nothing is lost that would have arrived without the extension. The tab closes only after Mortar
-// took the link.
-chrome.runtime.onMessage.addListener((msg, sender) => {
-  if (typeof msg?.link !== 'string' || !msg.link.startsWith('nxm://')) {
-    return
-  }
-  chrome.runtime.sendNativeMessage(host, { link: msg.link }).then((reply) => {
-    if (msg.close === true && reply?.ok === true && sender.tab?.id !== undefined) {
-      chrome.tabs.remove(sender.tab.id)
-    }
-  })
-})
+// The tab closes only after Mortar took the link; a failed delivery leaves the page's own nxm launch to run, so
+// nothing is lost that would have arrived without the extension.
+const relayLink = (msg, sender, sendResponse) => {
+  send({ link: msg.link }).then(
+    (reply) => {
+      if (msg.close === true && reply?.ok === true && sender.tab?.id !== undefined) {
+        chrome.tabs.remove(sender.tab.id)
+      }
+      sendResponse(reply)
+    },
+    (error) => sendResponse(failure(error)),
+  )
+}
 
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (typeof msg?.link !== 'string' || !msg.link.startsWith('https://')) {
-    return
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (typeof msg?.link === 'string') {
+    if (!(msg.link.startsWith('nxm://') || msg.link.startsWith('https://'))) {
+      return
+    }
+    relayLink(msg, sender, sendResponse)
+    return true
   }
-  chrome.runtime.sendNativeMessage(host, { link: msg.link }, (reply) => {
-    if (chrome.runtime.lastError) {
-      sendResponse({ ok: false, error: String(chrome.runtime.lastError.message) })
-      return
-    }
-    sendResponse(reply ?? { ok: true })
-  })
-  return true
-})
-
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (
-    (msg?.type !== 'installed' &&
-      msg?.type !== 'mod' &&
-      msg?.type !== 'modProblems' &&
-      msg?.type !== 'requirements') ||
-    typeof msg.game !== 'string'
-  ) {
-    return
+  if (msg?.type === 'checkNow') {
+    checkUpdates()
+      .then(sendResponse)
+      .catch(() => false)
+    return true
   }
-  const request =
-    msg.type === 'installed'
-      ? { type: 'installed', game: msg.game }
-      : { type: msg.type, game: msg.game, modId: msg.modId }
-  let emptyReply
-  if (msg.type === 'installed') {
-    emptyReply = { modIds: [] }
-  } else if (msg.type === 'mod') {
-    emptyReply = { open: null, others: [] }
-  } else if (msg.type === 'requirements') {
-    emptyReply = { requirements: [] }
-  } else {
-    emptyReply = { problems: [] }
+  if ((msg?.type === 'installed' || msg?.type === 'mod') && typeof msg.game === 'string') {
+    send({ type: msg.type, game: msg.game, modId: msg.modId }).then(sendResponse, (error) =>
+      sendResponse(failure(error)),
+    )
+    return true
   }
-  chrome.runtime.sendNativeMessage(host, request, (reply) => {
-    if (chrome.runtime.lastError) {
-      sendResponse({
-        ...emptyReply,
-        nativeMessagingError: true,
-      })
-      return
-    }
-    if (msg.type === 'installed') {
-      sendResponse({
-        modIds: Array.isArray(reply?.modIds) ? reply.modIds : [],
-        brokenIds: Array.isArray(reply?.brokenIds) ? reply.brokenIds : [],
-        connected: reply?.connected === true,
-        accent: reply?.accent,
-      })
-      return
-    }
-    if (msg.type === 'modProblems') {
-      sendResponse({
-        problems: Array.isArray(reply?.problems) ? reply.problems : [],
-        accent: reply?.accent,
-      })
-      return
-    }
-    if (msg.type === 'requirements') {
-      sendResponse({
-        requirements: Array.isArray(reply?.requirements) ? reply.requirements : [],
-        accent: reply?.accent,
-      })
-      return
-    }
-    sendResponse({
-      open: reply?.open ?? null,
-      others: Array.isArray(reply?.others) ? reply.others : [],
-      accent: reply?.accent,
-    })
-  })
-  return true
-})
-
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg?.type !== 'checkNow') {
-    return
-  }
-  chrome.runtime.sendNativeMessage(host, { type: 'updates', game: 'stardewvalley' }, (reply) => {
-    applyUpdatesBadge(reply, chrome.runtime.lastError)
-    sendResponse({
-      updates: reply?.updates,
-      profile: reply?.profile,
-      accent: reply?.accent,
-      nativeMessagingError: Boolean(chrome.runtime.lastError),
-    })
-  })
-  return true
 })
 
 // Content scripts only reach pages loaded after the extension, so Nexus tabs already open get the script now.
@@ -158,6 +156,7 @@ chrome.runtime.onInstalled.addListener(async () => {
         'menu.js',
         'menuRequirements.js',
         'hideInProfile.js',
+        'listingMarks.js',
         'content.js',
       ],
     })

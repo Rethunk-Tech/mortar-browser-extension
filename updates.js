@@ -1,3 +1,10 @@
+const mortarUpdateRowText = ({ name, installed, latest }) => {
+  if (installed && latest) {
+    return `${name} ${installed} → ${latest}`
+  }
+  return latest ? `${name} → ${latest}` : `${name} (newer file)`
+}
+
 globalThis.mortarUpdatesBadge = (reply, error) => {
   if (error || !reply || !Array.isArray(reply.updates)) {
     return {
@@ -7,17 +14,19 @@ globalThis.mortarUpdatesBadge = (reply, error) => {
       rows: [],
       profile: '',
       status: 'unreachable',
+      state: globalThis.mortarConnectionState(reply, error),
     }
   }
   const { accent, updates, profile } = reply
   const background = typeof accent === 'string' && accent ? accent : '#D6B17A'
-  const rows = updates.map((u) => ({
-    modId: u.modId,
-    name: u.name,
-    installed: u.installed,
-    latest: u.latest ?? '',
-    href: `https://www.nexusmods.com/stardewvalley/mods/${u.modId}?tab=files`,
-  }))
+  const rows = updates.map((u) => {
+    const row = { modId: u.modId, name: u.name, installed: u.installed, latest: u.latest ?? '' }
+    return {
+      ...row,
+      text: mortarUpdateRowText(row),
+      href: `https://www.nexusmods.com/stardewvalley/mods/${u.modId}?tab=files`,
+    }
+  })
   return {
     text: updates.length === 0 ? '' : String(updates.length),
     background,
@@ -25,5 +34,6 @@ globalThis.mortarUpdatesBadge = (reply, error) => {
     rows,
     profile: typeof profile === 'string' ? profile : '',
     status: 'ok',
+    state: globalThis.mortarConnectionState(reply, error),
   }
 }

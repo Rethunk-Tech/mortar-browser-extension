@@ -25,7 +25,7 @@ svg rect { fill: var(--mortar-accent); }
 .dot.red { background: #E5484D; }
 .menu {
   display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 2147483647;
-  width: 320px; box-sizing: border-box;
+  width: min(320px, calc(100vw - 16px)); box-sizing: border-box;
   background: rgb(40,40,48);
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 8px;
@@ -34,6 +34,7 @@ svg rect { fill: var(--mortar-accent); }
   color: rgba(255,255,255,0.9);
 }
 .menu.open { display: block; }
+.menu.right { left: auto; right: 0; }
 .header {
   display: flex; align-items: center; gap: 8px;
   color: rgba(255,255,255,0.9);
@@ -89,12 +90,10 @@ const mortarThisModLines = (data) => {
   }
   if (data.pinned) {
     const reason = typeof data.pinReason === 'string' ? data.pinReason.trim() : ''
-    lines.push(
-      mortarMenuLine(reason ? `Pinned: ${reason}` : 'Pinned in Mortar (this version stays)'),
-    )
+    lines.push(mortarMenuLine(reason ? `Pinned: ${reason}` : 'Pinned at this version'))
   }
   if (data.skipVersion) {
-    lines.push(mortarMenuLine(`Skipped version ${data.skipVersion}`))
+    lines.push(mortarMenuLine(`You skipped version ${data.skipVersion}`))
   }
   const skipSources = Array.isArray(data.skipSources) ? data.skipSources : []
   for (const source of skipSources) {
@@ -139,7 +138,7 @@ const mortarRequiredLines = (data) => {
   const names = requiredNames.length > 0 ? requiredNames : requiredBy.map((entry) => String(entry))
   const countLabel = globalThis.mortarPlural(requiredCount, 'mod', 'mods')
   return [
-    mortarMenuLine(`Required by ${countLabel}`, names.join(', ')),
+    mortarMenuLine(`${countLabel} in this profile`, names.join(', ')),
     ...names.map((name) => mortarMenuLine(name)),
   ]
 }
@@ -180,6 +179,21 @@ globalThis.mortarStatusDot = (data) => {
   return null
 }
 
+// The button's accessible name carries what the status dot shows by colour alone.
+globalThis.mortarMenuLabel = (data, dotKind) => {
+  if (dotKind === 'red') {
+    const count = Array.isArray(data.problems) ? data.problems.length : 0
+    return `Mortar: ${globalThis.mortarPlural(count, 'problem', 'problems')}`
+  }
+  if (dotKind === 'amber') {
+    return 'Mortar: update available'
+  }
+  if (dotKind === 'green') {
+    return `Mortar: in ${data.profileName}`
+  }
+  return 'Mortar'
+}
+
 globalThis.mortarBuildSections = (data) => {
   const sections = []
   if (!data?.connected || data.kind === 'collection') {
@@ -213,9 +227,11 @@ const mortarOwnedUpdateCount = (open, others, pageVer, newer) => {
   return updateCount
 }
 
-globalThis.mortarMenuModData = (open, others, pageVer, problems) => {
-  if (!open) {
-    return { connected: false, kind: 'mod' }
+// reply is the host's mod reply plus the connection state.
+globalThis.mortarMenuModData = (reply, pageVer) => {
+  const { open, others, problems, state = 'ready' } = reply ?? {}
+  if (!open || state !== 'ready') {
+    return { connected: false, kind: 'mod', state }
   }
   const newer = globalThis.mortarNewerVersion || (() => false)
   const installed = open.version
@@ -274,7 +290,7 @@ const mortarMenuEl = (tag, attrs, ...children) => {
 }
 
 const mortarMenuFocusables = (root) =>
-  [...root.querySelectorAll('button')].filter((node) => !node.disabled)
+  [...root.querySelectorAll('button, a[href]')].filter((node) => !node.disabled)
 
 const mortarMarkNode = () => {
   const wrap = mortarMenuEl('span', { 'aria-hidden': 'true' })
@@ -306,21 +322,20 @@ const mortarRenderSections = (menu, sections) => {
 
 const mortarBindMenu = (host, shadow, btn, menu) => {
   let open = false
-  const setOpen = (next) => {
+  const setOpen = (next, refocus = true) => {
     open = next
     menu.classList.toggle('open', open)
     btn.setAttribute('aria-expanded', open ? 'true' : 'false')
     if (open) {
-      globalThis.mortarRefreshAccent?.()
-      const [first] = mortarMenuFocusables(menu)
-      ;(first || menu).focus()
-    } else {
-      btn.focus()
+      menu.classList.toggle('right', btn.getBoundingClientRect().left > window.innerWidth / 2)
+      menu.focus()
+    } else if (refocus) {
+      btn.focus({ preventScroll: true })
     }
   }
-  const close = () => {
+  const close = (refocus = true) => {
     if (open) {
-      setOpen(false)
+      setOpen(false, refocus)
     }
   }
   btn.addEventListener('click', (event) => {
@@ -346,7 +361,7 @@ const mortarBindMenu = (host, shadow, btn, menu) => {
     const [first] = items
     const last = items.at(-1)
     const active = shadow.activeElement
-    if (event.shiftKey && active === first) {
+    if (event.shiftKey && (active === first || active === menu)) {
       event.preventDefault()
       last.focus()
     } else if (!event.shiftKey && active === last) {
@@ -357,7 +372,7 @@ const mortarBindMenu = (host, shadow, btn, menu) => {
   const onDocPointer = (event) => {
     const path = event.composedPath ? event.composedPath() : []
     if (!path.includes(host)) {
-      close()
+      close(false)
     }
   }
   document.addEventListener('pointerdown', onDocPointer, true)
@@ -398,11 +413,12 @@ globalThis.mortarAttachMenu = (host, data, options = {}) => {
   const profileName = data?.profileName || ''
   const isCollection = data?.kind === 'collection'
 
+  const label = globalThis.mortarMenuLabel(data, dotKind)
   const btn = mortarMenuEl('button', {
     class: `btn${connected ? '' : ' dim'}`,
     type: 'button',
-    'aria-label': 'Mortar',
-    title: 'Mortar',
+    'aria-label': label,
+    title: label,
     'aria-haspopup': 'dialog',
     'aria-expanded': 'false',
   })
@@ -430,7 +446,10 @@ globalThis.mortarAttachMenu = (host, data, options = {}) => {
     menu.append(
       mortarMenuEl('p', {
         class: 'disconnected',
-        text: 'Mortar is not running.',
+        text:
+          data?.state === 'missing'
+            ? globalThis.mortarInstallHint
+            : globalThis.mortarInstalledReplyStatus({ state: data?.state }),
       }),
     )
   }
@@ -450,7 +469,11 @@ globalThis.mortarAttachMenu = (host, data, options = {}) => {
     text: 'Open in Mortar',
   })
   const statusEl = mortarMenuEl('p', { class: 'status' })
-  const footer = mortarMenuEl('div', { class: 'footer' }, openBtn)
+  const footer = mortarMenuEl(
+    'div',
+    { class: 'footer' },
+    data?.state === 'missing' ? null : openBtn,
+  )
   if (isCollection) {
     footer.append(statusEl)
   }

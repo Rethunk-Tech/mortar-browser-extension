@@ -22,6 +22,6 @@ test('lists missing requirements first, with Nexus links, then present count', (
       href: 'https://www.nexusmods.com/stardewvalley/mods/2400',
     },
     { text: 'Needs SMAPI', problem: true },
-    { text: '1 requirements in this profile' },
+    { text: '1 requirement in this profile' },
   ])
 })

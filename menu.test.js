@@ -58,7 +58,7 @@ describe('mortarBuildSections', () => {
       sections(full).map((section) => [section.label, section.lines.map((line) => line.text)]),
     )
     expect(byLabel['This mod']).toContain('Version 1.2.3 in this profile')
-    expect(byLabel['This mod']).toContain('Pinned in Mortar (this version stays)')
+    expect(byLabel['This mod']).toContain('Pinned at this version')
     const pinnedReason = sections({
       connected: true,
       kind: 'mod',
@@ -78,7 +78,7 @@ describe('mortarBuildSections', () => {
       'Update available in 2 of your profiles',
     ])
     expect(byLabel['Other profiles']).toEqual(['Co-op (version 1.1.0)'])
-    expect(byLabel['Required by'][0]).toContain('Required by')
+    expect(byLabel['Required by'][0]).toBe('1 mod in this profile')
     expect(byLabel['Required by']).toContain('Content Patcher')
     expect(byLabel.Problems).toEqual(['Missing dependency', 'Broken'])
   })
@@ -148,7 +148,7 @@ describe('mortarMenuModData collection vs mod', () => {
   })
 
   test('disconnected mod data has no sections and no status dot', () => {
-    const data = globalThis.mortarMenuModData(undefined, [], '', [])
+    const data = globalThis.mortarMenuModData(undefined, '')
     expect(data.connected).toBe(false)
     expect(sections(data)).toEqual([])
     expect(dot(data)).toBeNull()
@@ -159,21 +159,40 @@ describe('mortarMenuModData', () => {
   test('counts profiles whose installed version is older than the page, and host-marked updates', () => {
     globalThis.mortarNewerVersion = (page, installed) => page > installed
     const data = globalThis.mortarMenuModData(
-      { profile: 'Main', version: '1.0.0' },
-      [
-        { profile: 'B', version: '0.9.0' },
-        { profile: 'C', version: '1.1.0', updateAvailable: true },
-      ],
+      {
+        open: { profile: 'Main', version: '1.0.0' },
+        others: [
+          { profile: 'B', version: '0.9.0' },
+          { profile: 'C', version: '1.1.0', updateAvailable: true },
+        ],
+      },
       '1.1.0',
-      [],
     )
     const mainOlderPlusBOlderPlusCMarked = 3
     expect(data.updateCount).toBe(mainOlderPlusBOlderPlusCMarked)
     expect(data.nexusNewer).toBe(true)
   })
   test('not in the profile when there is no installed version', () => {
-    const data = globalThis.mortarMenuModData({ profile: 'Main', version: '' }, [], '1.0.0', [])
+    const data = globalThis.mortarMenuModData({ open: { profile: 'Main', version: '' } }, '1.0.0')
     expect(data.inProfile).toBe(false)
     expect(globalThis.mortarStatusDot(data)).toBe(null)
+  })
+})
+
+describe('menu state and labels', () => {
+  test('a mod reply that is not ready is disconnected with its state', () => {
+    const data = globalThis.mortarMenuModData(
+      { open: { profile: 'Main' }, state: 'notRunning' },
+      '',
+    )
+    expect(data).toEqual({ connected: false, kind: 'mod', state: 'notRunning' })
+  })
+
+  test('the button name says what the status dot shows', () => {
+    const label = globalThis.mortarMenuLabel
+    expect(label({ problems: [{}, {}] }, 'red')).toBe('Mortar: 2 problems')
+    expect(label({}, 'amber')).toBe('Mortar: update available')
+    expect(label({ profileName: 'Farm' }, 'green')).toBe('Mortar: in Farm')
+    expect(label({}, null)).toBe('Mortar')
   })
 })

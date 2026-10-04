@@ -11,18 +11,40 @@ globalThis.mortarSkipSourceLabel = (source) => {
   return String(source || '')
 }
 
+// How far the extension is from Mortar's data: 'missing' (no native host), then the host's own state ('off',
+// 'notRunning', 'noProfile', 'ready'). A reply without a state counts as ready only when it says connected.
+globalThis.mortarConnectionState = (reply, lastError) => {
+  if (lastError || !reply || reply.nativeMessagingError === true) {
+    return 'missing'
+  }
+  if (['off', 'notRunning', 'noProfile', 'ready'].includes(reply.state)) {
+    return reply.state
+  }
+  return reply.connected === true ? 'ready' : 'noProfile'
+}
+
+globalThis.mortarInstallHint =
+  "Mortar isn't installed. Install Mortar and open it once to connect this browser."
+
+const mortarStateCopy = {
+  missing: "Mortar isn't installed",
+  off: 'Browser extension connection is off in Mortar',
+  notRunning: "Mortar isn't running",
+  noProfile: 'Open a profile in Mortar',
+}
+
 globalThis.mortarInstalledReplyStatus = (reply, lastError) => {
-  if (lastError || reply?.nativeMessagingError === true) {
-    return "Mortar's browser helper is not installed"
+  const state = globalThis.mortarConnectionState(reply, lastError)
+  if (state !== 'ready') {
+    return mortarStateCopy[state]
   }
-  if (!Array.isArray(reply?.modIds)) {
-    return 'Mortar could not read this profile'
+  return Array.isArray(reply?.modIds) ? '' : 'Mortar could not read this profile'
+}
+
+// What the collection panel says after handing the collection link to Mortar.
+globalThis.mortarLinkResultText = (reply, lastError) => {
+  if (lastError || !reply || reply.nativeMessagingError === true) {
+    return globalThis.mortarInstallHint
   }
-  if (reply?.connected !== true) {
-    if (reply?.connected === false) {
-      return 'Open a profile in Mortar'
-    }
-    return 'Open Mortar on a profile'
-  }
-  return ''
+  return reply.ok === true ? 'Sent to Mortar' : "Mortar couldn't open this collection"
 }

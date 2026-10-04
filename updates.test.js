@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import './plural.js'
 import './updates.js'
 
 test('updates reply becomes badge text, colour, and popup rows', () => {
@@ -19,6 +20,7 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
     color: '#1b1a17',
     profile: 'Default',
     status: 'ok',
+    state: 'noProfile',
     rows: [
       {
         modId: 1915,
@@ -26,6 +28,7 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
         installed: '4.0.0',
         latest: '4.1.0',
         href: 'https://www.nexusmods.com/stardewvalley/mods/1915?tab=files',
+        text: 'SMAPI 4.0.0 → 4.1.0',
       },
       {
         modId: 10,
@@ -33,6 +36,7 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
         installed: '1.0.0',
         latest: '',
         href: 'https://www.nexusmods.com/stardewvalley/mods/10?tab=files',
+        text: 'Other (newer file)',
       },
     ],
   })
@@ -61,5 +65,22 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
     rows: [],
     profile: '',
     status: 'unreachable',
+    state: 'missing',
   })
+})
+
+test('update rows print only the versions that are known', () => {
+  const rows = globalThis
+    .mortarUpdatesBadge(
+      {
+        state: 'ready',
+        updates: [
+          { modId: 1, name: 'A', installed: '', latest: '2.0' },
+          { modId: 2, name: 'B', installed: '1.0', latest: '' },
+        ],
+      },
+      false,
+    )
+    .rows.map((row) => row.text)
+  expect(rows).toEqual(['A → 2.0', 'B (newer file)'])
 })

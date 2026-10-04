@@ -5,9 +5,15 @@ document.getElementById('mortar-open-app')?.addEventListener('click', (event) =>
   link.click()
 })
 
-document.getElementById('mortar-check-now')?.addEventListener('click', (event) => {
+const mortarCheckNow = document.getElementById('mortar-check-now')
+mortarCheckNow?.addEventListener('click', (event) => {
   event.preventDefault()
-  chrome.runtime.sendMessage({ type: 'checkNow' }, () => {
-    globalThis.mortarReloadPopupUpdates?.()
+  mortarCheckNow.disabled = true
+  mortarCheckNow.textContent = 'Checking…'
+  chrome.runtime.sendMessage({ type: 'checkNow' }, (stored) => {
+    mortarCheckNow.disabled = false
+    mortarCheckNow.textContent = 'Check now'
+    globalThis.mortarPaintPopupUpdates?.(chrome.runtime.lastError ? undefined : stored)
+    globalThis.mortarRefreshPopupStatus?.()
   })
 })

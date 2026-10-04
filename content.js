@@ -20,16 +20,20 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const badgeClass = 'mortar-installed-mod-badge'
   const fileBadgeClass = 'mortar-installed-file-badge'
   const panelClass = 'mortar-mod-panel'
-  const listingStatusClass = 'mortar-listing-status'
+  const removedClass = 'mortar-removed-mod'
   const hideControlId = 'mortar-hide-in-profile'
-  const cardSelectors =
-    '[data-e2eid="mod-tile"], [data-testid*="mod-tile"], [data-testid*="mod-card"], .mod-tile, .mod-listing, article, li'
   let mode
   // The Mortar section's checkboxes on mod listings, saved per game.
   const filters = { installed: false, obsolete: false, broken: false }
   let markScheduled = false
   let installedRequest
-  let installedCache = { at: 0, ids: new Set(), connected: false, profileOpen: false }
+  const filterState = { game: undefined }
+  let lastModReply
+  const emptyInstalledCache = () => ({
+    ...globalThis.mortarInstalledListingState(undefined, true),
+    at: 0,
+  })
+  let installedCache = emptyInstalledCache()
 
   // A tab opened just for this download is closed once Mortar has the link: every history entry is this mod's own
   // page (its description, its files tab, the download page). A tab with any other history stays open. Only the
@@ -92,37 +96,22 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     if (installedRequest) {
       return installedRequest
     }
-    clearMarks()
     installedRequest = new Promise((resolve) => {
-      const fail = (reply, lastError) => {
-        const message = globalThis.mortarInstalledReplyStatus(reply, lastError)
-        installedCache = globalThis.mortarInstalledListingState(reply, lastError)
-        if (message) {
-          showListingStatus(message)
-        } else {
-          clearListingStatus()
-        }
+      const settle = (reply, lastError) => {
+        const usable = globalThis.mortarInstalledReplyStatus(reply, lastError) === ''
+        const ids = usable
+          ? new Set(reply.modIds.filter((id) => Number.isInteger(id) && id > 0))
+          : undefined
+        installedCache = globalThis.mortarInstalledListingState(reply, lastError, ids)
         resolve(installedCache.ids)
       }
       try {
         chrome.runtime.sendMessage({ type: 'installed', game: pageGame() }, (reply) => {
           globalThis.mortarSetAccent(reply?.accent)
-          const problem = globalThis.mortarInstalledReplyStatus(reply, chrome.runtime.lastError)
-          if (problem) {
-            fail(reply, chrome.runtime.lastError)
-            return
-          }
-          const ids = new Set(reply.modIds.filter((id) => Number.isInteger(id) && id > 0))
-          installedCache = globalThis.mortarInstalledListingState(
-            reply,
-            chrome.runtime.lastError,
-            ids,
-          )
-          clearListingStatus()
-          resolve(ids)
+          settle(reply, chrome.runtime.lastError)
         })
       } catch {
-        fail(undefined, true)
+        settle(undefined, true)
       }
     }).finally(() => {
       installedRequest = undefined
@@ -131,6 +120,8 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   }
 
   const modPageID = () => globalThis.mortarNexusModID(location.pathname)
+
+  const isFilesTab = () => new URL(location.href).searchParams.get('tab') === 'files'
 
   const pageVersion = () => {
     const element = document.querySelector('[data-testid*="version"], .mod-version, .version')
@@ -155,7 +146,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
 
   const markProfileFile = (reply) => {
     clearFileBadge()
-    if (new URL(location.href).searchParams.get('tab') !== 'files') {
+    if (!isFilesTab()) {
       return
     }
     const groups = globalThis.mortarFileLabelGroups?.(reply) || []
@@ -184,24 +175,10 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       }
       if (matchedRow && !matchedRow.querySelector(`.${fileBadgeClass}`)) {
         used.add(matchedRow)
-        const badge = document.createElement('span')
-        badge.className = `${badgeClass} ${fileBadgeClass}`
-        badge.append('In ')
-        for (let i = 0; i < group.names.length; i += 1) {
-          if (i > 0) {
-            badge.append(', ')
-          }
-          const entry = group.names[i]
-          if (entry.active) {
-            const mark = document.createElement('span')
-            mark.className = 'mortar-file-active'
-            mark.textContent = entry.name
-            badge.append(mark)
-          } else {
-            badge.append(entry.name)
-          }
-        }
-        matchedRow.prepend(badge)
+        const badge = globalThis.mortarFileBadge(document, group, `${badgeClass} ${fileBadgeClass}`)
+        // A span directly inside a <tr> becomes an anonymous cell and shifts the columns.
+        const cell = matchedRow.matches('tr') ? matchedRow.querySelector('td, th') : undefined
+        ;(cell || matchedRow).prepend(badge)
       }
     }
   }
@@ -217,11 +194,24 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   }
   const renderModPanel = async () => {
     const id = modPageID()
-    if (id === undefined || panelRendering) {
+    if (id === undefined) {
+      if (panelKey) {
+        removePanels()
+        clearFileBadge()
+        panelKey = ''
+        lastModReply = undefined
+      }
+      return
+    }
+    if (panelRendering) {
       return
     }
     const key = `${id}|${mode}|${new URL(location.href).searchParams.get('tab') ?? ''}`
     if (key === panelKey && document.querySelector(`.${panelClass}`)) {
+      // Nexus draws the file rows after the tab opens, so the labels are retried until one lands.
+      if (isFilesTab() && !document.querySelector(`.${fileBadgeClass}`)) {
+        markProfileFile(lastModReply)
+      }
       return
     }
     panelRendering = true
@@ -240,41 +230,34 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     }
     const reply = await new Promise((resolve) => {
       try {
-        chrome.runtime.sendMessage({ type: 'mod', game: pageGame(), modId: id }, resolve)
+        chrome.runtime.sendMessage({ type: 'mod', game: pageGame(), modId: id }, (response) =>
+          resolve(chrome.runtime.lastError ? undefined : response),
+        )
       } catch {
         resolve(undefined)
       }
     })
     globalThis.mortarSetAccent(reply?.accent)
-    markProfileFile(reply)
+    const state = globalThis.mortarConnectionState(reply)
     const game = mortarGame()
-    if (mode !== selectedMode || game === '') {
+    if (mode !== selectedMode || game === '' || state === 'off') {
       removePanels()
+      clearFileBadge()
       return
     }
-    const connected = Boolean(reply?.open)
-    const problems = connected
-      ? await new Promise((resolve) => {
-          try {
-            chrome.runtime.sendMessage(
-              { type: 'modProblems', game: pageGame(), modId: id },
-              (response) => {
-                resolve(Array.isArray(response?.problems) ? response.problems : [])
-              },
-            )
-          } catch {
-            resolve([])
-          }
-        })
-      : []
+    lastModReply = state === 'ready' ? reply : undefined
+    markProfileFile(lastModReply)
     const [existing, ...extra] = document.querySelectorAll(`.${panelClass}`)
     for (const el of extra) {
       el.remove()
     }
     const panel = existing || document.createElement('div')
     panel.className = panelClass
-    const data = globalThis.mortarMenuModData(reply?.open, reply?.others, pageVersion(), problems)
-    data.requirements = connected ? await globalThis.mortarFetchRequirements(pageGame(), id) : []
+    const data = globalThis.mortarMenuModData(
+      { ...reply, state },
+      reply?.open?.pageVersion || pageVersion(),
+    )
+    data.requirements = Array.isArray(reply?.requirements) ? reply.requirements : []
     globalThis.mortarAttachMenu(panel, data, {
       onOpen: () => {
         const link = document.createElement('a')
@@ -294,6 +277,12 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       collectionPanelClass: 'mortar-collection-panel',
       currentMode,
       ensureMarkerStyle,
+      installedIDs,
+      installedCache: () => installedCache,
+      appOff: async () => {
+        await installedIDs()
+        return installedCache.state === 'off'
+      },
     })
 
   const ensureMarkerStyle = () =>
@@ -302,32 +291,10 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       badgeClass,
       fileBadgeClass,
       hiddenClass,
+      removedClass,
       ...globalThis.mortarDimClasses,
       panelClass,
     })
-
-  const clearMarks = () => {
-    for (const tile of document.querySelectorAll(`.${markerClass}, .${hiddenClass}`)) {
-      tile.classList.remove(markerClass, hiddenClass)
-      tile.querySelector(`.${badgeClass}`)?.remove()
-    }
-  }
-
-  const clearListingStatus = () => {
-    document.querySelector(`.${listingStatusClass}`)?.remove()
-  }
-
-  const showListingStatus = (text) => {
-    if (!isModListing()) {
-      return
-    }
-    clearListingStatus()
-    ensureMarkerStyle()
-    const badge = document.createElement('div')
-    badge.className = `${badgeClass} ${listingStatusClass}`
-    badge.textContent = text
-    document.body.prepend(badge)
-  }
 
   const modID = (href) => {
     try {
@@ -341,7 +308,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     }
   }
 
-  const tileFor = (link) => link.closest(cardSelectors) || link
+  const tileFor = (link) => link.closest(globalThis.mortarTileSelector)
   const listingMarkCtx = () => ({
     document,
     isModListing,
@@ -353,16 +320,17 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     installedCache: () => installedCache,
     mode: () => mode,
     filters,
+    filterState,
     modID,
     tileFor,
     ensureMarkerStyle,
     markerClass,
     hiddenClass,
+    removedClass,
     badgeClass,
     onHideChange: (row, checked) => {
       filters[row] = checked
       globalThis.mortarWriteListingFilter(chrome.storage?.local, pageGame(), row, checked)
-      clearMarks()
       requestMark()
     },
   })
@@ -385,7 +353,6 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       return
     }
     if (globalThis.mortarApplyFilterChanges(changes, pageGame(), filters)) {
-      clearMarks()
       requestMark()
     }
     if (changes[modeKey]) {
@@ -393,7 +360,6 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
         changes[modeKey].newValue === 'hide' || changes[modeKey].newValue === 'off'
           ? changes[modeKey].newValue
           : 'highlight'
-      clearMarks()
       requestMark()
       panelKey = ''
       renderModPanel().catch(() => false)
@@ -428,13 +394,8 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       if (!sent.has(a.href)) {
         sent.add(a.href)
         chrome.runtime.sendMessage({ link: a.href, close: throwaway() })
-        installedCache = { at: 0, ids: new Set(), connected: false, profileOpen: false }
+        installedCache = emptyInstalledCache()
         installedRequest = undefined
-      }
-    }
-    for (const el of root.querySelectorAll('*')) {
-      if (el.shadowRoot) {
-        watch(el.shadowRoot)
       }
     }
     requestMark()
@@ -454,6 +415,17 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     ([...record.addedNodes, ...record.removedNodes].length > 0 &&
       [...record.addedNodes, ...record.removedNodes].every(isOwn))
 
+  // Shadow roots are looked for when a node arrives, not on every scan; Mortar's own hosts are never watched, since
+  // the panel's changes inside its root would otherwise schedule scans that redraw it.
+  const watchShadows = (node) => {
+    const hosts = [node, ...(node.querySelectorAll?.('*') ?? [])]
+    for (const el of hosts) {
+      if (el.shadowRoot && !el.matches(ownSelector)) {
+        watch(el.shadowRoot)
+      }
+    }
+  }
+
   const watch = (root) => {
     if (watched.has(root)) {
       return
@@ -461,6 +433,13 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     watched.add(root)
     let pending
     new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node instanceof Element && !isOwn(node)) {
+            watchShadows(node)
+          }
+        }
+      }
       if (records.every(ownMutation) || pending !== undefined) {
         return
       }
@@ -474,11 +453,12 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       attributes: true,
       attributeFilter: ['href'],
     })
+    watchShadows(root)
     scan(root)
   }
 
-  // Re-reading the accent on return to the tab and on menu open keeps the menu in step with Mortar's Appearance
-  // setting without a page reload.
+  // Re-reading the accent on return to the tab keeps the menu in step with Mortar's Appearance setting without a
+  // page reload.
   globalThis.mortarRefreshAccent = () => {
     try {
       chrome.runtime.sendMessage({ type: 'installed', game: pageGame() }, (reply) => {

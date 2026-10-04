@@ -47,6 +47,16 @@
         flex: 1;
         padding: 5px;
       }
+      #popup-actions button:disabled {
+        cursor: default;
+        opacity: 0.6;
+      }
+      #popup-actions button.primary {
+        background: var(--accent, rgb(214 177 122));
+        border-color: transparent;
+        color: rgb(27 26 23);
+        font-weight: 600;
+      }
       #status {
         color: rgb(196 188 172);
         font-size: 12px;
@@ -90,7 +100,7 @@
     <select id="mode">
       <option value="off">Off (do not mark Nexus pages)</option>
       <option value="highlight">Highlight</option>
-      <option value="hide">Hide mods already in Mortar</option>
+      <option value="hide">Hide mods in profile</option>
     </select>
     <p id="status"></p>
     <p id="popup-actions">
