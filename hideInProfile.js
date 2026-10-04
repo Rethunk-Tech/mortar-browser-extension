@@ -14,26 +14,20 @@ globalThis.mortarListingTileHidden = (installed, hide) => installed === true && 
 
 globalThis.mortarHiddenModsCountLabel = (count) => `(${count} hidden)`
 
+// Nexus's listing sidebar is #filters-panel; its checkboxes are Headless UI buttons with role="checkbox", not inputs.
 globalThis.mortarFindNexusFilterSidebar = (root, hideControlId) => {
-  const boxes = [...root.querySelectorAll('input[type="checkbox"]')].filter(
-    (box) => !box.closest(`#${hideControlId}`),
+  const panel = root.getElementById('filters-panel')
+  if (panel) {
+    return panel
+  }
+  const box = [...root.querySelectorAll('[role="checkbox"], input[type="checkbox"]')].find(
+    (el) => !el.closest(`#${hideControlId}`),
   )
-  for (const box of boxes) {
-    const sidebar = box.closest('aside')
-    if (sidebar) {
-      return sidebar
-    }
-  }
-  for (const box of boxes) {
-    const sidebar = box.closest(
-      '[class*="Filter"], [class*="filter"], [data-testid*="filter"], [data-testid*="Filter"]',
-    )
-    if (sidebar) {
-      return sidebar
-    }
-  }
+  return box?.closest('[role="region"], aside') || undefined
 }
 
+// The control is Mortar's own section at the top of the sidebar: Nexus's checkboxes are script-driven buttons, so a
+// native checkbox is used and styled to sit with them.
 globalThis.mortarEnsureHideInProfileControl = (root, hideControlId, onChange) => {
   const sidebar = globalThis.mortarFindNexusFilterSidebar(root, hideControlId)
   if (!sidebar) {
@@ -41,40 +35,30 @@ globalThis.mortarEnsureHideInProfileControl = (root, hideControlId, onChange) =>
   }
   let wrap = root.getElementById(hideControlId)
   if (!wrap) {
-    const template = [...sidebar.querySelectorAll('label')].find(
-      (el) => el.querySelector('input[type="checkbox"]') && el.id !== hideControlId,
-    )
-    wrap = root.createElement(template?.tagName || 'label')
+    wrap = root.createElement('div')
     wrap.id = hideControlId
-    if (template) {
-      wrap.className = template.className
-    }
+    wrap.style.cssText =
+      'padding: 8px 0 12px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);'
+    const heading = root.createElement('p')
+    heading.textContent = 'Mortar'
+    heading.style.cssText =
+      'margin: 0 0 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.8;'
+    const label = root.createElement('label')
+    label.style.cssText =
+      'display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;'
     const input = root.createElement('input')
     input.type = 'checkbox'
     input.id = `${hideControlId}-input`
-    const tmplInput = template?.querySelector('input[type="checkbox"]')
-    if (tmplInput) {
-      input.className = tmplInput.className
-    }
+    input.style.cssText =
+      'width: 16px; height: 16px; margin: 0; accent-color: #d98f40; cursor: pointer;'
     const text = root.createElement('span')
-    const tmplText = [...(template?.querySelectorAll('span') || [])].find((el) =>
-      el.textContent?.trim(),
-    )
-    if (tmplText) {
-      text.className = tmplText.className
-    }
     text.append('Hide mods in this profile ')
     const count = root.createElement('span')
     count.dataset.mortarHideCount = 'true'
-    wrap.append(input, text, count)
-    if (wrap.tagName === 'LABEL') {
-      wrap.htmlFor = input.id
-    }
-    if (template?.parentElement) {
-      template.parentElement.insertBefore(wrap, template)
-    } else {
-      sidebar.prepend(wrap)
-    }
+    count.style.opacity = '0.7'
+    label.append(input, text, count)
+    wrap.append(heading, label)
+    sidebar.prepend(wrap)
   }
   const input = wrap.querySelector('input[type="checkbox"]')
   if (input && input.dataset.mortarBound !== 'true') {

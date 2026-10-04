@@ -23,7 +23,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const listingStatusClass = 'mortar-listing-status'
   const hideControlId = 'mortar-hide-in-profile'
   const cardSelectors =
-    '[data-testid*="mod-tile"], [data-testid*="mod-card"], .mod-tile, .mod-listing, article, li'
+    '[data-e2eid="mod-tile"], [data-testid*="mod-tile"], [data-testid*="mod-card"], .mod-tile, .mod-listing, article, li'
   let mode
   let hideInProfile = false
   let markScheduled = false
