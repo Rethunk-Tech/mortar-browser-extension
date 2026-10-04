@@ -55,7 +55,7 @@ test('hide-in-profile filter stays off when Mortar is disconnected or no profile
   expect(globalThis.mortarListingTileHidden(true, true)).toBe(true)
   expect(globalThis.mortarListingTileHidden(true, false)).toBe(false)
   expect(globalThis.mortarListingTileHidden(false, true)).toBe(false)
-  expect(globalThis.mortarHiddenModsCountLabel(threeHidden)).toBe('(3 hidden)')
+  expect(globalThis.mortarHiddenModsCountLabel(threeHidden)).toBe('(3)')
   expect(globalThis.mortarHideInProfileStorageKey('stardewvalley')).toBe(
     'hideModsInProfile:stardewvalley',
   )

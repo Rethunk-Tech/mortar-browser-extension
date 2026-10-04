@@ -12,7 +12,7 @@ globalThis.mortarHideInProfileControl = ({ connected, profileOpen, enabled }) =>
 
 globalThis.mortarListingTileHidden = (installed, hide) => installed === true && hide === true
 
-globalThis.mortarHiddenModsCountLabel = (count) => `(${count} hidden)`
+globalThis.mortarHiddenModsCountLabel = (count) => `(${count})`
 
 // Nexus's listing sidebar is #filters-panel; its checkboxes are Headless UI buttons with role="checkbox", not inputs.
 globalThis.mortarFindNexusFilterSidebar = (root, hideControlId) => {
@@ -26,8 +26,27 @@ globalThis.mortarFindNexusFilterSidebar = (root, hideControlId) => {
   return box?.closest('[role="region"], aside') || undefined
 }
 
-// The control is Mortar's own section at the top of the sidebar: Nexus's checkboxes are script-driven buttons, so a
-// native checkbox is used and styled to sit with them.
+// Nexus's own classes, read from its listing sidebar, so the control looks like a filter section with one checkbox.
+const mortarFilterClasses = {
+  header:
+    'group/filter flex w-full items-center gap-x-2 border-t border-stroke-subdued py-3 text-left',
+  title:
+    'text-title-sm text-neutral-moderate grow transition-colors group-hover/filter:text-neutral-strong',
+  body: 'block pt-2 pb-6',
+  row: 'group/checkbox flex gap-x-2 cursor-pointer data-disabled:cursor-not-allowed data-disabled:opacity-40 w-full',
+  box: 'relative flex size-5 shrink-0 items-center justify-center rounded border text-neutral-inverted transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-subdued border-stroke-strong/60',
+  boxOff: 'bg-surface-low group-[:not([data-disabled]):hover]/checkbox:bg-surface-translucent-low',
+  boxOn: 'bg-neutral-strong',
+  tick: 'shrink-0 absolute transition-opacity',
+  label:
+    'min-w-0 grow cursor-pointer text-left leading-none group-data-disabled/checkbox:cursor-not-allowed',
+  text: 'text-body-md flex gap-x-1',
+  name: 'truncate text-neutral-moderate transition-colors group-hover/checkbox:text-neutral-strong',
+  count: 'shrink-0 text-neutral-subdued',
+}
+const mortarTickPath = 'M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z'
+
+// The section goes right after the "Hide filters" block, before Nexus's first filter section.
 globalThis.mortarEnsureHideInProfileControl = (root, hideControlId, onChange) => {
   const sidebar = globalThis.mortarFindNexusFilterSidebar(root, hideControlId)
   if (!sidebar) {
@@ -35,36 +54,66 @@ globalThis.mortarEnsureHideInProfileControl = (root, hideControlId, onChange) =>
   }
   let wrap = root.getElementById(hideControlId)
   if (!wrap) {
-    wrap = root.createElement('div')
+    const c = mortarFilterClasses
+    const el = (tag, className, content) => {
+      const node = root.createElement(tag)
+      if (className) {
+        node.className = className
+      }
+      if (content) {
+        node.textContent = content
+      }
+      return node
+    }
+    wrap = el('div')
     wrap.id = hideControlId
-    wrap.style.cssText =
-      'padding: 8px 0 12px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);'
-    const heading = root.createElement('p')
-    heading.textContent = 'Mortar'
-    heading.style.cssText =
-      'margin: 0 0 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.8;'
-    const label = root.createElement('label')
-    label.style.cssText =
-      'display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;'
-    const input = root.createElement('input')
-    input.type = 'checkbox'
-    input.id = `${hideControlId}-input`
-    input.style.cssText =
-      'width: 16px; height: 16px; margin: 0; accent-color: #d98f40; cursor: pointer;'
-    const text = root.createElement('span')
-    text.append('Hide mods in this profile ')
-    const count = root.createElement('span')
+    const header = el('div', c.header)
+    header.append(el('span', c.title, 'Mortar'))
+    const row = el('div', c.row)
+    const checkbox = el('span', `${c.box} ${c.boxOff}`)
+    checkbox.setAttribute('role', 'checkbox')
+    checkbox.setAttribute('aria-checked', 'false')
+    checkbox.tabIndex = 0
+    checkbox.id = `${hideControlId}-box`
+    const svgNS = 'http://www.w3.org/2000/svg'
+    const tick = root.createElementNS(svgNS, 'svg')
+    tick.setAttribute('viewBox', '0 0 24 24')
+    tick.setAttribute('role', 'presentation')
+    tick.setAttribute('class', `${c.tick} opacity-0`)
+    const path = root.createElementNS(svgNS, 'path')
+    path.setAttribute('d', mortarTickPath)
+    tick.append(path)
+    checkbox.append(tick)
+    const label = el('label', c.label)
+    label.id = `${hideControlId}-label`
+    checkbox.setAttribute('aria-labelledby', label.id)
+    const text = el('p', c.text)
+    const count = el('span', c.count)
     count.dataset.mortarHideCount = 'true'
-    count.style.opacity = '0.7'
-    label.append(input, text, count)
-    wrap.append(heading, label)
-    sidebar.prepend(wrap)
+    text.append(el('span', c.name, 'Hide installed'), count)
+    wrap.dataset.mortarHint = 'Hides mods that are in the profile open in Mortar'
+    label.append(text)
+    row.append(checkbox, label)
+    const body = el('div', c.body)
+    body.append(row)
+    wrap.append(header, body)
+    const firstSection = [...sidebar.children].find((child) => child.matches('button'))
+    sidebar.insertBefore(wrap, firstSection || null)
   }
-  const input = wrap.querySelector('input[type="checkbox"]')
-  if (input && input.dataset.mortarBound !== 'true') {
-    input.dataset.mortarBound = 'true'
-    input.addEventListener('change', () => {
-      onChange(input.checked)
+  const box = wrap.querySelector('[role="checkbox"]')
+  if (box && box.dataset.mortarBound !== 'true') {
+    box.dataset.mortarBound = 'true'
+    const toggle = () => {
+      if (box.getAttribute('aria-disabled') !== 'true') {
+        onChange(box.getAttribute('aria-checked') !== 'true')
+      }
+    }
+    wrap.querySelector('[class*="group/checkbox"]').addEventListener('click', toggle)
+    box.addEventListener('keydown', (event) => {
+      if (event.key === ' ' || event.key === 'Enter') {
+        event.preventDefault()
+        toggle()
+      }
     })
   }
   return wrap
@@ -74,16 +123,23 @@ globalThis.mortarSyncHideInProfileControl = (wrap, controlState, hiddenCount) =>
   if (!wrap) {
     return
   }
-  const input = wrap.querySelector('input[type="checkbox"]')
-  if (input) {
-    input.disabled = controlState.disabled
-    input.checked = controlState.hide
-    input.title = controlState.title
+  const c = mortarFilterClasses
+  const row = wrap.querySelector('[class*="group/checkbox"]')
+  const box = wrap.querySelector('[role="checkbox"]')
+  if (box) {
+    box.setAttribute('aria-checked', controlState.hide ? 'true' : 'false')
+    box.className = `${c.box} ${controlState.hide ? c.boxOn : c.boxOff}`
+    box.toggleAttribute('data-checked', controlState.hide)
+    box.setAttribute('aria-disabled', controlState.disabled ? 'true' : 'false')
+    box
+      .querySelector('svg')
+      ?.setAttribute('class', `${c.tick} ${controlState.hide ? 'opacity-100' : 'opacity-0'}`)
   }
-  wrap.title = controlState.title
+  row?.toggleAttribute('data-disabled', controlState.disabled)
+  wrap.title = controlState.title || wrap.dataset.mortarHint || ''
   const count = wrap.querySelector('[data-mortar-hide-count]')
   if (count) {
-    count.textContent = globalThis.mortarHiddenModsCountLabel(hiddenCount)
+    count.textContent = hiddenCount > 0 ? globalThis.mortarHiddenModsCountLabel(hiddenCount) : ''
   }
 }
 
