@@ -154,17 +154,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   for (const tab of await chrome.tabs.query({ url: 'https://www.nexusmods.com/*' })) {
     chrome.scripting.executeScript({
       target: { tabId: tab.id, allFrames: false },
-      files: [
-        'plural.js',
-        'fileLabels.js',
-        'modPanel.js',
-        'collectionCount.js',
-        'menu.js',
-        'menuRequirements.js',
-        'hideInProfile.js',
-        'listingMarks.js',
-        'content.js',
-      ],
+      files: chrome.runtime.getManifest().content_scripts[0].js,
     })
   }
 })
