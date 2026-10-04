@@ -1,0 +1,83 @@
+name: Release
+
+# A v* tag builds the extension zip, a Chrome Web Store zip and, when the AMO secrets are set, an unlisted signed
+# Firefox add-on, and attaches all of them to the tag's release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # AMO's review of an unlisted version usually takes minutes, and signing waits for it.
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: Rethunk-Tech/gh-actions/setup-bun@99dfb9093ab089d28f76d8036322a7c062259e76 # v1.13
+
+      - name: Gate
+        run: |
+          bun install --frozen-lockfile
+          bun run gate
+          npx --yes web-ext@10.7.0 lint
+
+      - name: Tag matches manifest
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="$(jq -r .version manifest.json)"
+          if [ "v$version" != "$TAG" ]; then
+            echo "tag $TAG does not match manifest.json version $version" >&2
+            exit 1
+          fi
+
+      # The Chrome Web Store assigns its own id and rejects an upload that carries the manifest key, which only pins
+      # the unpacked build's id.
+      - name: Zips
+        run: |
+          set -euo pipefail
+          npx --yes web-ext@10.7.0 build --artifacts-dir dist --filename mortar-browser-extension.zip
+          store="$RUNNER_TEMP/store"
+          mkdir -p "$store"
+          unzip -q dist/mortar-browser-extension.zip -d "$store"
+          jq 'del(.key)' "$store/manifest.json" >"$store/manifest.tmp"
+          mv "$store/manifest.tmp" "$store/manifest.json"
+          (cd "$store" && zip -q -r "$GITHUB_WORKSPACE/dist/mortar-browser-extension-chrome-web-store.zip" .)
+
+      # AMO signs each extension version once, so a rerun reuses the signed copy already on the release.
+      - name: Firefox add-on
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "$WEB_EXT_API_KEY" ] || [ -z "$WEB_EXT_API_SECRET" ]; then
+            echo "::notice::AMO_JWT_ISSUER or AMO_JWT_SECRET is not set; the release has no signed Firefox add-on"
+            exit 0
+          fi
+          if ! gh release download "$TAG" --repo "$GITHUB_REPOSITORY" -p mortar-browser-extension.xpi -D dist 2>/dev/null; then
+            npx --yes web-ext@10.7.0 sign --channel unlisted --artifacts-dir "$RUNNER_TEMP/xpi"
+            mv "$RUNNER_TEMP"/xpi/*.xpi dist/mortar-browser-extension.xpi
+          fi
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber dist/*
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$TAG" --generate-notes --latest dist/*
+          fi
