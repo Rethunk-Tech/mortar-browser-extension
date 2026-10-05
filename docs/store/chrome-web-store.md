@@ -26,7 +26,7 @@ Mortar is a desktop mod manager for PC games. This extension connects your brows
 - On thunderstore.io package pages, a package already in your open Mortar profile is marked, and an Install in Mortar button sends the package to Mortar. This works on package pages only, not on Thunderstore listings.
 - The toolbar badge and popup show how many of your profile's mods have updates, checked every 30 minutes.
 
-The extension only adds its buttons and marks on Nexus Mods and Thunderstore pages for games Mortar manages: Stardew Valley, with more games coming. It never downloads anything itself and never opens Nexus pages on its own. Downloads start only from Nexus's own Mod Manager Download button.
+The extension only adds its buttons and marks on Nexus Mods and Thunderstore pages for the games Mortar supports, which come from its catalog: Stardew Valley today. It never downloads anything itself and never opens Nexus pages on its own. Downloads start only from Nexus's own Mod Manager Download button.
 
 It needs the Mortar desktop app (https://github.com/Rethunk-Tech/mortar). If Mortar is not installed, the Mortar button and filter section say "Mortar isn't installed" and how to connect, and the popup says the same; nothing is clicked for you. If Mortar is installed but not running, they say "Mortar isn't running"; if no profile is open, "Open a profile in Mortar"; if the connection is switched off in Mortar's settings, nothing is drawn on pages.
 
