@@ -17,11 +17,11 @@ Sends Nexus Mods Mod Manager Download clicks to the Mortar desktop mod manager a
 
 ## Long description
 
-Mortar is a desktop mod manager for Stardew Valley. This extension connects your browser to it while you browse Nexus Mods.
+Mortar is a desktop mod manager for PC games. This extension connects your browser to it while you browse Nexus Mods.
 
 - Mod Manager Download buttons are relayed to Mortar. Open as many mod tabs as you like and click away; every click arrives, instead of the browser handing the nxm:// links to the desktop one at a time and dropping some. Nexus first shows a "Download mod file" dialog listing the file's requirements; when Mortar is installed and the connection is on, the extension clicks that dialog's own Download link for you so the link reaches Mortar. Mortar shows the requirements itself.
 - Mods and files already in your open Mortar profile are marked on Nexus pages, so you can tell what you have. Choose highlight, hide or off in the toolbar popup.
-- A Mortar section in the filter sidebar of Stardew Valley mod listings has three filters that gray out mods already in your profile, mods marked obsolete, and mods the SMAPI compatibility list marks broken.
+- A Mortar section in the filter sidebar of mod listings has three filters that gray out mods already in your profile, mods marked obsolete, and mods the SMAPI compatibility list marks broken.
 - Mod pages show which files are installed, requirements and known problems for the mod, as reported by Mortar. Collection pages have an Open in Mortar button.
 - The toolbar badge and popup show how many of your profile's mods have updates, checked every 30 minutes.
 
