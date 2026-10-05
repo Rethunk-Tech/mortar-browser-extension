@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Mortar",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Sends Nexus Mods Mod Manager Download clicks to the Mortar desktop mod manager for Stardew Valley and marks the mods you already have on Nexus pages.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqe3SnpMoNtzpFRKV0eOAaBgMy8Mx35rDG+laj5z1skoFi9E4ktRYlItpNsxkQFHcKjGwyQD329OfTAgHR9ibrHyvCi9RWyhreZTXVb0Epjq3i4dPj3Lsi1R5Z50kY+SJMXQ0FDmlXJXkbANGzXdmQfzAJyYdE8WiJIbW6qFEUJ6XetzqDyiaqMs+VNOicsRs4GAwKoEjgaoJid/IjNgrMUoZ3m8/MUoyJ5TynmOJIJQ964h9VGKXZv3Qg/hHABqHKo7xkpPQadizyI4ogPyCcqD2xxzFTWO3ZeLlbpZCIqEnHwJT1hSydu6j/OKd2+6SoP7zdatMGXOg8sN3bzhtUwIDAQAB",
   "permissions": ["alarms", "nativeMessaging", "scripting", "storage"],
@@ -32,6 +32,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "mortar@rethunk.tech",
+      "update_url": "https://github.com/Rethunk-Tech/mortar-browser-extension/releases/latest/download/updates.json",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
         "required": ["none"]

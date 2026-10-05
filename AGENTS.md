@@ -8,7 +8,7 @@ Plain-JS Manifest V3 extension; no build step. Every content script shares one s
 - `background.js`: the one native port to Mortar (`tech.rethunk.mortar`); stamps `protocol` on every message.
 - `plural.js`: shared copy and connection state, including the protocol range check.
 - `content.js` and its helpers: Nexus page marks, menu and mod panel. `popup.*`: the toolbar popup.
-- `docs/store/`: Chrome Web Store and AMO listing copy.
+- `docs/store/`: Chrome Web Store listing copy. Firefox is self-distributed: AMO signs it unlisted and never lists or updates it.
 
 ## Tests
 
@@ -16,4 +16,4 @@ Plain-JS Manifest V3 extension; no build step. Every content script shares one s
 
 ## Release
 
-Bump `version` in `manifest.json`, commit, tag `vX.Y.Z`. `release.yml` checks the tag matches, builds both zips and signs the unlisted `.xpi` with `AMO_JWT_ISSUER`/`AMO_JWT_SECRET`; AMO signs each version once. A protocol change bumps `protocol` here and in Mortar's `internal/nativehost` together, with each side's accepted range.
+Bump `version` in `manifest.json`, commit, tag `vX.Y.Z`. `release.yml` checks the tag matches, builds both zips and signs the unlisted `.xpi` with `AMO_JWT_ISSUER`/`AMO_JWT_SECRET` (AMO signs each version once; a rerun fetches that copy with `scripts/amo-signed.mjs`) and writes `updates.json`, which the manifest's `gecko.update_url` reads from the latest release. A protocol change bumps `protocol` here and in Mortar's `internal/nativehost` together, with each side's accepted range.

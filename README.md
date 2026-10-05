@@ -34,7 +34,7 @@ Install from a release, requirements, the native-messaging protocol and the dev 
 | Layout, tests, release | [AGENTS.md](AGENTS.md) |
 | Contributing | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Security policy | [SECURITY.md](SECURITY.md) |
-| Store listing copy | [docs/store/](docs/store/) |
+| Chrome Web Store listing copy | [docs/store/](docs/store/) |
 | Licence | [LICENSE](LICENSE) |
 
 ## License

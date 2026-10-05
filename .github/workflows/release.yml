@@ -1,7 +1,7 @@
 name: Release
 
 # A v* tag builds the extension zip, a Chrome Web Store zip and, when the AMO secrets are set, an unlisted signed
-# Firefox add-on, and attaches all of them to the tag's release.
+# Firefox add-on with its updates.json, and attaches all of them to the tag's release.
 on:
   push:
     tags: ["v*"]
@@ -78,6 +78,21 @@ jobs:
             mv "$RUNNER_TEMP"/xpi/*.xpi "$xpi"
           fi
 
+      # The add-on is distributed outside AMO, so Firefox updates it from the manifest's update_url: the latest
+      # release's updates.json, naming this release's .xpi and its hash.
+      - name: Firefox update manifest
+        if: hashFiles('dist/mortar-browser-extension.xpi') != ''
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          jq -n \
+            --arg id "$(jq -r .browser_specific_settings.gecko.id manifest.json)" \
+            --arg version "${TAG#v}" \
+            --arg link "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/mortar-browser-extension.xpi" \
+            --arg hash "sha256:$(sha256sum dist/mortar-browser-extension.xpi | cut -d' ' -f1)" \
+            '{addons: {($id): {updates: [{version: $version, update_link: $link, update_hash: $hash}]}}}' >dist/updates.json
+
       - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -86,7 +101,7 @@ jobs:
           set -euo pipefail
           files=(dist/*.zip)
           if [ -f dist/mortar-browser-extension.xpi ]; then
-            files+=(dist/mortar-browser-extension.xpi)
+            files+=(dist/mortar-browser-extension.xpi dist/updates.json)
           fi
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber "${files[@]}"

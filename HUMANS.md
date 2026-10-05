@@ -8,7 +8,7 @@ The Mortar desktop app must be installed on the same computer and opened once: i
 
 Each release at https://github.com/Rethunk-Tech/mortar-browser-extension/releases/latest carries:
 
-- `mortar-browser-extension.xpi`: Firefox. Open the file in Firefox to install the signed add-on.
+- `mortar-browser-extension.xpi`: Firefox. Open the file in Firefox to install the signed add-on. It is distributed here rather than on addons.mozilla.org, and Firefox updates it from the latest release's `updates.json`.
 - `mortar-browser-extension.zip`: Chrome, Edge or another Chromium browser. Unzip it, open `chrome://extensions`, turn on Developer mode and choose **Load unpacked** on the unzipped folder.
 - `mortar-browser-extension-chrome-web-store.zip`: the same files without the manifest `key`, for the Chrome Web Store upload.
 
