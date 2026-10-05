@@ -11,6 +11,8 @@
 
 A Chrome, Edge and Firefox extension for [Mortar](https://github.com/Rethunk-Tech/mortar), the desktop mod manager. On https://www.nexusmods.com it hands Mod Manager Download clicks to Mortar, marks the mods the open Mortar profile already has, flags broken and obsolete mods, and shows available updates in its popup. It needs the Mortar app on the same computer and does nothing on the page without it.
 
+<p align="center"><img src="media/readme/popup.png" alt="The toolbar popup connected to Mortar: 660 Nexus mods in the Main profile and the updates available for them" width="380"></p>
+
 ## Getting started
 
 ```sh

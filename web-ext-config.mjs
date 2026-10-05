@@ -3,6 +3,7 @@ export default {
   ignoreFiles: [
     '**/*.test.js',
     'docs',
+    'media',
     'package.json',
     'bun.lock',
     'biome.jsonc',
