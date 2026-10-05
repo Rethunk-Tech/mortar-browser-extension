@@ -1,8 +1,4 @@
-const modeKey = 'mode'
-const mode = document.querySelector('#mode')
 const status = document.querySelector('#status')
-
-const normalized = (value) => (value === 'off' || value === 'hide' ? value : 'highlight')
 
 const paintStatus = (reply, lastError) => {
   const state = globalThis.mortarConnectionState(reply, lastError)
@@ -38,16 +34,6 @@ const refreshStatus = () => {
   })
 }
 globalThis.mortarRefreshPopupStatus = refreshStatus
-
-chrome.storage.local.get({ [modeKey]: 'highlight' }, (result) => {
-  if (!chrome.runtime.lastError) {
-    mode.value = normalized(result?.[modeKey])
-  }
-})
-
-mode.addEventListener('change', () => {
-  chrome.storage.local.set({ [modeKey]: normalized(mode.value) })
-})
 
 refreshStatus()
 

@@ -30,33 +30,25 @@ globalThis.mortarApplyListingHideMarks = ({
   gray,
   remove,
   updates,
+  showUpdates = true,
   markerClass,
   hiddenClass,
   removedClass,
   badgeClass,
 }) => {
   for (const [tile, id] of tiles) {
+    // A mod with an update stays readable under Gray out, so the badge that names the update is not dimmed away.
+    const update = showUpdates && updates.has(id)
+    const grayed = gray && !remove && !update
     tile.classList.toggle(removedClass, remove)
     tile.classList.toggle(markerClass, !remove)
-    tile.classList.toggle(hiddenClass, gray && !remove)
-    if (remove || gray) {
+    tile.classList.toggle(hiddenClass, grayed)
+    if (remove || grayed) {
       tile.querySelector(`.${badgeClass}`)?.remove()
     } else {
-      mortarSyncTileBadge(document, tile, { badgeClass, update: updates.has(id) })
+      mortarSyncTileBadge(document, tile, { badgeClass, update })
     }
   }
-}
-
-// The Mortar filter row states are read once per game; storage.onChanged keeps them current after that.
-const mortarLoadFilters = async (ctx) => {
-  const game = ctx.pageGame()
-  if (ctx.filterState.game === game) {
-    return
-  }
-  for (const [row, keyFor] of Object.entries(globalThis.mortarFilterKeys)) {
-    ctx.filters[row] = await globalThis.mortarReadHideInProfile(ctx.storage, game, keyFor)
-  }
-  ctx.filterState.game = game
 }
 
 const mortarListingOff = (ctx) => {
@@ -74,7 +66,7 @@ globalThis.mortarMarkInstalledListing = async (ctx) => {
     mortarListingOff(ctx)
     return
   }
-  await mortarLoadFilters(ctx)
+  ctx.applySettings(await ctx.settings())
   const ids = await ctx.installedIDs()
   if (ctx.mode() !== selectedMode) {
     return
@@ -90,7 +82,7 @@ globalThis.mortarMarkInstalledListing = async (ctx) => {
         disabled: true,
         hide: false,
         removed: true,
-        title: 'Hide mode removes these; switch to Highlight in the toolbar popup',
+        title: 'Installed mods are hidden; change this in the extension options',
       }
     : globalThis.mortarHideInProfileControl({
         connected: cache.connected,
@@ -119,6 +111,7 @@ globalThis.mortarMarkInstalledListing = async (ctx) => {
     gray: control.hide,
     remove: removing,
     updates: cache.updates,
+    showUpdates: ctx.showUpdates(),
     markerClass: ctx.markerClass,
     hiddenClass: ctx.hiddenClass,
     removedClass: ctx.removedClass,
@@ -127,12 +120,16 @@ globalThis.mortarMarkInstalledListing = async (ctx) => {
   const obsoleteCount = globalThis.mortarApplyDimMarks({
     root: ctx.document,
     enabled: ctx.filters.obsolete,
+    remove: ctx.removing.obsolete,
+    removedClass: ctx.removedClass,
     dimClass: globalThis.mortarDimClasses.obsoleteClass,
     dim: globalThis.mortarTileObsolete,
   })
   const brokenCount = globalThis.mortarApplyDimMarks({
     root: ctx.document,
     enabled: ctx.filters.broken && !cache.nativeFail,
+    remove: ctx.removing.broken,
+    removedClass: ctx.removedClass,
     dimClass: globalThis.mortarDimClasses.brokenClass,
     dim: (tile) => {
       const link = globalThis.mortarTileTitleLink(tile)

@@ -7,7 +7,7 @@ Plain-JS Manifest V3 extension; no build step. Every content script shares one s
 - `manifest.json`: scripts, permissions, the Chromium `key` and the Firefox id. Mortar's `internal/nativehost` allows these ids.
 - `background.js`: the one native port to Mortar (`tech.rethunk.mortar`); stamps `protocol` on every message.
 - `plural.js`: shared copy and connection state, including the protocol range check.
-- `content.js` and its helpers: Nexus page marks, menu and mod panel. `popup.*`: the toolbar popup.
+- `content.js` and its helpers: Nexus page marks, menu and mod panel. `popup.*`: the toolbar popup. `options.*`: the options page (sites, markings, connection); `settings.js` holds the `chrome.storage.sync` keys, their defaults and the mapping to the listing mode, shared by the page and the content scripts.
 - `docs/store/`: Chrome Web Store listing copy. Firefox is self-distributed: AMO signs it unlisted and never lists or updates it.
 
 ## Tests

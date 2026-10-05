@@ -104,5 +104,7 @@ if (
       show('Mortar', true)
     }
   }
-  run().catch(() => false)
+  globalThis.mortarWhenSiteEnabled('siteThunderstore', () => {
+    run().catch(() => false)
+  })
 }

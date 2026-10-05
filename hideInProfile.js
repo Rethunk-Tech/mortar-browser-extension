@@ -1,16 +1,7 @@
-globalThis.mortarHideInProfileStorageKey = (game) => `hideModsInProfile:${game}`
-globalThis.mortarGrayObsoleteStorageKey = (game) => `grayObsoleteMods:${game}`
 // The classes that dim listing tiles for the obsolete and broken rows.
 globalThis.mortarDimClasses = {
   obsoleteClass: 'mortar-obsolete-mod',
   brokenClass: 'mortar-broken-mod',
-}
-
-// Each listing filter row's storage key, saved per game.
-globalThis.mortarFilterKeys = {
-  installed: globalThis.mortarHideInProfileStorageKey,
-  obsolete: globalThis.mortarGrayObsoleteStorageKey,
-  broken: (game) => `grayBrokenMods:${game}`,
 }
 
 // The words Mortar's Problems check reads as an author marking a mod dead (authorStatusWord in
@@ -257,11 +248,21 @@ globalThis.mortarSyncHideInProfileControl = (wrap, controlState, hiddenCount, ro
 }
 
 // Dims every listing tile that dim(tile) picks while enabled, and returns how many it dimmed.
-globalThis.mortarApplyDimMarks = ({ root, enabled, dimClass, dim }) => {
+globalThis.mortarApplyDimMarks = ({
+  root,
+  enabled,
+  dimClass,
+  dim,
+  remove = false,
+  removedClass,
+}) => {
   let count = 0
   for (const tile of root.querySelectorAll(globalThis.mortarTileSelector)) {
     const on = enabled && dim(tile)
-    tile.classList.toggle(dimClass, on)
+    tile.classList.toggle(dimClass, on && !remove)
+    if (remove && removedClass) {
+      tile.classList.toggle(removedClass, on)
+    }
     if (on) {
       count += 1
     }
@@ -278,59 +279,6 @@ globalThis.mortarTileObsolete = (tile) =>
     globalThis.mortarTileTitleLink(tile)?.textContent || '',
     (tile.querySelector('[data-e2eid="mod-tile-summary"]') || tile).textContent || '',
   )
-
-globalThis.mortarReadHideInProfile = (
-  storage,
-  game,
-  keyFor = globalThis.mortarHideInProfileStorageKey,
-) =>
-  new Promise((resolve) => {
-    if (!(game && storage)) {
-      resolve(false)
-      return
-    }
-    const key = keyFor(game)
-    try {
-      storage.get({ [key]: false }, (result) => {
-        resolve(result?.[key] === true)
-      })
-    } catch {
-      resolve(false)
-    }
-  })
-
-globalThis.mortarWriteHideInProfile = (
-  storage,
-  game,
-  value,
-  keyFor = globalThis.mortarHideInProfileStorageKey,
-) => {
-  if (!(game && storage)) {
-    return
-  }
-  try {
-    storage.set({ [keyFor(game)]: value === true })
-  } catch {
-    // Storage is unavailable in this tab; the checkbox still applies until reload.
-  }
-}
-
-// Saves one listing filter row for the page's game.
-globalThis.mortarWriteListingFilter = (storage, game, row, checked) =>
-  globalThis.mortarWriteHideInProfile(storage, game, checked, globalThis.mortarFilterKeys[row])
-
-// Copies another tab's change to a listing filter into filters; true when one changed.
-globalThis.mortarApplyFilterChanges = (changes, game, filters) => {
-  let changed = false
-  for (const [row, keyFor] of Object.entries(globalThis.mortarFilterKeys)) {
-    const change = changes[keyFor(game)]
-    if (change) {
-      filters[row] = change.newValue === true
-      changed = true
-    }
-  }
-  return changed
-}
 
 globalThis.mortarInstalledListingState = (reply, lastError, ids) => {
   const nativeFail = Boolean(lastError) || reply?.nativeMessagingError === true

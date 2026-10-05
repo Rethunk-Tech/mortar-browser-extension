@@ -17,3 +17,8 @@ mortarCheckNow?.addEventListener('click', (event) => {
     globalThis.mortarRefreshPopupStatus?.()
   })
 })
+
+document.getElementById('mortar-options')?.addEventListener('click', (event) => {
+  event.preventDefault()
+  chrome.runtime.openOptionsPage()
+})

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mortar options</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font: 15px sans-serif;
+      }
+
+      body {
+        background: rgb(36 35 31);
+        color: rgb(244 240 232);
+        margin: 0;
+        padding: 24px 16px 48px;
+      }
+
+      main {
+        margin: 0 auto;
+        max-width: 640px;
+      }
+
+      h1 {
+        font-size: 22px;
+        margin: 0 0 20px;
+      }
+
+      section {
+        background: rgb(46 44 39);
+        border-radius: 8px;
+        margin: 0 0 16px;
+        padding: 14px 16px 16px;
+      }
+
+      h2 {
+        border-bottom: 1px solid var(--accent, rgb(214 177 122));
+        font-size: 16px;
+        margin: 0 0 12px;
+        padding-bottom: 6px;
+      }
+
+      fieldset {
+        border: 0;
+        margin: 0 0 12px;
+        padding: 0;
+      }
+
+      legend {
+        font-weight: 600;
+        padding: 0;
+      }
+
+      .hint,
+      #connection dd {
+        color: rgb(196 188 172);
+        font-size: 13px;
+        line-height: 1.4;
+        margin: 2px 0 6px;
+      }
+
+      .choices {
+        display: flex;
+        gap: 16px;
+      }
+
+      label {
+        cursor: pointer;
+      }
+
+      #connection dl {
+        margin: 0 0 10px;
+      }
+
+      #connection dt {
+        font-weight: 600;
+      }
+
+      #connection dd {
+        margin: 0 0 8px;
+      }
+
+      button,
+      a.button {
+        background: rgb(52 50 45);
+        border: 1px solid rgb(113 106 91);
+        border-radius: 4px;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+        margin-right: 8px;
+        padding: 5px 12px;
+        text-decoration: none;
+      }
+
+      a {
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Mortar options</h1>
+      <section id="sites">
+        <h2>Sites</h2>
+        <fieldset>
+          <label><input type="checkbox" data-setting="siteNexus" /> Nexus Mods</label>
+          <p class="hint">Marks mods, hands downloads to Mortar and adds its panels on nexusmods.com.</p>
+          <label><input type="checkbox" data-setting="siteThunderstore" /> Thunderstore</label>
+          <p class="hint">Marks a package already in your profile and adds Install in Mortar.</p>
+        </fieldset>
+      </section>
+      <section id="marks">
+        <h2>Markings on mod lists</h2>
+        <p class="hint">
+          What lists on Nexus do with mods in your open Mortar profile. Gray out and Hide match
+          Mortar's Browse filters.
+        </p>
+        <div id="mark-rows"></div>
+      </section>
+      <section id="connection">
+        <h2>Connection to Mortar</h2>
+        <dl>
+          <dt>Status</dt>
+          <dd id="connection-status" role="status">Checking…</dd>
+          <dt>Mortar</dt>
+          <dd id="connection-mortar">Unknown</dd>
+          <dt>This extension</dt>
+          <dd id="connection-extension"></dd>
+        </dl>
+        <button type="button" id="recheck">Check again</button>
+        <a class="button" id="open-mortar" href="mortar://">Open Mortar</a>
+        <p class="hint">
+          Mortar has no way to open its own settings from the browser.
+          <a
+            id="docs-link"
+            href="https://github.com/Rethunk-Tech/mortar/blob/main/docs/user-guide.md#browser-extension"
+            target="_blank"
+            rel="noreferrer"
+            >Read how the extension works</a
+          >.
+        </p>
+      </section>
+    </main>
+    <script defer src="plural.js"></script>
+    <script defer src="settings.js"></script>
+    <script defer src="options.js"></script>
+  </body>
+</html>

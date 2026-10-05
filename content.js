@@ -14,7 +14,6 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const pageVersionPattern = /\d+(?:\.\d+)+/
   const numericFileID = /^\d+$/
   const filePath = /\/files\/(\d+)(?:\/|$)/
-  const modeKey = 'mode'
   const markerClass = 'mortar-installed-mod'
   const hiddenClass = 'mortar-hidden-mod'
   const badgeClass = 'mortar-installed-mod-badge'
@@ -23,11 +22,13 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const removedClass = 'mortar-removed-mod'
   const hideControlId = 'mortar-hide-in-profile'
   let mode
-  // The Mortar section's checkboxes on mod listings, saved per game.
+  // The Mortar section's checkboxes on mod listings; Gray out and Hide both count as checked.
   const filters = { installed: false, obsolete: false, broken: false }
+  // Which of those rows remove tiles instead of dimming them (the installed row's Hide is the "hide" mode).
+  const removing = { obsolete: false, broken: false }
+  let settings
   let markScheduled = false
   let installedRequest
-  const filterState = { game: undefined }
   let lastModReply
   const emptyInstalledCache = () => ({
     ...globalThis.mortarInstalledListingState(undefined, true),
@@ -59,31 +60,25 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
 
   const isModListing = () => globalThis.mortarIsNexusModListing(location.pathname)
 
-  const readMode = () =>
-    new Promise((resolve) => {
-      if (!chrome.storage?.local) {
-        resolve('highlight')
-        return
-      }
-      try {
-        chrome.storage.local.get({ [modeKey]: 'highlight' }, (result) => {
-          if (chrome.runtime.lastError) {
-            resolve('highlight')
-            return
-          }
-          const value = result?.[modeKey]
-          resolve(value === 'hide' || value === 'off' ? value : 'highlight')
-        })
-      } catch {
-        resolve('highlight')
-      }
-    })
+  const applySettings = (next) => {
+    settings = next
+    mode = globalThis.mortarInstalledMode(next)
+    filters.installed = next.markInstalled === 'gray'
+    filters.obsolete = next.markObsolete !== 'off'
+    filters.broken = next.markBroken !== 'off'
+    removing.obsolete = next.markObsolete === 'hide'
+    removing.broken = next.markBroken === 'hide'
+  }
+
+  const readSettings = async () => {
+    if (!settings) {
+      applySettings(await globalThis.mortarReadSettings())
+    }
+    return settings
+  }
 
   const currentMode = async () => {
-    if (mode) {
-      return mode
-    }
-    mode = await readMode()
+    await readSettings()
     return mode
   }
 
@@ -322,12 +317,14 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     hideControlId,
     currentMode,
     pageGame,
-    storage: chrome.storage?.local,
+    settings: readSettings,
+    applySettings,
+    showUpdates: () => settings?.markUpdate !== 'off',
+    removing,
     installedIDs,
     installedCache: () => installedCache,
     mode: () => mode,
     filters,
-    filterState,
     modID,
     tileFor,
     ensureMarkerStyle,
@@ -336,9 +333,10 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     removedClass,
     badgeClass,
     onHideChange: (row, checked) => {
-      filters[row] = checked
-      globalThis.mortarWriteListingFilter(chrome.storage?.local, pageGame(), row, checked)
-      requestMark()
+      const key = { installed: 'markInstalled', obsolete: 'markObsolete', broken: 'markBroken' }[
+        row
+      ]
+      chrome.storage.sync.set({ [key]: checked ? 'gray' : 'off' })
     },
   })
 
@@ -355,22 +353,20 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     })
   }
 
-  chrome.storage?.onChanged?.addListener((changes, area) => {
-    if (area !== 'local') {
-      return
-    }
-    if (globalThis.mortarApplyFilterChanges(changes, pageGame(), filters)) {
-      requestMark()
-    }
-    if (changes[modeKey]) {
-      mode =
-        changes[modeKey].newValue === 'hide' || changes[modeKey].newValue === 'off'
-          ? changes[modeKey].newValue
-          : 'highlight'
-      requestMark()
+  // Another tab or the options page changed a setting: marks and panels follow without a reload.
+  const followSettings = async () => {
+    const before = mode
+    applySettings(await globalThis.mortarReadSettings())
+    requestMark()
+    if (mode !== before) {
       panelKey = ''
-      renderModPanel().catch(() => false)
-      renderCollectionPanel().catch(() => false)
+      await Promise.all([renderModPanel(), renderCollectionPanel()])
+    }
+  }
+
+  chrome.storage?.onChanged?.addListener((_changes, area) => {
+    if (area === 'sync') {
+      followSettings().catch(() => false)
     }
   })
 
@@ -475,14 +471,16 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
 
   // Mortar's profile, installed mods and Appearance setting change while the tab is in the background, so coming
   // back re-reads all of it.
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      installedCache = emptyInstalledCache()
-      panelKey = ''
-      requestMark()
-      renderModPanel().catch(() => false)
-      renderCollectionPanel().catch(() => false)
-    }
+  globalThis.mortarWhenSiteEnabled('siteNexus', () => {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        installedCache = emptyInstalledCache()
+        panelKey = ''
+        requestMark()
+        renderModPanel().catch(() => false)
+        renderCollectionPanel().catch(() => false)
+      }
+    })
+    watch(document)
   })
-  watch(document)
 }

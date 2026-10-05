@@ -5,6 +5,10 @@
   "description": "Sends Nexus Mods downloads and Thunderstore installs to the Mortar desktop mod manager and marks mods you already have.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqe3SnpMoNtzpFRKV0eOAaBgMy8Mx35rDG+laj5z1skoFi9E4ktRYlItpNsxkQFHcKjGwyQD329OfTAgHR9ibrHyvCi9RWyhreZTXVb0Epjq3i4dPj3Lsi1R5Z50kY+SJMXQ0FDmlXJXkbANGzXdmQfzAJyYdE8WiJIbW6qFEUJ6XetzqDyiaqMs+VNOicsRs4GAwKoEjgaoJid/IjNgrMUoZ3m8/MUoyJ5TynmOJIJQ964h9VGKXZv3Qg/hHABqHKo7xkpPQadizyI4ogPyCcqD2xxzFTWO3ZeLlbpZCIqEnHwJT1hSydu6j/OKd2+6SoP7zdatMGXOg8sN3bzhtUwIDAQAB",
   "permissions": ["alarms", "nativeMessaging", "scripting", "storage"],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -21,6 +25,7 @@
       "matches": ["https://www.nexusmods.com/*"],
       "js": [
         "plural.js",
+        "settings.js",
         "fileLabels.js",
         "modPanel.js",
         "collectionCount.js",
@@ -34,7 +39,7 @@
     },
     {
       "matches": ["https://thunderstore.io/c/*/p/*"],
-      "js": ["plural.js", "thunderstore.js"],
+      "js": ["plural.js", "settings.js", "thunderstore.js"],
       "run_at": "document_idle"
     }
   ],
