@@ -104,10 +104,20 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     refreshUpdates()
   }
 })
+const isNexusPage = (url) => {
+  if (typeof url !== 'string') {
+    return false
+  }
+  try {
+    const { hostname } = new URL(url)
+    return hostname === 'nexusmods.com' || hostname.endsWith('.nexusmods.com')
+  } catch {
+    return false
+  }
+}
 chrome.tabs.onActivated.addListener((info) => {
   chrome.tabs.get(info.tabId, (tab) => {
-    const url = tab?.url
-    if (typeof url === 'string' && url.includes('nexusmods.com')) {
+    if (isNexusPage(tab?.url)) {
       refreshUpdates()
     }
   })
