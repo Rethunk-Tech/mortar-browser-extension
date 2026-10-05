@@ -12,10 +12,10 @@ globalThis.mortarSkipSourceLabel = (source) => {
 }
 
 // The native-messaging protocol this extension speaks, sent with every message, and the range of Mortar protocols
-// it understands. A Mortar from before the protocol was versioned sends none and already speaks protocol 1.
-globalThis.mortarProtocol = 1
-const mortarProtocolMin = 1
-const mortarProtocolMax = 1
+// it understands. A reply that names none counts as protocol 0.
+globalThis.mortarProtocol = 2
+const mortarProtocolMin = 2
+const mortarProtocolMax = 2
 
 // 'mortarOld' or 'extensionOld' when the two sides do not speak a common protocol, else ''. Mortar's own verdict on
 // this extension's protocol wins; otherwise Mortar's protocol is checked against this extension's range.
@@ -26,7 +26,7 @@ globalThis.mortarProtocolMismatch = (reply) => {
   if (reply?.protocolError === 'extensionTooNew') {
     return 'mortarOld'
   }
-  const protocol = reply?.protocol ?? 1
+  const protocol = reply?.protocol ?? 0
   if (protocol < mortarProtocolMin) {
     return 'mortarOld'
   }
@@ -50,8 +50,26 @@ globalThis.mortarConnectionState = (reply, lastError) => {
   return reply.connected === true ? 'ready' : 'noProfile'
 }
 
-// The Nexus domains Mortar manages, as the native host reports them; none until a reply says so.
-globalThis.mortarSupportedGames = (reply) => (Array.isArray(reply?.games) ? reply.games : [])
+// The host's games, [{id, name, sources: {nexus: domain}}]; none until a reply says so.
+const hostGames = (reply) => (Array.isArray(reply?.games) ? reply.games : [])
+
+// The Nexus domains of the games Mortar manages.
+globalThis.mortarSupportedGames = (reply) =>
+  hostGames(reply)
+    .map((g) => g?.sources?.nexus)
+    .filter((domain) => typeof domain === 'string' && domain !== '')
+
+// The Mortar game id of a Nexus domain, from the host's list; undefined when Mortar does not manage it.
+globalThis.mortarGameID = (reply, domain) =>
+  hostGames(reply).find((g) => g?.sources?.nexus === domain)?.id
+
+// A data request for the page's Nexus game.
+globalThis.mortarGameRequest = (type, domain, extra) => ({
+  type,
+  source: 'nexus',
+  sourceGameKey: domain,
+  ...extra,
+})
 
 // Every host reply lists the managed games, so a request with no game learns them; then each game is asked in turn.
 // The primary reply carries the shared fields (state, accent, profile): the first game that is ready, else the first.

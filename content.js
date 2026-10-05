@@ -106,7 +106,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
         resolve(installedCache.ids)
       }
       try {
-        chrome.runtime.sendMessage({ type: 'installed', game }, (reply) => {
+        chrome.runtime.sendMessage(globalThis.mortarGameRequest('installed', game), (reply) => {
           globalThis.mortarSetAccent(reply?.accent)
           settle(reply, chrome.runtime.lastError)
         })
@@ -234,8 +234,9 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     }
     const reply = await new Promise((resolve) => {
       try {
-        chrome.runtime.sendMessage({ type: 'mod', game: pageGame(), modId: id }, (response) =>
-          resolve(chrome.runtime.lastError ? undefined : response),
+        chrome.runtime.sendMessage(
+          globalThis.mortarGameRequest('mod', pageGame(), { modId: id }),
+          (response) => resolve(chrome.runtime.lastError ? undefined : response),
         )
       } catch {
         resolve(undefined)
@@ -267,7 +268,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     globalThis.mortarAttachMenu(panel, data, {
       onOpen: () => {
         const link = document.createElement('a')
-        link.href = `mortar://${game}/mod/${id}`
+        link.href = `mortar://${globalThis.mortarGameID(reply, game)}/mod/${id}`
         link.click()
       },
     })

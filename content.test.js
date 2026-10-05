@@ -66,7 +66,7 @@ test('hide-in-profile filter stays off when Mortar is disconnected or no profile
   expect(disconnected.connected).toBe(false)
   expect(disconnected.profileOpen).toBe(false)
   const open = globalThis.mortarInstalledListingState(
-    { protocol: 1, connected: true, profile: 'Main' },
+    { protocol: 2, connected: true, profile: 'Main' },
     undefined,
     new Set([contentPatcher]),
   )
@@ -183,7 +183,23 @@ test('only mod tiles are matched for marks', () => {
 test('supported games come from the host reply, none until one arrives', () => {
   expect(globalThis.mortarSupportedGames(undefined)).toEqual([])
   expect(globalThis.mortarSupportedGames({ games: [] })).toEqual([])
-  expect(globalThis.mortarSupportedGames({ games: ['skyrim'] })).toEqual(['skyrim'])
+  const games = [
+    { id: 'stardew', name: 'Stardew Valley', sources: { nexus: 'stardewvalley' } },
+    { id: 'skyrim-se', name: 'Skyrim', sources: { nexus: 'skyrimspecialedition', github: 'x' } },
+    { id: 'other', name: 'Other', sources: {} },
+  ]
+  expect(globalThis.mortarSupportedGames({ games })).toEqual([
+    'stardewvalley',
+    'skyrimspecialedition',
+  ])
+  expect(globalThis.mortarGameID({ games }, 'skyrimspecialedition')).toBe('skyrim-se')
+  expect(globalThis.mortarGameID({ games }, 'nope')).toBeUndefined()
+  expect(globalThis.mortarGameRequest('mod', 'stardewvalley', { modId: 3 })).toEqual({
+    type: 'mod',
+    source: 'nexus',
+    sourceGameKey: 'stardewvalley',
+    modId: 3,
+  })
 })
 
 // Mortar's Problems check marks the same words (internal/problems authorStatusWord in Rethunk-Tech/mortar).

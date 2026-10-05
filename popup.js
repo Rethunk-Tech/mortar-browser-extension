@@ -27,7 +27,7 @@ const refreshStatus = () => {
   let lastError
   const ask = (game) =>
     new Promise((resolve) => {
-      chrome.runtime.sendMessage({ type: 'installed', game }, (reply) => {
+      chrome.runtime.sendMessage(globalThis.mortarGameRequest('installed', game), (reply) => {
         lastError ??= chrome.runtime.lastError
         resolve(reply)
       })

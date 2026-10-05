@@ -19,7 +19,9 @@ The extension and Mortar exchange JSON messages over native messaging. Every mes
 - Mortar refuses a message whose protocol is outside its range and replies `protocolError: "extensionTooOld"` or `"extensionTooNew"`; its Settings › Downloads connection row says the extension is too old or too new for this Mortar.
 - The extension checks Mortar's `protocol` against its own range and shows "Update Mortar" or "Update the browser extension" in its popup and on Nexus pages.
 
-Both sides speak protocol 1 and accept 1..1. A message or reply without `protocol` counts as 1, which is what extension 0.1.1 and the Mortar releases before the field speak; only an explicit number outside the range is a mismatch. A change to a message's shape bumps the number on both sides.
+Both sides speak protocol 2 and accept 2..2; a message or reply without `protocol` counts as 0. A change to a message's shape bumps the number on both sides.
+
+Requests that concern a game name it by its source: `{"type": "installed", "source": "nexus", "sourceGameKey": "<nexus domain>"}`. Every reply's `games` lists what Mortar manages, `[{id, name, sources: {nexus: "<domain>"}}]`; the extension draws its UI only on pages whose domain is listed and builds `mortar://<game id>/mod/<id>` from the matching `id`.
 
 ## Getting started
 

@@ -78,7 +78,7 @@ const checkUpdates = async () => {
   let error
   try {
     const { games, replies, primary } = await globalThis.mortarAskEachGame((game) =>
-      send({ type: 'updates', game }),
+      send(globalThis.mortarGameRequest('updates', game)),
     )
     reply = {
       ...primary,
@@ -148,10 +148,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       .catch(() => false)
     return true
   }
-  if ((msg?.type === 'installed' || msg?.type === 'mod') && typeof msg.game === 'string') {
-    send({ type: msg.type, game: msg.game, modId: msg.modId }).then(sendResponse, (error) =>
-      sendResponse(failure(error)),
-    )
+  if (
+    (msg?.type === 'installed' || msg?.type === 'mod') &&
+    msg.source === 'nexus' &&
+    typeof msg.sourceGameKey === 'string'
+  ) {
+    send({
+      type: msg.type,
+      source: msg.source,
+      sourceGameKey: msg.sourceGameKey,
+      modId: msg.modId,
+    }).then(sendResponse, (error) => sendResponse(failure(error)))
     return true
   }
 })
