@@ -24,7 +24,7 @@ globalThis.mortarUpdatesBadge = (reply, error) => {
     return {
       ...row,
       text: mortarUpdateRowText(row),
-      href: `https://www.nexusmods.com/stardewvalley/mods/${u.modId}?tab=files`,
+      href: `https://www.nexusmods.com/${u.game}/mods/${u.modId}?tab=files`,
     }
   })
   return {

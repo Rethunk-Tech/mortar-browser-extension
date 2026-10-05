@@ -9,8 +9,8 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
       accent: '#aabbcc',
       profile: 'Default',
       updates: [
-        { modId: 1915, name: 'SMAPI', installed: '4.0.0', latest: '4.1.0' },
-        { modId: 10, name: 'Other', installed: '1.0.0' },
+        { game: 'stardewvalley', modId: 1915, name: 'SMAPI', installed: '4.0.0', latest: '4.1.0' },
+        { game: 'stardewvalley', modId: 10, name: 'Other', installed: '1.0.0' },
       ],
     },
     false,

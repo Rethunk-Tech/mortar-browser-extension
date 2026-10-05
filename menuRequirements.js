@@ -9,7 +9,7 @@ globalThis.mortarRequirementLines = (data) => {
     if (req.external || !req.present) {
       const line = { text: `Needs ${req.name}`, problem: true }
       if (!req.external && req.modId > 0) {
-        line.href = `https://www.nexusmods.com/stardewvalley/mods/${req.modId}`
+        line.href = `https://www.nexusmods.com/${data.game}/mods/${req.modId}`
       }
       missing.push(line)
     } else {

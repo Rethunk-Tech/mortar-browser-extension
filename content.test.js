@@ -180,9 +180,9 @@ test('only mod tiles are matched for marks', () => {
   expect([...tiles.entries()]).toEqual([[tile, tileModID]])
 })
 
-test('supported games come from the host reply, Stardew until one arrives', () => {
-  expect(globalThis.mortarSupportedGames(undefined)).toEqual(['stardewvalley'])
-  expect(globalThis.mortarSupportedGames({ games: [] })).toEqual(['stardewvalley'])
+test('supported games come from the host reply, none until one arrives', () => {
+  expect(globalThis.mortarSupportedGames(undefined)).toEqual([])
+  expect(globalThis.mortarSupportedGames({ games: [] })).toEqual([])
   expect(globalThis.mortarSupportedGames({ games: ['skyrim'] })).toEqual(['skyrim'])
 })
 

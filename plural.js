@@ -50,9 +50,19 @@ globalThis.mortarConnectionState = (reply, lastError) => {
   return reply.connected === true ? 'ready' : 'noProfile'
 }
 
-// The Nexus domains Mortar manages, as the native host reports them; Stardew Valley until a reply says more.
-globalThis.mortarSupportedGames = (reply) =>
-  Array.isArray(reply?.games) && reply.games.length > 0 ? reply.games : ['stardewvalley']
+// The Nexus domains Mortar manages, as the native host reports them; none until a reply says so.
+globalThis.mortarSupportedGames = (reply) => (Array.isArray(reply?.games) ? reply.games : [])
+
+// Every host reply lists the managed games, so a request with no game learns them; then each game is asked in turn.
+// The primary reply carries the shared fields (state, accent, profile): the first game that is ready, else the first.
+globalThis.mortarAskEachGame = async (ask) => {
+  const probe = await ask('')
+  const games = globalThis.mortarSupportedGames(probe)
+  const replies = await Promise.all(games.map(ask))
+  const primary =
+    replies.find((r) => globalThis.mortarConnectionState(r) === 'ready') ?? replies[0] ?? probe
+  return { games, replies, primary }
+}
 
 globalThis.mortarInstallHint =
   "Mortar isn't installed. Install Mortar and open it once to connect this browser."

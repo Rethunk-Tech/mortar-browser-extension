@@ -56,7 +56,6 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     const parts = location.pathname.split('/').filter(Boolean)
     return (parts[0] === 'games' ? parts[1] : parts[0]) || ''
   }
-  const mortarGame = () => (pageGame() === 'stardewvalley' ? 'stardew' : '')
 
   const isModListing = () => globalThis.mortarIsNexusModListing(location.pathname)
 
@@ -244,7 +243,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     })
     globalThis.mortarSetAccent(reply?.accent)
     const state = globalThis.mortarConnectionState(reply)
-    const game = mortarGame()
+    const game = pageGame()
     const supported = globalThis.mortarSupportedGames(reply).includes(pageGame())
     if (mode !== selectedMode || game === '' || !supported || state === 'off') {
       removePanels()
@@ -264,6 +263,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       reply?.open?.pageVersion || pageVersion(),
     )
     data.requirements = Array.isArray(reply?.requirements) ? reply.requirements : []
+    data.game = pageGame()
     globalThis.mortarAttachMenu(panel, data, {
       onOpen: () => {
         const link = document.createElement('a')

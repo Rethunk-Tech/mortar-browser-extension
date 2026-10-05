@@ -24,8 +24,17 @@ const paintStatus = (reply, lastError) => {
 }
 
 const refreshStatus = () => {
-  chrome.runtime.sendMessage({ type: 'installed', game: 'stardewvalley' }, (reply) => {
-    paintStatus(reply, chrome.runtime.lastError)
+  let lastError
+  const ask = (game) =>
+    new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: 'installed', game }, (reply) => {
+        lastError ??= chrome.runtime.lastError
+        resolve(reply)
+      })
+    })
+  globalThis.mortarAskEachGame(ask).then(({ replies, primary }) => {
+    const modIds = replies.flatMap((r) => (Array.isArray(r?.modIds) ? r.modIds : []))
+    paintStatus(Array.isArray(primary?.modIds) ? { ...primary, modIds } : primary, lastError)
   })
 }
 globalThis.mortarRefreshPopupStatus = refreshStatus

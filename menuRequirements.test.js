@@ -9,6 +9,7 @@ test('omits the requirements section when there are none', () => {
 test('lists missing requirements first, with Nexus links, then present count', () => {
   expect(
     globalThis.mortarRequirementLines({
+      game: 'stardewvalley',
       requirements: [
         { name: 'Content Patcher', modId: 1915, present: true },
         { name: 'GMCM', modId: 2400, present: false },
