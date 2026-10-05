@@ -7,9 +7,9 @@ Copy for the Mortar extension (Manifest V3). Every claim below was checked again
 - Name: Mortar
 - Category: Productivity (Chrome has no games-tools category; Productivity fits a companion to a desktop app)
 - Language: English
-- Homepage URL: https://github.com/Rethunk-Tech/mortar
+- Homepage URL: https://mortar.rethunk.tech/extension/
 - Support URL: https://github.com/Rethunk-Tech/mortar-browser-extension/issues
-- Privacy policy URL: required by Chrome because the extension handles page content. Host the "Privacy policy text" below at a stable URL (for example the rendered copy of this section in the repository) and enter it.
+- Privacy policy URL: https://mortar.rethunk.tech/extension/#privacy (the "Privacy policy text" below, as published there).
 
 ## Short description (132 characters max)
 
