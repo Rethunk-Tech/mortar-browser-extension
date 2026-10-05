@@ -54,7 +54,8 @@ jobs:
           mv "$store/manifest.tmp" "$store/manifest.json"
           (cd "$store" && zip -q -r "$GITHUB_WORKSPACE/dist/mortar-browser-extension-chrome-web-store.zip" .)
 
-      # AMO signs each extension version once, so a rerun reuses the signed copy already on the release.
+      # AMO signs each extension version once, so a rerun reuses the signed copy from the release or, when the release
+      # never got it, from AMO itself.
       - name: Firefox add-on
         env:
           GH_TOKEN: ${{ github.token }}
@@ -67,9 +68,14 @@ jobs:
             echo "::notice::AMO_JWT_ISSUER or AMO_JWT_SECRET is not set; the release has no signed Firefox add-on"
             exit 0
           fi
-          if ! gh release download "$TAG" --repo "$GITHUB_REPOSITORY" -p mortar-browser-extension.xpi -D dist 2>/dev/null; then
+          xpi=dist/mortar-browser-extension.xpi
+          if gh release download "$TAG" --repo "$GITHUB_REPOSITORY" -p mortar-browser-extension.xpi -D dist 2>/dev/null; then
+            exit 0
+          fi
+          bun scripts/amo-signed.mjs "$(jq -r .browser_specific_settings.gecko.id manifest.json)" "${TAG#v}" "$xpi"
+          if [ ! -f "$xpi" ]; then
             bunx web-ext@10.7.0 sign --source-dir dist/firefox --channel unlisted --artifacts-dir "$RUNNER_TEMP/xpi"
-            mv "$RUNNER_TEMP"/xpi/*.xpi dist/mortar-browser-extension.xpi
+            mv "$RUNNER_TEMP"/xpi/*.xpi "$xpi"
           fi
 
       - name: Release
@@ -78,8 +84,12 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
+          files=(dist/*.zip)
+          if [ -f dist/mortar-browser-extension.xpi ]; then
+            files+=(dist/mortar-browser-extension.xpi)
+          fi
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber dist/*
+            gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber "${files[@]}"
           else
-            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$TAG" --generate-notes --latest dist/*
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$TAG" --generate-notes --latest "${files[@]}"
           fi
