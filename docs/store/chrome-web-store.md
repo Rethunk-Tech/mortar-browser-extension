@@ -51,7 +51,7 @@ Remote code: none. All code ships in the package.
 
 ## Store ID prerequisite
 
-Mortar's native host manifest allows only the extension's origin. The store assigns its own item id, so before publishing: add the id to `storeChromeIDs` in Mortar's [`internal/nativehost/nativehost.go`](https://github.com/Rethunk-Tech/mortar/blob/main/internal/nativehost/nativehost.go), and upload `mortar-browser-extension-chrome-web-store.zip` from the release, which `.github/workflows/release.yml` builds without `key` (the store signs with its own key).
+The store item id is `hboeppdoecbglcmfojappgehkbecdfbi`. Mortar's native host manifest allows only the extension's origins, so this id is in `storeChromeIDs` in Mortar's [`internal/nativehost/nativehost.go`](https://github.com/Rethunk-Tech/mortar/blob/main/internal/nativehost/nativehost.go), and upload `mortar-browser-extension-chrome-web-store.zip` from the release, which `.github/workflows/release.yml` builds without `key` (the store signs with its own key).
 
 ## Data use disclosures (Privacy practices tab)
 
