@@ -9,3 +9,9 @@ test('content scripts load together in one scope', async () => {
   const texts = await Promise.all(files.map((f) => file(new URL(`./${f}`, import.meta.url)).text()))
   expect(() => new Function(texts.join('\n;\n'))).not.toThrow()
 })
+
+// The Chrome Web Store rejects a package whose manifest description is longer than 132 characters.
+test('manifest description fits the Chrome Web Store limit', async () => {
+  const manifest = await file(new URL('./manifest.json', import.meta.url)).json()
+  expect(manifest.description.length).toBeLessThanOrEqual(132)
+})
