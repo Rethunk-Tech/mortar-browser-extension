@@ -5,9 +5,12 @@ import { file } from 'bun'
 // file from loading at all; importing each file on its own in a test never shows that.
 test('content scripts load together in one scope', async () => {
   const manifest = await file(new URL('./manifest.json', import.meta.url)).json()
-  const files = manifest.content_scripts.flatMap((entry) => entry.js)
-  const texts = await Promise.all(files.map((f) => file(new URL(`./${f}`, import.meta.url)).text()))
-  expect(() => new Function(texts.join('\n;\n'))).not.toThrow()
+  for (const entry of manifest.content_scripts) {
+    const texts = await Promise.all(
+      entry.js.map((f) => file(new URL(`./${f}`, import.meta.url)).text()),
+    )
+    expect(() => new Function(texts.join('\n;\n'))).not.toThrow()
+  }
 })
 
 // The Chrome Web Store rejects a package whose manifest description is longer than 132 characters.

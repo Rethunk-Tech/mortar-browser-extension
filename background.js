@@ -149,6 +149,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true
   }
   if (
+    (msg?.type === 'installedPackages' || msg?.type === 'installPackage') &&
+    msg.source === 'thunderstore' &&
+    typeof msg.sourceGameKey === 'string'
+  ) {
+    send({
+      type: msg.type,
+      source: msg.source,
+      sourceGameKey: msg.sourceGameKey,
+      ...(msg.type === 'installPackage' ? { package: String(msg.package) } : {}),
+    }).then(sendResponse, (error) => sendResponse(failure(error)))
+    return true
+  }
+  if (
     (msg?.type === 'installed' || msg?.type === 'mod') &&
     msg.source === 'nexus' &&
     typeof msg.sourceGameKey === 'string'
