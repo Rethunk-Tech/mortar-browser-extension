@@ -9,7 +9,7 @@
 
 ---
 
-A Chrome, Edge and Firefox extension for [Mortar](https://github.com/Rethunk-Tech/mortar), the desktop mod manager. On https://www.nexusmods.com it hands Mod Manager Download clicks to Mortar, marks the mods the open Mortar profile already has, flags broken and obsolete mods, and shows available updates in its popup. It needs the Mortar app on the same computer and does nothing on the page without it.
+A Chrome, Edge and Firefox extension for [Mortar](https://github.com/Rethunk-Tech/mortar), the desktop mod manager. On https://www.nexusmods.com (and, for install buttons, thunderstore.io package pages) it hands Mod Manager Download clicks to Mortar, marks the mods the open Mortar profile already has, flags broken and obsolete mods, and shows available updates in its popup. It needs the Mortar app on the same computer and does nothing on the page without it.
 
 <p align="center"><img src="media/readme/popup.png" alt="The toolbar popup connected to Mortar: 660 Nexus mods in the Main profile and the updates available for them" width="380"></p>
 
@@ -24,6 +24,7 @@ Install from a release, requirements, the native-messaging protocol and the dev 
 ## Highlights
 
 - Relays Nexus's own Mod Manager Download button to Mortar; never starts downloads or opens Nexus pages itself
+- Installs Thunderstore packages into the open profile from their package pages
 - Marks mods and files the open profile already has, on mod pages, file lists and listings
 - Flags broken and obsolete mods and shows available updates in the popup
 - Versioned native-messaging handshake: each side says which one to update when they cannot talk

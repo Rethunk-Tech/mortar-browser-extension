@@ -21,7 +21,7 @@ The extension and Mortar exchange JSON messages over native messaging. Every mes
 
 Both sides speak protocol 2 and accept 2..2; a message or reply without `protocol` counts as 0. A change to a message's shape bumps the number on both sides.
 
-Requests that concern a game name it by its source: `{"type": "installed", "source": "nexus", "sourceGameKey": "<nexus domain>"}`. Every reply's `games` lists what Mortar manages, `[{id, name, sources: {nexus: "<domain>"}}]`; the extension draws its UI only on pages whose domain is listed and builds `mortar://<game id>/mod/<id>` from the matching `id`.
+Requests that concern a game name it by its source (`nexus`, or `thunderstore` for `installedPackages` and `installPackage {package}`): `{"type": "installed", "source": "nexus", "sourceGameKey": "<nexus domain>"}`. Every reply's `games` lists what Mortar manages, `[{id, name, sources: {nexus: "<domain>", thunderstore: "<community>"}}]`; the extension draws its UI only on pages whose domain is listed and builds `mortar://<game id>/mod/<id>` from the matching `id`.
 
 ## Getting started
 
