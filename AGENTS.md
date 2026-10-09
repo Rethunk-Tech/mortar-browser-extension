@@ -17,3 +17,7 @@ Plain-JS Manifest V3 extension; no bundler or transpile step; `bun run build` on
 ## Release
 
 Bump `version` in `manifest.json`, commit, tag `vX.Y.Z`. `release.yml` checks the tag matches, builds both zips and signs the unlisted `.xpi` with `AMO_JWT_ISSUER`/`AMO_JWT_SECRET` (AMO signs each version once; a rerun fetches that copy with `scripts/amo-signed.mjs`) and writes `updates.json`, which the manifest's `gecko.update_url` reads from the latest release. A protocol change bumps `protocol` here and in Mortar's `internal/nativehost` together, with each side's accepted range.
+
+## Chrome Web Store
+
+The developer dashboard cannot be automated: Chrome refuses every extension action on `chrome.google.com/webstore` ("The extensions gallery cannot be scripted"), signed in or not, and the Web Store API only uploads to and publishes an existing item. Listing, privacy and new-item work go to the maintainer as a paste guide built from `docs/store/chrome-web-store.md` plus the release zip.
