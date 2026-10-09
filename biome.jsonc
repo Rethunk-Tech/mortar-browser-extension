@@ -6,7 +6,17 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**"]
+    "includes": [
+      "**",
+      "!**/*.dc.html",
+      "!**/*.min.js",
+      "!**/database.types.ts",
+      "!**/design/doc-page.js",
+      "!**/design/support.js",
+      "!**/generated",
+      "!**/vendor",
+      "!.claude"
+    ]
   },
   "formatter": {
     "indentStyle": "space",
@@ -33,10 +43,12 @@
     "rules": {
       "preset": "all",
       "style": {
+        "useExportsLast": "off",
+        "noContinue": "off",
         "noNonNullAssertion": "error",
         "useImportType": "error",
         "noExcessiveLinesPerFile": {
-          "level": "on",
+          "level": "error",
           "options": {
             "maxLines": 500
           }
@@ -80,7 +92,7 @@
       },
       "complexity": {
         "noExcessiveLinesPerFunction": {
-          "level": "on",
+          "level": "error",
           "options": {
             "maxLines": 100,
             "skipBlankLines": true,
@@ -89,7 +101,7 @@
         },
         "noUselessReturn": "off",
         "noExcessiveCognitiveComplexity": {
-          "level": "on",
+          "level": "error",
           "options": {
             "maxAllowedComplexity": 25
           }
@@ -128,11 +140,29 @@
   },
   "overrides": [
     {
-      "includes": ["web-ext-config.mjs"],
+      "includes": [
+        "**/*.config.js",
+        "**/*.config.mjs",
+        "**/*.config.ts",
+        "**/scripts/**",
+        "tools/**"
+      ],
       "linter": {
         "rules": {
+          "correctness": {
+            "noNodejsModules": "off",
+            "noProcessGlobal": "off",
+            "noUnresolvedImports": "off"
+          },
+          "performance": {
+            "useTopLevelRegex": "off"
+          },
           "style": {
-            "noDefaultExport": "off"
+            "noDefaultExport": "off",
+            "noProcessEnv": "off"
+          },
+          "suspicious": {
+            "noConsole": "off"
           }
         }
       }
