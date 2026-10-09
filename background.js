@@ -161,13 +161,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (
     (msg?.type === 'installedPackages' || msg?.type === 'installPackage') &&
     msg.source === 'thunderstore' &&
-    typeof msg.sourceGameKey === 'string'
+    typeof msg.sourceGameKey === 'string' &&
+    (msg.type !== 'installPackage' || typeof msg.package === 'string')
   ) {
     send({
       type: msg.type,
       source: msg.source,
       sourceGameKey: msg.sourceGameKey,
-      ...(msg.type === 'installPackage' ? { package: String(msg.package) } : {}),
+      ...(msg.type === 'installPackage' ? { package: msg.package } : {}),
     }).then(sendResponse, (error) => sendResponse(failure(error)))
     return true
   }
@@ -187,6 +188,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 })
 
 // Content scripts only reach pages loaded after the extension, so Nexus tabs already open get the script now.
+// Thunderstore tabs are not covered: injecting there would need a thunderstore.io host permission, and a package page
+// that was open before the install only misses its buttons until it is reloaded.
 chrome.runtime.onInstalled.addListener(async () => {
   startUpdates()
   for (const tab of await chrome.tabs.query({ url: 'https://www.nexusmods.com/*' })) {
