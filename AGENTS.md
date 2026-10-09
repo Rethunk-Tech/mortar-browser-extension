@@ -22,3 +22,7 @@ Bump `version` in `manifest.json`, commit, tag `vX.Y.Z`. `release.yml` checks th
 ## Chrome Web Store
 
 The developer dashboard cannot be automated: Chrome refuses every extension action on `chrome.google.com/webstore` ("The extensions gallery cannot be scripted"), signed in or not, and the Web Store API only uploads to and publishes an existing item. Listing, privacy and new-item work go to the maintainer as a paste guide built from `docs/store/chrome-web-store.md` plus the release zip.
+
+## Gate budget
+
+The detected gates match CI, which runs `bun run gate` (`lint`, `test`, then `build` and `web-ext lint` on `dist/firefox`); `gate` runs the build and web-ext lint chained and the rest concurrently. Measured 2026-10-09 with `gate --profile` at load 5 to 6 (CPU is the evidence): warm 0.85 to 0.94 s wall and 1.5 CPU-s; cold (a clone without `dist`, throwaway bun cache) 1.6 s wall and 2.4 CPU-s, 1.2 s of it `web-ext lint`. Within budget; nothing is duplicated or oversubscribed. `bunx` keeps its own download cache outside `BUN_INSTALL_CACHE_DIR`, so the cold figure does not include fetching web-ext.
