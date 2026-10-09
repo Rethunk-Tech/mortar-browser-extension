@@ -1,6 +1,6 @@
 # Mortar browser extension
 
-Plain-JS Manifest V3 extension; no build step. Every content script shares one scope (see `scripts.test.js`), so top-level names are `mortar`-prefixed globals.
+Plain-JS Manifest V3 extension; no bundler or transpile step; `bun run build` only packages it. Every content script shares one scope (see `scripts.test.js`), so top-level names are `mortar`-prefixed globals.
 
 ## Layout
 
