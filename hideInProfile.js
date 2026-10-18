@@ -290,7 +290,7 @@ globalThis.mortarInstalledListingState = (reply, lastError, ids) => {
     broken: new Set(Array.isArray(reply?.brokenIds) ? reply.brokenIds : []),
     nativeFail,
     connected,
-    profileOpen: connected && reply?.profile !== '',
+    profileOpen: connected && typeof reply?.profile === 'string' && reply.profile !== '',
     profile: typeof reply?.profile === 'string' ? reply.profile : '',
     updates: new Set(Array.isArray(reply?.updateIds) ? reply.updateIds : []),
     games: globalThis.mortarSupportedGames(reply),

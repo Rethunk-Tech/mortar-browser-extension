@@ -62,6 +62,12 @@ test('hide-in-profile filter stays off when Mortar is disconnected or no profile
   )
   expect(disconnected.connected).toBe(false)
   expect(disconnected.profileOpen).toBe(false)
+  const connectedNoProfile = globalThis.mortarInstalledListingState(
+    { protocol: 2, connected: true },
+    undefined,
+  )
+  expect(connectedNoProfile.connected).toBe(true)
+  expect(connectedNoProfile.profileOpen).toBe(false)
   const open = globalThis.mortarInstalledListingState(
     { protocol: 2, connected: true, profile: 'Main' },
     undefined,
