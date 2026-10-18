@@ -5,10 +5,10 @@ Plain-JS Manifest V3 extension; no bundler or transpile step; `bun run build` on
 ## Layout
 
 - `manifest.json`: scripts, permissions, the Chromium `key` and the Firefox id. Mortar's `internal/nativehost` allows these ids.
-- `background.js`: the one native port to Mortar (`tech.rethunk.mortar`); stamps `protocol` on every message.
+- `background.js`: the one native port to Mortar (`tech.rethunk.mortar`); stamps `protocol` on every message; closes an idle port after 60 seconds; alarm `updates` every 30 minutes.
 - `plural.js`: shared copy and connection state, including the protocol range check.
 - `thunderstore.js`: the Thunderstore package-page content script (installed marks and install buttons).
-- `content.js` and its helpers: Nexus page marks, menu and mod panel. `popup.*`: the toolbar popup. `options.*`: the options page (sites, markings, connection); `settings.js` holds the `chrome.storage.sync` keys, their defaults and the mapping to the listing mode, shared by the page and the content scripts.
+- `content.js` and its helpers: Nexus page marks, menu and mod panel. `popup.*`: the toolbar popup. `options.*`: the options page (sites, markings, connection); `settings.js` holds the `chrome.storage.sync` keys (`siteNexus`, `siteThunderstore`, `markInstalled`, `markUpdate`, `markObsolete`, `markBroken`), their defaults and the mapping from `markInstalled` gray to listing highlight mode, shared by the page and the content scripts. Session keys `updatesReply` and `updatesError` are written by the background script.
 - `docs/store/`: Chrome Web Store listing copy. Firefox is self-distributed: AMO signs it unlisted and never lists or updates it.
 
 ## Tests
@@ -17,7 +17,7 @@ Plain-JS Manifest V3 extension; no bundler or transpile step; `bun run build` on
 
 ## Release
 
-Bump `version` in `manifest.json`, commit, tag `vX.Y.Z`. `release.yml` checks the tag matches, builds both zips and signs the unlisted `.xpi` with `AMO_JWT_ISSUER`/`AMO_JWT_SECRET` (AMO signs each version once; a rerun fetches that copy with `scripts/amo-signed.mjs`) and writes `updates.json`, which the manifest's `gecko.update_url` reads from the latest release. A protocol change bumps `protocol` here and in Mortar's `internal/nativehost` together, with each side's accepted range.
+Bump `version` in `manifest.json`, commit, tag `vX.Y.Z`. `release.yml` checks the tag matches, builds both zips and signs the unlisted `.xpi`. GitHub secrets `AMO_JWT_ISSUER`/`AMO_JWT_SECRET` are mapped to `WEB_EXT_API_KEY`/`WEB_EXT_API_SECRET` for `bun scripts/amo-signed.mjs <addon id> <version> <out.xpi>` (AMO signs each version once; a rerun fetches that copy) and, when AMO has no file yet, `web-ext sign --source-dir dist/firefox --channel unlisted`. It writes `updates.json`, which the manifest's `gecko.update_url` reads from the latest release. A protocol change bumps `protocol` here and in Mortar's `internal/nativehost` together, with each side's accepted range.
 
 ## Chrome Web Store
 
@@ -25,4 +25,4 @@ The developer dashboard cannot be automated: Chrome refuses every extension acti
 
 ## Gate budget
 
-`bun run gate` is the `lint`, `test` and `webext` scripts in `package.json` (`biome check`, `bun test`, then `build` and `web-ext lint` on `dist/firefox`), each run even if an earlier one fails, with a non-zero exit if any failed. Lefthook's pre-push job runs that script; CI lists the three as separate steps with `if: ${{ !cancelled() }}` so a lint miss still reports the later checks. There is no `.gate.toml` and no `gate --profile`.
+`bun run gate` is the `lint`, `test` and `webext` scripts in `package.json` (`biome check --error-on-warnings .`, `bun test`, then `build` and `web-ext lint --source-dir dist/firefox`), each run even if an earlier one fails, with a non-zero exit if any failed. Lefthook's pre-push job runs that script. CI's Setup Bun step runs tests (`run-test`); Lint and Web-ext are separate steps with `if: ${{ !cancelled() }}` so a failure earlier still reports those checks. There is no `.gate.toml` and no `gate --profile`.

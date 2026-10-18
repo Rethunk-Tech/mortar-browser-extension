@@ -20,15 +20,15 @@ Sends Nexus Mods downloads and Thunderstore installs to the Mortar desktop mod m
 Mortar is a desktop mod manager for PC games. This extension connects your browser to it while you browse Nexus Mods and Thunderstore.
 
 - Mod Manager Download buttons are relayed to Mortar. Open as many mod tabs as you like and click away; every click arrives, instead of the browser handing the nxm:// links to the desktop one at a time and dropping some. Nexus first shows a "Download mod file" dialog listing the file's requirements; when Mortar is installed and the connection is on, the extension clicks that dialog's own Download link for you so the link reaches Mortar. Mortar shows the requirements itself.
-- Mods and files already in your open Mortar profile are marked on Nexus pages, so you can tell what you have. Choose Off, Gray out or Hide on the extension's options page.
-- A Mortar section in the filter sidebar of mod listings has three filters that gray out mods already in your profile, mods marked obsolete, and mods the SMAPI compatibility list marks broken.
+- Mods and files already in your open Mortar profile are marked on Nexus pages, so you can tell what you have. On the extension's options page choose Off, Gray out or Hide for mods in the profile, obsolete mods, and mods Mortar marks broken for your game version, and Off or Show badge for the "Update available" badge.
+- A Mortar section in the filter sidebar of mod listings has three checkboxes that switch those rows between Gray out and Off (Hide is only on the options page): mods already in your profile, mods whose name or summary says obsolete, deprecated or depreciated, and mods Mortar reports as broken.
 - Mod pages show which files are installed, requirements and known problems for the mod, as reported by Mortar. Collection pages have an Open in Mortar button.
 - On thunderstore.io package pages, a package already in your open Mortar profile is marked, and an Install in Mortar button sends the package to Mortar. This works on package pages only, not on Thunderstore listings.
 - The toolbar badge and popup show how many of your profile's mods have updates, checked every 30 minutes.
 
-The extension only adds its buttons and marks on Nexus Mods and Thunderstore pages for the games Mortar supports, which come from its catalog: Stardew Valley today. It never downloads anything itself and never opens Nexus pages on its own. Downloads start only from Nexus's own Mod Manager Download button.
+The extension only adds its buttons and marks on Nexus Mods pages whose game domain Mortar lists, and on Thunderstore package pages whose community Mortar lists. It never downloads anything itself and never opens Nexus pages on its own. Downloads start only from Nexus's own Mod Manager Download button.
 
-It needs the Mortar desktop app (<https://github.com/Rethunk-Tech/mortar>). If Mortar is not installed, the Mortar button and filter section say "Mortar isn't installed" and how to connect, and the popup says the same; nothing is clicked for you. If Mortar is installed but not running, they say "Mortar isn't running"; if no profile is open, "Open a profile in Mortar"; if the connection is switched off in Mortar's settings, nothing is drawn on pages.
+It needs the Mortar desktop app (<https://github.com/Rethunk-Tech/mortar>). If Mortar is not installed, the popup and options page say "Mortar isn't installed" and how to connect; Nexus pages are left as Nexus drew them; Thunderstore package pages show the same hint and do not install. Nothing is clicked for you. If Mortar is installed but not running, those surfaces say "Mortar isn't running"; if no profile is open, "Open a profile in Mortar". If the connection is switched off in Mortar's settings, Nexus pages draw nothing extra; Thunderstore package pages say the connection is off. Sites can be switched off on the options page (Nexus Mods and Thunderstore, both on by default).
 
 ## Single purpose
 
@@ -38,7 +38,7 @@ Relay Nexus Mods "Mod Manager Download" clicks and Thunderstore package installs
 
 - `nativeMessaging`: the only channel to the Mortar desktop app (native host `tech.rethunk.mortar`, on the user's own machine). It carries download links to Mortar and asks it which mods are installed and which have updates.
 - `scripting`: when the extension is installed or updated, injects its content scripts into Nexus Mods tabs that were already open (content scripts alone only reach pages loaded afterwards).
-- `storage`: keeps the user's choice (highlight, hide or off) and the three per-game listing filters (in my profile, obsolete, broken) in local storage, and keeps the last update check in session storage so the popup and badge render without a new request.
+- `storage`: `chrome.storage.sync` holds the options keys `siteNexus` and `siteThunderstore` (default on), `markInstalled` (default gray), `markUpdate` (default on), `markObsolete` and `markBroken` (default off). `chrome.storage.session` holds the last update check (`updatesReply`, `updatesError`) so the popup and badge render without a new request.
 - `alarms`: schedules the update check every 30 minutes so the toolbar badge stays current.
 - Host permission `https://www.nexusmods.com/*`: the content scripts must read Nexus mod and listing pages (mod ids, download links) to mark mods, to follow the Download link in Nexus's "Download mod file" dialog, and to relay Mod Manager Download links.
 - Content script match `https://thunderstore.io/c/*/p/*`: reads the community, namespace and package name from a Thunderstore package page's address to mark a package already in the profile and to add the Install in Mortar button. It reads nothing else and makes no requests. No other site is accessed.
@@ -47,7 +47,7 @@ Remote code: none. All code ships in the package.
 
 ## Notes for reviewers
 
-- Install the Mortar desktop app from <https://github.com/Rethunk-Tech/mortar>; it registers the native messaging host. Open a Stardew Valley mod page on nexusmods.com; a Thunderstore package page only shows Mortar's button for a game Mortar manages, which today is Stardew Valley.
+- Install the Mortar desktop app from <https://github.com/Rethunk-Tech/mortar>; it registers the native messaging host. Open a mod page for a game Mortar lists (for example Stardew Valley on nexusmods.com). A Thunderstore package page only shows Mortar's overlay for a community in Mortar's `games` list.
 - Without the app the popup says "Mortar isn't installed. Install Mortar and open it once to connect this browser." and the Open Mortar button is hidden. With the app installed but closed it says "Mortar isn't running".
 - The extension clicks the "Download mod file" dialog's Download link only when Mortar is installed and its extension connection is on.
 
@@ -67,7 +67,7 @@ Certify all three: not sold to third parties; not used or transferred for purpos
 
 ## Privacy policy text
 
-Mortar's browser extension reads Nexus Mods pages in your browser to mark mods and to pass Mod Manager Download links to the Mortar desktop app installed on your own computer, using the browser's native messaging. The only data exchanged is Nexus mod ids, file ids and nxm:// links, and Thunderstore package names, going to Mortar, and installed-mod and update information coming back. It runs only on <https://www.nexusmods.com> and on Thunderstore package pages (<https://thunderstore.io/c/*/p/>*). The extension makes no network requests of its own, has no server, analytics or telemetry, and sends nothing to the developers or any third party. Your display choice and filter settings are stored in your browser's extension storage and never leave it. Uninstalling the extension removes them.
+Mortar's browser extension reads Nexus Mods pages in your browser to mark mods and to pass Mod Manager Download links to the Mortar desktop app installed on your own computer, using the browser's native messaging. The only data exchanged is Nexus mod ids, file ids and nxm:// links, and Thunderstore package names, going to Mortar, and installed-mod and update information coming back. It runs only on <https://www.nexusmods.com> and on Thunderstore package pages (<https://thunderstore.io/c/*/p/>*). The extension makes no network requests of its own, has no server, analytics or telemetry, and sends nothing to the developers or any third party. Site toggles, listing marks and the update-badge choice are stored in your browser's synced extension storage and never leave it. Uninstalling the extension removes them.
 
 ## Screenshots (1280x800 preferred, or 640x400; PNG or JPEG, no alpha, up to 5)
 
