@@ -1,15 +1,13 @@
 # Chrome Web Store listing
 
-Copy for the Mortar extension (Manifest V3). Every claim below was checked against `manifest.json`, `background.js`, `content.js`, `modPanel.js`, `popup.js` and `hideInProfile.js`.
-
 ## Listing fields
 
 - Name: Mortar
-- Category: Productivity (Chrome has no games-tools category; Productivity fits a companion to a desktop app)
+- Category: Productivity (Chrome has no games-tools category)
 - Language: English
 - Homepage URL: <https://mortar.rethunk.tech/extension/>
 - Support URL: <https://github.com/Rethunk-Tech/mortar-browser-extension/issues>
-- Privacy policy URL: <https://mortar.rethunk.tech/extension/#privacy> (the "Privacy policy text" below, as published there).
+- Privacy policy URL: <https://mortar.rethunk.tech/extension/#privacy>
 
 ## Short description (132 characters max)
 
@@ -17,64 +15,56 @@ Sends Nexus Mods downloads and Thunderstore installs to the Mortar desktop mod m
 
 ## Long description
 
-Mortar is a desktop mod manager for PC games. This extension connects your browser to it while you browse Nexus Mods and Thunderstore.
+Mortar is a desktop mod manager for PC games. This extension connects the browser to it on Nexus Mods and Thunderstore.
 
-- Mod Manager Download buttons are relayed to Mortar. Open as many mod tabs as you like and click away; every click arrives, instead of the browser handing the nxm:// links to the desktop one at a time and dropping some. Nexus first shows a "Download mod file" dialog listing the file's requirements; when Mortar is installed and the connection is on, the extension clicks that dialog's own Download link for you so the link reaches Mortar. Mortar shows the requirements itself.
-- Mods and files already in your open Mortar profile are marked on Nexus pages, so you can tell what you have. On the extension's options page choose Off, Gray out or Hide for mods in the profile, obsolete mods, and mods Mortar marks broken for your game version, and Off or Show badge for the "Update available" badge.
-- A Mortar section in the filter sidebar of mod listings has three checkboxes that switch those rows between Gray out and Off (Hide is only on the options page): mods already in your profile, mods whose name or summary says obsolete, deprecated or depreciated, and mods Mortar reports as broken.
-- Mod pages show which files are installed, requirements and known problems for the mod, as reported by Mortar. Collection pages have an Open in Mortar button.
-- On thunderstore.io package pages, a package already in your open Mortar profile is marked, and an Install in Mortar button sends the package to Mortar. This works on package pages only, not on Thunderstore listings.
-- The toolbar badge and popup show how many of your profile's mods have updates, checked every 30 minutes.
+- Relays Mod Manager Download clicks to Mortar so nxm:// links are not dropped when many tabs fire at once. When Mortar is installed and the connection is on, the extension clicks Nexus's "Download mod file" dialog so the link reaches Mortar. Mortar shows the file's requirements.
+- Marks mods and files already in the open profile. Options: Off, Gray out or Hide for in-profile, obsolete, and broken-for-this-game-version; Off or Show badge for updates.
+- Listing sidebar checkboxes switch those rows between Gray out and Off only (Hide is options-only).
+- Mod pages show installed files, requirements and known problems from Mortar. Collection pages have Open in Mortar.
+- thunderstore.io package pages (not listings) mark an installed package and offer Install in Mortar.
+- Toolbar badge and popup show profile updates, checked every 30 minutes.
 
-The extension only adds its buttons and marks on Nexus Mods pages whose game domain Mortar lists, and on Thunderstore package pages whose community Mortar lists. It never downloads anything itself and never opens Nexus pages on its own. Downloads start only from Nexus's own Mod Manager Download button.
+UI only on Nexus game domains and Thunderstore communities Mortar lists. The extension never downloads or opens Nexus pages itself.
 
-It needs the Mortar desktop app (<https://github.com/Rethunk-Tech/mortar>). If Mortar is not installed, the popup and options page say "Mortar isn't installed" and how to connect; Nexus pages are left as Nexus drew them; Thunderstore package pages show the same hint and do not install. Nothing is clicked for you. If Mortar is installed but not running, those surfaces say "Mortar isn't running"; if no profile is open, "Open a profile in Mortar". If the connection is switched off in Mortar's settings, Nexus pages draw nothing extra; Thunderstore package pages say the connection is off. Sites can be switched off on the options page (Nexus Mods and Thunderstore, both on by default).
+Needs [Mortar](https://github.com/Rethunk-Tech/mortar). Without it: popup/options say "Mortar isn't installed"; Nexus stays as Nexus drew it; Thunderstore package pages hint and do not install. Installed but not running: "Mortar isn't running". No profile: "Open a profile in Mortar". Connection off in Mortar: Nexus draws nothing extra; Thunderstore says the connection is off. Site toggles are on the options page (both on by default).
 
 ## Single purpose
 
-Relay Nexus Mods "Mod Manager Download" clicks and Thunderstore package installs to the Mortar desktop mod manager and show, on Nexus Mods and Thunderstore package pages, which mods Mortar already has.
+Relay Nexus Mods "Mod Manager Download" clicks and Thunderstore package installs to Mortar and show which mods it already has.
 
 ## Permission justifications
 
-- `nativeMessaging`: the only channel to the Mortar desktop app (native host `tech.rethunk.mortar`, on the user's own machine). It carries download links to Mortar and asks it which mods are installed and which have updates.
-- `scripting`: when the extension is installed or updated, injects its content scripts into Nexus Mods tabs that were already open (content scripts alone only reach pages loaded afterwards).
-- `storage`: `chrome.storage.sync` holds the options keys `siteNexus` and `siteThunderstore` (default on), `markInstalled` (default gray), `markUpdate` (default on), `markObsolete` and `markBroken` (default off). `chrome.storage.session` holds the last update check (`updatesReply`, `updatesError`) so the popup and badge render without a new request.
-- `alarms`: schedules the update check every 30 minutes so the toolbar badge stays current.
-- Host permission `https://www.nexusmods.com/*`: the content scripts must read Nexus mod and listing pages (mod ids, download links) to mark mods, to follow the Download link in Nexus's "Download mod file" dialog, and to relay Mod Manager Download links.
-- Content script match `https://thunderstore.io/c/*/p/*`: reads the community, namespace and package name from a Thunderstore package page's address to mark a package already in the profile and to add the Install in Mortar button. It reads nothing else and makes no requests. No other site is accessed.
+- `nativeMessaging`: only channel to Mortar (`tech.rethunk.mortar` on this machine). Carries download links and asks which mods are installed or have updates.
+- `scripting`: injects content scripts into already-open Nexus tabs on install or update (content scripts alone miss those).
+- `storage`: `chrome.storage.sync` options keys in `settings.js`. `chrome.storage.session` holds the last update check (`updatesReply`, `updatesError`).
+- `alarms`: update check every 30 minutes for the toolbar badge.
+- Host `https://www.nexusmods.com/*`: read mod ids and download links; follow the dialog Download link; relay Mod Manager Download.
+- Match `https://thunderstore.io/c/*/p/*`: community, namespace and package name from the address for the mark and Install button. Reads nothing else. No other site.
 
-Remote code: none. All code ships in the package.
-
-## Notes for reviewers
-
-- Install the Mortar desktop app from <https://github.com/Rethunk-Tech/mortar>; it registers the native messaging host. Open a mod page for a game Mortar lists (for example Stardew Valley on nexusmods.com). A Thunderstore package page only shows Mortar's overlay for a community in Mortar's `games` list.
-- Without the app the popup says "Mortar isn't installed. Install Mortar and open it once to connect this browser." and the Open Mortar button is hidden. With the app installed but closed it says "Mortar isn't running".
-- The extension clicks the "Download mod file" dialog's Download link only when Mortar is installed and its extension connection is on.
+Remote code: none.
 
 ## Store ID prerequisite
 
-The store item id is `hboeppdoecbglcmfojappgehkbecdfbi`. Mortar's native host manifest allows only the extension's origins, so this id is in `storeChromeIDs` in Mortar's [`internal/nativehost/nativehost.go`](https://github.com/Rethunk-Tech/mortar/blob/main/internal/nativehost/nativehost.go). Upload `mortar-browser-extension-chrome-web-store.zip` from each release, which `.github/workflows/release.yml` builds without `key` (the store signs with its own key).
+Item id `hboeppdoecbglcmfojappgehkbecdfbi` is in Mortar's `storeChromeIDs` (`internal/nativehost/nativehost.go`). Upload `mortar-browser-extension-chrome-web-store.zip` from the release (built without `key`). Reviewers: install Mortar, open a listed game; the dialog Download click runs only when Mortar is installed and the connection is on.
 
 ## Data use disclosures (Privacy practices tab)
 
-Data types the extension handles:
-
-- Website content: Nexus Mods page content (mod ids, file ids, nxm:// download links) and Thunderstore package page addresses (community, namespace, package name) is read in the page so it can be marked and relayed.
-- Web history: the background script checks whether the active tab's URL contains nexusmods.com to refresh the update check; the URL is not stored or sent.
-- Not collected: personally identifiable information, health, financial, authentication, location, user activity (keystrokes, mouse), or personal communications.
+- Website content: Nexus mod/file ids and nxm:// links; Thunderstore community/namespace/package from the address. Read in-page to mark and relay.
+- Web history: background checks whether the active tab URL contains nexusmods.com to refresh updates; the URL is not stored or sent.
+- Not collected: PII, health, financial, authentication, location, user activity, or personal communications.
 
 Certify all three: not sold to third parties; not used or transferred for purposes unrelated to the single purpose; not used for creditworthiness or lending.
 
 ## Privacy policy text
 
-Mortar's browser extension reads Nexus Mods pages in your browser to mark mods and to pass Mod Manager Download links to the Mortar desktop app installed on your own computer, using the browser's native messaging. The only data exchanged is Nexus mod ids, file ids and nxm:// links, and Thunderstore package names, going to Mortar, and installed-mod and update information coming back. It runs only on <https://www.nexusmods.com> and on Thunderstore package pages (<https://thunderstore.io/c/*/p/>*). The extension makes no network requests of its own, has no server, analytics or telemetry, and sends nothing to the developers or any third party. Site toggles, listing marks and the update-badge choice are stored in your browser's synced extension storage and never leave it. Uninstalling the extension removes them.
+Mortar's browser extension reads Nexus Mods pages to mark mods and pass Mod Manager Download links to the Mortar app on this computer via native messaging. The only data exchanged is Nexus mod/file ids and nxm:// links, and Thunderstore package names, going to Mortar, and installed-mod and update information coming back. It runs only on <https://www.nexusmods.com> and Thunderstore package pages (`https://thunderstore.io/c/*/p/*`). No network requests of its own, no server, analytics or telemetry, nothing to the developers or any third party. Site toggles, listing marks and the update-badge choice stay in the browser's synced extension storage. Uninstalling removes them.
 
 ## Screenshots (1280x800 preferred, or 640x400; PNG or JPEG, no alpha, up to 5)
 
-1. Nexus mod page with the Mortar panel showing installed files and the Mod Manager Download button: caption "Downloads go straight to Mortar".
-2. A Nexus listing page with installed mods highlighted: "Mods you already have are marked".
-3. Same listing with mode set to hide: "Or hide them".
-4. Toolbar popup open with the update list and the connected status line.
-5. Toolbar with the updates badge next to the Mortar app window in the same shot (1280x800).
+1. Nexus mod page with the Mortar panel and Mod Manager Download: "Downloads go straight to Mortar".
+2. Listing with installed mods highlighted: "Mods you already have are marked".
+3. Same listing hidden: "Or hide them".
+4. Toolbar popup with the update list and connected status.
+5. Toolbar badge next to the Mortar app (1280x800).
 
-Also: small promo tile 440x280 (required), marquee 1400x560 (optional). Capture against a throwaway profile; avoid showing personal account names.
+Also: small promo 440x280 (required), marquee 1400x560 (optional). Capture on a throwaway profile; no personal account names.
