@@ -29,8 +29,12 @@ const refreshStatus = () => {
       })
     })
   globalThis.mortarAskEachGame(ask).then(({ replies, primary }) => {
-    const modIds = replies.flatMap((r) => (Array.isArray(r?.modIds) ? r.modIds : []))
-    paintStatus(Array.isArray(primary?.modIds) ? { ...primary, modIds } : primary, lastError)
+    const { reply, lastError: paintError } = globalThis.mortarPopupStatusInput(
+      replies,
+      primary,
+      lastError,
+    )
+    paintStatus(reply, paintError)
   })
 }
 globalThis.mortarRefreshPopupStatus = refreshStatus

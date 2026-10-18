@@ -85,6 +85,15 @@ globalThis.mortarAskEachGame = async (ask) => {
   return { games, replies, primary }
 }
 
+globalThis.mortarPopupStatusInput = (replies, primary, lastError) => {
+  const modIds = replies.flatMap((r) => (Array.isArray(r?.modIds) ? r.modIds : []))
+  const reply = Array.isArray(primary?.modIds) ? { ...primary, modIds } : primary
+  return {
+    reply,
+    lastError: globalThis.mortarConnectionState(reply) === 'ready' ? undefined : lastError,
+  }
+}
+
 globalThis.mortarInstallHint =
   "Mortar isn't installed. Install Mortar and open it once to connect this browser."
 

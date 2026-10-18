@@ -74,6 +74,26 @@ test('AskEachGame picks the first ready game reply, else the first, else the pro
   }
 })
 
+test('popup status uses lastError only when the painted reply is not ready', () => {
+  const sendFail = { message: 'Could not establish connection' }
+  const ready = {
+    protocol: 2,
+    state: 'ready',
+    connected: true,
+    profile: 'Main',
+    modIds: [1],
+  }
+  const mixed = globalThis.mortarPopupStatusInput([ready], ready, sendFail)
+  expect(mixed.lastError).toBeUndefined()
+  expect(globalThis.mortarInstalledReplyStatus(mixed.reply, mixed.lastError)).toBe('')
+  expect(mixed.reply.modIds).toEqual([1])
+  const missing = globalThis.mortarPopupStatusInput([], undefined, sendFail)
+  expect(missing.lastError).toBe(sendFail)
+  expect(globalThis.mortarInstalledReplyStatus(missing.reply, missing.lastError)).toBe(
+    "Mortar isn't installed",
+  )
+})
+
 test('a protocol mismatch names the side to update', () => {
   const state = globalThis.mortarConnectionState
   expect(state({ protocol: 2, state: 'ready', connected: true })).toBe('ready')
