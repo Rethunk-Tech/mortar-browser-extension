@@ -4,12 +4,14 @@
 // Mutation observers, not a timer, find the link: background tabs throttle timers to as little as once a minute.
 // The background script also injects this file into Nexus tabs that were open before the extension loaded, so a
 // tab can run it twice; the flag keeps one copy.
+// biome-ignore lint/style/noExcessiveLinesPerFile: site enable/disable teardown
 if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   globalThis.mortarNxmWatch = true
   const sent = new Set()
   const skipped = new Set()
   const advanced = new WeakSet()
   const watched = new WeakSet()
+  let siteActive = false
   const installedCacheDuration = 60_000
   const pageVersionPattern = /\d+(?:\.\d+)+/
   const numericFileID = /^\d+$/
@@ -355,8 +357,12 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
 
   // Another tab or the options page changed a setting: marks and panels follow without a reload.
   const followSettings = async () => {
+    const next = await globalThis.mortarReadSettings()
+    if (!(siteActive && next.siteNexus)) {
+      return
+    }
     const before = mode
-    applySettings(await globalThis.mortarReadSettings())
+    applySettings(next)
     requestMark()
     if (mode !== before) {
       panelKey = ''
@@ -383,7 +389,6 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       )
       if (own) {
         await installedIDs()
-        // The dialog may have been handled, or Mortar found missing or off, while the installed list loaded.
         if (!(advanced.has(dialog) || ['missing', 'off'].includes(installedCache.state))) {
           advanced.add(dialog)
           skipped.add(own.href)
@@ -396,7 +401,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   // A copy left in an open tab when the extension is reloaded or removed loses chrome.runtime; the new copy takes
   // over, so the old one stays quiet.
   const scan = (root) => {
-    if (!chrome.runtime?.id) {
+    if (!(siteActive && chrome.runtime?.id)) {
       return
     }
     // Mod manager download first opens a "Download mod file" dialog listing the file's requirements. Mortar
@@ -405,7 +410,15 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     for (const a of root.querySelectorAll('a[href^="nxm://"]')) {
       if (!sent.has(a.href)) {
         sent.add(a.href)
-        chrome.runtime.sendMessage({ link: a.href, close: throwaway() })
+        try {
+          chrome.runtime.sendMessage({ link: a.href, close: throwaway() }, (reply) => {
+            if (!globalThis.mortarNxmKeepSent(reply, chrome.runtime.lastError)) {
+              sent.delete(a.href)
+            }
+          })
+        } catch {
+          sent.delete(a.href)
+        }
         installedCache = emptyInstalledCache()
         installedRequest = undefined
       }
@@ -439,7 +452,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   }
 
   const watch = (root) => {
-    if (watched.has(root)) {
+    if (!siteActive || watched.has(root)) {
       return
     }
     watched.add(root)
@@ -469,18 +482,38 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     scan(root)
   }
 
+  const onVisible = () => {
+    if (siteActive && document.visibilityState === 'visible') {
+      installedCache = emptyInstalledCache()
+      panelKey = ''
+      requestMark()
+      renderModPanel().catch(() => false)
+      renderCollectionPanel().catch(() => false)
+    }
+  }
+
+  const stopSite = () => {
+    siteActive = false
+    document.removeEventListener('visibilitychange', onVisible)
+    watched.delete(document)
+    removePanels()
+    clearFileBadge()
+    panelKey = ''
+    lastModReply = undefined
+    document.getElementById(hideControlId)?.remove()
+    document.getElementById('mortar-installed-mod-style')?.remove()
+    globalThis.mortarClearListingMarks(listingMarkCtx())
+  }
+
   // Mortar's profile, installed mods and Appearance setting change while the tab is in the background, so coming
   // back re-reads all of it.
-  globalThis.mortarWhenSiteEnabled('siteNexus', () => {
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        installedCache = emptyInstalledCache()
-        panelKey = ''
-        requestMark()
-        renderModPanel().catch(() => false)
-        renderCollectionPanel().catch(() => false)
-      }
-    })
-    watch(document)
-  })
+  globalThis.mortarWhenSiteEnabled(
+    'siteNexus',
+    () => {
+      siteActive = true
+      document.addEventListener('visibilitychange', onVisible)
+      watch(document)
+    },
+    stopSite,
+  )
 }
