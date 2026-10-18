@@ -15,7 +15,6 @@ globalThis.mortarUpdatesBadge = (reply, error) => {
       color: '#1b1a17',
       rows: [],
       profile: '',
-      status: 'unreachable',
       state: globalThis.mortarConnectionState(reply, error),
     }
   }
@@ -35,7 +34,6 @@ globalThis.mortarUpdatesBadge = (reply, error) => {
     color: '#1b1a17',
     rows,
     profile: typeof profile === 'string' ? profile : '',
-    status: 'ok',
     state: globalThis.mortarConnectionState(reply, error),
   }
 }

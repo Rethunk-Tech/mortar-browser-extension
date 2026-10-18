@@ -20,7 +20,6 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
     background: '#aabbcc',
     color: '#1b1a17',
     profile: 'Default',
-    status: 'ok',
     state: 'noProfile',
     rows: [
       {
@@ -48,7 +47,6 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
   )
   expect(empty.text).toBe('')
   expect(empty.rows).toEqual([])
-  expect(empty.status).toBe('ok')
   expect(empty.background).toBe('#111111')
 
   const missingAccent = globalThis.mortarUpdatesBadge(
@@ -65,7 +63,6 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
     color: '#1b1a17',
     rows: [],
     profile: '',
-    status: 'unreachable',
     state: 'missing',
   })
 
