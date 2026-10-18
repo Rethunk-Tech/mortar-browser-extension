@@ -176,13 +176,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (
     (msg?.type === 'installed' || msg?.type === 'mod') &&
     msg.source === 'nexus' &&
-    typeof msg.sourceGameKey === 'string'
+    typeof msg.sourceGameKey === 'string' &&
+    (msg.type === 'installed' || (Number.isInteger(msg.modId) && msg.modId > 0))
   ) {
     send({
       type: msg.type,
       source: msg.source,
       sourceGameKey: msg.sourceGameKey,
-      modId: msg.modId,
+      ...(msg.type === 'mod' ? { modId: msg.modId } : {}),
     }).then(sendResponse, (error) => sendResponse(failure(error)))
     return true
   }
@@ -194,6 +195,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 chrome.runtime.onInstalled.addListener(async () => {
   startUpdates()
   for (const tab of await chrome.tabs.query({ url: 'https://www.nexusmods.com/*' })) {
+    if (typeof tab.id !== 'number') {
+      continue
+    }
     chrome.scripting.executeScript({
       target: { tabId: tab.id, allFrames: false },
       files: chrome.runtime.getManifest().content_scripts[0].js,

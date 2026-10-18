@@ -3,8 +3,10 @@ import './plural.js'
 import './updates.js'
 
 const ports = []
+const injected = []
 let onMessage
 let postHook
+let queryTabs = []
 
 const listeners = () => {
   const fns = []
@@ -37,10 +39,10 @@ globalThis.chrome = {
     getManifest: () => ({ content_scripts: [{ js: [] }] }),
   },
   alarms: { onAlarm: listeners(), create: () => undefined },
-  tabs: { onActivated: listeners(), query: async () => [], remove: () => undefined },
+  tabs: { onActivated: listeners(), query: async () => queryTabs, remove: () => undefined },
   action: { setBadgeText: () => undefined, setBadgeBackgroundColor: () => undefined },
   storage: { session: { set: async () => undefined } },
-  scripting: { executeScript: () => undefined },
+  scripting: { executeScript: (opts) => injected.push(opts) },
 }
 
 await import('./background.js')
@@ -58,6 +60,8 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 beforeEach(() => {
   postHook = undefined
+  queryTabs = []
+  injected.length = 0
   for (const port of ports.splice(0)) {
     for (const fn of port.onDisconnect.fns) {
       fn()
@@ -138,6 +142,8 @@ test('messages with a wrong source or missing fields are dropped', async () => {
     { type: 'mod', source: 'nexus' },
     { type: 'installPackage', source: 'thunderstore', sourceGameKey: 'g' },
     { type: 'installPackage', source: 'thunderstore', sourceGameKey: 'g', package: 7 },
+    { type: 'mod', source: 'nexus', sourceGameKey: 'g', modId: '1' },
+    { type: 'mod', source: 'nexus', sourceGameKey: 'g', modId: 0 },
     { type: 'unknown' },
     undefined,
   ]
@@ -145,6 +151,32 @@ test('messages with a wrong source or missing fields are dropped', async () => {
     expect(await route(msg)).toBe('dropped')
   }
   expect(ports).toHaveLength(0)
+})
+
+test('an installed request does not forward a spoofed modId', async () => {
+  const reply = route({
+    type: 'installed',
+    source: 'nexus',
+    sourceGameKey: 'g',
+    modId: 999,
+  })
+  await settle()
+  expect(ports[0].sent[0]).toEqual({
+    type: 'installed',
+    source: 'nexus',
+    sourceGameKey: 'g',
+    protocol: 2,
+  })
+  for (const fn of ports[0].onMessage.fns) {
+    fn({ ok: true })
+  }
+  expect(await reply).toEqual({ ok: true })
+})
+
+test('onInstalled injects only into nexus tabs that have an id', async () => {
+  queryTabs = [{ id: 3 }, { url: 'https://www.nexusmods.com/x' }]
+  await chrome.runtime.onInstalled.fns[0]()
+  expect(injected).toEqual([{ target: { tabId: 3, allFrames: false }, files: [] }])
 })
 
 test('an installPackage with a string package is forwarded as sent', async () => {
