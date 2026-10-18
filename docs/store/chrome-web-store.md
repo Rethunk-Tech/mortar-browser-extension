@@ -35,11 +35,11 @@ Relay Nexus Mods "Mod Manager Download" clicks and Thunderstore package installs
 ## Permission justifications
 
 - `nativeMessaging`: only channel to Mortar (`tech.rethunk.mortar` on this machine). Carries download links and asks which mods are installed or have updates.
-- `scripting`: injects content scripts into already-open Nexus tabs on install or update (content scripts alone miss those).
+- `scripting`: injects content scripts into already-open Nexus and Thunderstore tabs on install or update (content scripts alone miss those).
 - `storage`: `chrome.storage.sync` options keys in `settings.js`. `chrome.storage.session` holds the last update check (`updatesReply`, `updatesError`).
 - `alarms`: update check every 30 minutes for the toolbar badge.
-- Host `https://www.nexusmods.com/*`: read mod ids and download links; follow the dialog Download link; relay Mod Manager Download.
-- Match `https://thunderstore.io/c/*` and `https://thunderstore.io/c/*/p/*`: community listings mark installed packages; package pages also read namespace and name for the mark and Install button. Reads nothing else. No other site.
+- Host `https://www.nexusmods.com/*`: read mod ids and download links; follow the dialog Download link; relay Mod Manager Download; inject into already-open Nexus tabs.
+- Host `https://thunderstore.io/*`: read community, namespace and package name from listing and package pages; inject into already-open Thunderstore tabs. Reads nothing else. No other site.
 
 Remote code: none.
 

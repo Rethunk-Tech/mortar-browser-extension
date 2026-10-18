@@ -36,10 +36,25 @@ globalThis.chrome = {
     },
     onStartup: listeners(),
     onInstalled: listeners(),
-    getManifest: () => ({ content_scripts: [{ js: [] }] }),
+    getManifest: () => ({
+      content_scripts: [{ js: ['nexus.js'] }, { js: ['thunderstore.js'] }],
+    }),
   },
   alarms: { onAlarm: listeners(), create: () => undefined },
-  tabs: { onActivated: listeners(), query: async () => queryTabs, remove: () => undefined },
+  tabs: {
+    onActivated: listeners(),
+    query: async ({ url }) =>
+      queryTabs.filter((tab) => {
+        if (!tab.url) {
+          return false
+        }
+        if (url.includes('nexusmods.com')) {
+          return tab.url.includes('nexusmods.com')
+        }
+        return tab.url.includes('thunderstore.io/c/')
+      }),
+    remove: () => undefined,
+  },
   action: { setBadgeText: () => undefined, setBadgeBackgroundColor: () => undefined },
   storage: { session: { set: async () => undefined } },
   scripting: { executeScript: (opts) => injected.push(opts) },
@@ -173,10 +188,20 @@ test('an installed request does not forward a spoofed modId', async () => {
   expect(await reply).toEqual({ ok: true })
 })
 
-test('onInstalled injects only into nexus tabs that have an id', async () => {
-  queryTabs = [{ id: 3 }, { url: 'https://www.nexusmods.com/x' }]
+test('onInstalled injects Nexus and Thunderstore tabs that have an id', async () => {
+  queryTabs = [
+    { id: 3, url: 'https://www.nexusmods.com/stardewvalley' },
+    { url: 'https://www.nexusmods.com/x' },
+    { id: 8, url: 'https://thunderstore.io/c/lethal-company/p/A/B/' },
+    { id: 9, url: 'https://thunderstore.io/' },
+    { id: 10, url: 'https://thunderstore.io/c/lethal-company/' },
+  ]
   await chrome.runtime.onInstalled.fns[0]()
-  expect(injected).toEqual([{ target: { tabId: 3, allFrames: false }, files: [] }])
+  expect(injected).toEqual([
+    { target: { tabId: 3, allFrames: false }, files: ['nexus.js'] },
+    { target: { tabId: 8, allFrames: false }, files: ['thunderstore.js'] },
+    { target: { tabId: 10, allFrames: false }, files: ['thunderstore.js'] },
+  ])
 })
 
 test('an installPackage with a string package is forwarded as sent', async () => {

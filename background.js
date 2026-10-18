@@ -189,18 +189,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 })
 
-// Content scripts only reach pages loaded after the extension, so Nexus tabs already open get the script now.
-// Thunderstore tabs are not covered: injecting there would need a thunderstore.io host permission, and a package page
-// that was open before the install only misses its buttons until it is reloaded.
-chrome.runtime.onInstalled.addListener(async () => {
-  startUpdates()
-  for (const tab of await chrome.tabs.query({ url: 'https://www.nexusmods.com/*' })) {
+// Content scripts only reach pages loaded after the extension, so already-open tabs get the matching list now.
+const injectOpenTabs = async (url, files) => {
+  for (const tab of await chrome.tabs.query({ url })) {
     if (typeof tab.id !== 'number') {
       continue
     }
     chrome.scripting.executeScript({
       target: { tabId: tab.id, allFrames: false },
-      files: chrome.runtime.getManifest().content_scripts[0].js,
+      files,
     })
   }
+}
+
+chrome.runtime.onInstalled.addListener(async () => {
+  startUpdates()
+  const scripts = chrome.runtime.getManifest().content_scripts
+  await injectOpenTabs('https://www.nexusmods.com/*', scripts[0].js)
+  await injectOpenTabs('https://thunderstore.io/c/*', scripts[1].js)
 })

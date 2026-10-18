@@ -56,7 +56,7 @@
       "strict_min_version": "142.0"
     }
   },
-  "host_permissions": ["https://www.nexusmods.com/*"],
+  "host_permissions": ["https://www.nexusmods.com/*", "https://thunderstore.io/*"],
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
