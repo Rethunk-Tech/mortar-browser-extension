@@ -49,10 +49,11 @@ const send = (message) =>
       if (!port) {
         connect()
       }
-      port.postMessage({ ...message, protocol: globalThis.mortarProtocol })
       pending.push({ resolve, reject })
+      port.postMessage({ ...message, protocol: globalThis.mortarProtocol })
       armIdle()
     } catch (error) {
+      pending.pop()
       reject(error)
     }
   })
@@ -155,7 +156,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type === 'checkNow') {
     checkUpdates()
       .then(sendResponse)
-      .catch(() => false)
+      .catch((error) => sendResponse(failure(error)))
     return true
   }
   if (

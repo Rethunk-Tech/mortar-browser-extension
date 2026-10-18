@@ -4,6 +4,7 @@ import './updates.js'
 
 const ports = []
 let onMessage
+let postHook
 
 const listeners = () => {
   const fns = []
@@ -17,7 +18,10 @@ globalThis.chrome = {
         sent: [],
         onMessage: listeners(),
         onDisconnect: listeners(),
-        postMessage: (message) => port.sent.push(message),
+        postMessage: (message) => {
+          port.sent.push(message)
+          postHook?.(port)
+        },
         disconnect: () => undefined,
       }
       ports.push(port)
@@ -53,6 +57,7 @@ const route = (msg, sender = {}) =>
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 beforeEach(() => {
+  postHook = undefined
   for (const port of ports.splice(0)) {
     for (const fn of port.onDisconnect.fns) {
       fn()
@@ -75,6 +80,35 @@ test('replies pair with requests first in, first out, and every message carries 
     fn({ ok: true, n: 2 })
   }
   expect([(await first).n, (await second).n]).toEqual([1, 2])
+})
+
+test('a disconnect during postMessage still settles the waiter', async () => {
+  postHook = (port) => {
+    for (const fn of port.onDisconnect.fns) {
+      fn()
+    }
+  }
+  const reply = await Promise.race([
+    route({ link: 'nxm://during' }),
+    new Promise((resolve) => setTimeout(() => resolve('hung'), 0)),
+  ])
+  expect(reply.nativeMessagingError).toBe(true)
+  expect(reply).not.toBe('hung')
+})
+
+test('a rejected update check still answers the popup', async () => {
+  const previous = chrome.storage.session.set
+  chrome.storage.session.set = () => Promise.reject(new Error('session closed'))
+  try {
+    const reply = route({ type: 'checkNow' })
+    await settle()
+    for (const fn of ports[0].onDisconnect.fns) {
+      fn()
+    }
+    expect((await reply).nativeMessagingError).toBe(true)
+  } finally {
+    chrome.storage.session.set = previous
+  }
 })
 
 test('a disconnect rejects every pending request', async () => {
