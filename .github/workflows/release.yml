@@ -7,7 +7,7 @@ on:
     tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
 
 # A release run is never cancelled part-way; a second tag push queues behind it.
 concurrency:
@@ -15,10 +15,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     # AMO's review of an unlisted version usually takes minutes, and signing waits for it.
     timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -28,8 +30,17 @@ jobs:
       - name: Setup Bun
         uses: Rethunk-Tech/gh-actions/setup-bun@bc5fa5b1004205c9c9399fc941d79d5ada53c59b # v1.16
 
-      - name: Gate
-        run: bun run gate
+      - name: Lint
+        if: ${{ !cancelled() }}
+        run: bun run lint
+
+      - name: Test
+        if: ${{ !cancelled() }}
+        run: bun run test
+
+      - name: Web-ext
+        if: ${{ !cancelled() }}
+        run: bun run webext
 
       - name: Tag matches manifest
         env:
@@ -55,7 +66,7 @@ jobs:
           (cd "$store" && zip -q -r "$GITHUB_WORKSPACE/dist/mortar-browser-extension-chrome-web-store.zip" .)
 
       # AMO signs each extension version once, so a rerun reuses the signed copy from the release or, when the release
-      # never got it, from AMO itself.
+      # never got it, from AMO itself. This job cannot create a release; it only reads an existing one.
       - name: Firefox add-on
         env:
           GH_TOKEN: ${{ github.token }}
@@ -92,6 +103,28 @@ jobs:
             --arg link "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/mortar-browser-extension.xpi" \
             --arg hash "sha256:$(sha256sum dist/mortar-browser-extension.xpi | cut -d' ' -f1)" \
             '{addons: {($id): {updates: [{version: $version, update_link: $link, update_hash: $hash}]}}}' >dist/updates.json
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-files
+          path: |
+            dist/*.zip
+            dist/*.xpi
+            dist/updates.json
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-files
+          path: dist
 
       - name: Release
         env:
