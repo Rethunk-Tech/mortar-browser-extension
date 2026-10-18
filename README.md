@@ -9,37 +9,12 @@
 
 ---
 
-A Chrome, Edge and Firefox extension for [Mortar](https://github.com/Rethunk-Tech/mortar), the desktop mod manager. On <https://www.nexusmods.com> it hands Mod Manager Download clicks to Mortar, marks the mods the open Mortar profile already has, flags broken and obsolete mods, and shows available updates in its popup. On thunderstore.io package pages it marks packages already in that profile and offers Install in Mortar. It needs the Mortar app on the same computer; without it the popup and options page say so, Nexus pages stay as Nexus drew them, and Thunderstore package pages show how to connect.
+Chrome, Edge and Firefox companion for [Mortar](https://github.com/Rethunk-Tech/mortar). Relays Nexus Mod Manager Download clicks and Thunderstore package installs to the app on this computer, and marks what the open profile already has. Without Mortar the popup and options page say so; Nexus pages stay as Nexus drew them.
 
 <p align="center"><img src="media/readme/popup.png" alt="The toolbar popup connected to Mortar: 660 Nexus mods in the Main profile and the updates available for them" width="380"></p>
 
-## Getting started
+Install, protocol and the dev loop: [HUMANS.md](HUMANS.md). Layout and release: [AGENTS.md](AGENTS.md). Store listing copy: [docs/store/](docs/store/). Security: [SECURITY.md](SECURITY.md). Licence: AGPL-3.0, [LICENSE](LICENSE).
 
 ```sh
 bun install && bun run gate
 ```
-
-Install from a release, requirements, the native-messaging protocol and the dev loop: [HUMANS.md](HUMANS.md).
-
-## Highlights
-
-- Relays Nexus's own Mod Manager Download button to Mortar, including clicking Nexus's "Download mod file" dialog so the nxm:// link reaches Mortar; never downloads files or opens Nexus pages itself
-- Installs Thunderstore packages into the open profile from their package pages
-- Marks mods and files the open profile already has, on mod pages, file lists and listings
-- Flags broken and obsolete mods and shows available updates in the popup
-- Versioned native-messaging handshake: each side says which one to update when they cannot talk
-
-## Documentation
-
-| Topic | Location |
-| --- | --- |
-| Install, protocol, develop | [HUMANS.md](HUMANS.md) |
-| Layout, tests, release | [AGENTS.md](AGENTS.md) |
-| Contributing | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| Security policy | [SECURITY.md](SECURITY.md) |
-| Chrome Web Store listing copy | [docs/store/](docs/store/) |
-| Licence | [LICENSE](LICENSE) |
-
-## License
-
-AGPL-3.0, see [LICENSE](LICENSE).
