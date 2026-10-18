@@ -24,6 +24,36 @@ test('install result never shows a raw host error', () => {
     globalThis.mortarInstallHint,
   )
   expect(text({ nativeMessagingError: true })).toBe(globalThis.mortarInstallHint)
+  expect(text({ protocol: 2, state: 'notRunning' })).toBe("Mortar isn't running")
+  expect(text({ protocol: 2, state: 'noProfile' })).toBe('Open a profile in Mortar')
+})
+
+test('a disconnected package page still names the connection problem', () => {
+  const overlay = globalThis.mortarThunderstoreOverlay
+  const page = { key: 'lethal-company', namespace: 'Alice', name: 'MoreCompany' }
+  expect(overlay(undefined, 'no host', page)).toEqual({
+    text: globalThis.mortarInstallHint,
+    button: false,
+  })
+  expect(overlay({ protocol: 2, state: 'notRunning' }, undefined, page)).toEqual({
+    text: "Mortar isn't running",
+    button: false,
+  })
+  expect(overlay({ protocol: 2, state: 'ready', games: [], packages: [] }, undefined, page)).toBe(
+    undefined,
+  )
+  const managed = {
+    protocol: 2,
+    state: 'ready',
+    games: [{ sources: { thunderstore: 'lethal-company' } }],
+    packages: [],
+  }
+  expect(overlay(managed, undefined, page)).toEqual({ text: 'Mortar', button: true })
+  expect(overlay({ ...managed, packages: ['Alice-MoreCompany'] }, undefined, page)).toEqual({
+    text: 'In Mortar profile',
+    button: false,
+  })
+  expect(overlay(managed, undefined, undefined)).toBe(undefined)
 })
 
 test('only managed communities with a package in the profile are marked', () => {

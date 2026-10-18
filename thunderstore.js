@@ -33,10 +33,33 @@ globalThis.mortarThunderstoreResultText = (reply, lastError) => {
   if (state === 'missing') {
     return globalThis.mortarInstallHint
   }
-  if (state === 'mortarOld' || state === 'extensionOld') {
+  if (
+    state === 'mortarOld' ||
+    state === 'extensionOld' ||
+    ['off', 'notRunning', 'noProfile'].includes(reply?.state)
+  ) {
     return globalThis.mortarStateText(state)
   }
   return reply.ok === true ? 'Sent to Mortar' : "Mortar couldn't install this package"
+}
+
+// What the package page overlay shows: a connection problem, In Mortar profile, or the install button.
+// An unmanaged community stays untouched, the same as a page that is not a package page.
+globalThis.mortarThunderstoreOverlay = (reply, lastError, page) => {
+  if (!page) {
+    return
+  }
+  const state = globalThis.mortarConnectionState(reply, lastError)
+  if (state !== 'ready') {
+    return { text: globalThis.mortarThunderstoreResultText(reply, lastError), button: false }
+  }
+  if (!globalThis.mortarThunderstoreManaged(reply, page.key)) {
+    return
+  }
+  if (globalThis.mortarThunderstoreInstalled(reply, page)) {
+    return { text: 'In Mortar profile', button: false }
+  }
+  return { text: 'Mortar', button: true }
 }
 
 if (
@@ -89,18 +112,12 @@ if (
     const { reply, error } = await ask(
       globalThis.mortarThunderstoreRequest('installedPackages', page),
     )
-    if (
-      globalThis.mortarConnectionState(reply, error) !== 'ready' ||
-      !globalThis.mortarThunderstoreManaged(reply, page.key)
-    ) {
+    const overlay = globalThis.mortarThunderstoreOverlay(reply, error, page)
+    if (!overlay) {
       return
     }
-    globalThis.mortarSetAccent?.(reply.accent)
-    if (globalThis.mortarThunderstoreInstalled(reply, page)) {
-      show('In Mortar profile', false)
-    } else {
-      show('Mortar', true)
-    }
+    globalThis.mortarSetAccent?.(reply?.accent)
+    show(overlay.text, overlay.button)
   }
   globalThis.mortarWhenSiteEnabled(
     'siteThunderstore',
