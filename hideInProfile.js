@@ -302,3 +302,27 @@ globalThis.mortarInstalledListingState = (reply, lastError, ids) => {
     status,
   }
 }
+
+globalThis.mortarCreateSiteWatch = (Observer) => {
+  let watched = new WeakSet()
+  const observers = []
+  return {
+    watch(root, callback, options) {
+      if (watched.has(root)) {
+        return false
+      }
+      watched.add(root)
+      const observer = new Observer(callback)
+      observer.observe(root, options)
+      observers.push(observer)
+      return true
+    },
+    stop() {
+      for (const observer of observers) {
+        observer.disconnect()
+      }
+      observers.length = 0
+      watched = new WeakSet()
+    },
+  }
+}

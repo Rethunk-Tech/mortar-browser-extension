@@ -10,7 +10,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const sent = new Set()
   const skipped = new Set()
   const advanced = new WeakSet()
-  const watched = new WeakSet()
+  const siteWatch = globalThis.mortarCreateSiteWatch(MutationObserver)
   let siteActive = false
   const installedCacheDuration = 60_000
   const pageVersionPattern = /\d+(?:\.\d+)+/
@@ -454,32 +454,38 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   }
 
   const watch = (root) => {
-    if (!siteActive || watched.has(root)) {
+    if (!siteActive) {
       return
     }
-    watched.add(root)
     let pending
-    new MutationObserver((records) => {
-      for (const record of records) {
-        for (const node of record.addedNodes) {
-          if (node instanceof Element && !isOwn(node)) {
-            watchShadows(node)
+    const started = siteWatch.watch(
+      root,
+      (records) => {
+        for (const record of records) {
+          for (const node of record.addedNodes) {
+            if (node instanceof Element && !isOwn(node)) {
+              watchShadows(node)
+            }
           }
         }
-      }
-      if (records.every(ownMutation) || pending !== undefined) {
-        return
-      }
-      pending = setTimeout(() => {
-        pending = undefined
-        scan(root)
-      }, scanDelayMs)
-    }).observe(root, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: ['href'],
-    })
+        if (records.every(ownMutation) || pending !== undefined) {
+          return
+        }
+        pending = setTimeout(() => {
+          pending = undefined
+          scan(root)
+        }, scanDelayMs)
+      },
+      {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: ['href'],
+      },
+    )
+    if (!started) {
+      return
+    }
     watchShadows(root)
     scan(root)
   }
@@ -497,7 +503,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const stopSite = () => {
     siteActive = false
     document.removeEventListener('visibilitychange', onVisible)
-    watched.delete(document)
+    siteWatch.stop()
     removePanels()
     clearFileBadge()
     panelKey = ''

@@ -113,6 +113,29 @@ test('obsolete listing tiles follow Mortar author-marked rule', () => {
   expect(obsolete('Normal Mod', 'A normal summary.')).toBe(false)
 })
 
+test('a second site start does not observe the same root twice', () => {
+  let observes = 0
+  let disconnects = 0
+  const Observer = class {
+    observe() {
+      observes += 1
+    }
+    disconnect() {
+      disconnects += 1
+    }
+  }
+  const watch = globalThis.mortarCreateSiteWatch(Observer)
+  const root = {}
+  expect(watch.watch(root, () => undefined, {})).toBe(true)
+  expect(watch.watch(root, () => undefined, {})).toBe(false)
+  expect(observes).toBe(1)
+  watch.stop()
+  expect(disconnects).toBe(1)
+  expect(watch.watch(root, () => undefined, {})).toBe(true)
+  expect(watch.watch(root, () => undefined, {})).toBe(false)
+  expect(observes).toBe(2)
+})
+
 test('a failed installed lookup is asked again on the next installedIDs()', () => {
   const ttl = 60_000
   const now = Date.now()
