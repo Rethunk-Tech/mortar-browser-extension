@@ -48,6 +48,32 @@ test('skipped sources use the same names as the rest of the UI', () => {
   expect(label('other')).toBe('other')
 })
 
+test('AskEachGame picks the first ready game reply, else the first, else the probe', async () => {
+  const nexus = (domain) => ({ sources: { nexus: domain } })
+  const two = [nexus('stardewvalley'), nexus('skyrimspecialedition')]
+  const probeEmpty = { protocol: 2, state: 'noProfile', games: [] }
+  const probeTwo = { protocol: 2, state: 'noProfile', games: two }
+  const notReady = { protocol: 2, state: 'noProfile', games: two }
+  const ready = { protocol: 2, state: 'ready', connected: true, games: two }
+  for (const { replies, games, primary } of [
+    { replies: { '': probeEmpty }, games: [], primary: probeEmpty },
+    {
+      replies: { '': probeTwo, stardewvalley: notReady, skyrimspecialedition: ready },
+      games: ['stardewvalley', 'skyrimspecialedition'],
+      primary: ready,
+    },
+    {
+      replies: { '': probeTwo, stardewvalley: notReady, skyrimspecialedition: notReady },
+      games: ['stardewvalley', 'skyrimspecialedition'],
+      primary: notReady,
+    },
+  ]) {
+    const got = await globalThis.mortarAskEachGame(async (game) => replies[game])
+    expect(got.games).toEqual(games)
+    expect(got.primary).toBe(primary)
+  }
+})
+
 test('a protocol mismatch names the side to update', () => {
   const state = globalThis.mortarConnectionState
   expect(state({ protocol: 2, state: 'ready', connected: true })).toBe('ready')

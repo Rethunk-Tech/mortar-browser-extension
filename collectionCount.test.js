@@ -1,11 +1,29 @@
 import { expect, test } from 'bun:test'
 import './plural.js'
+import './modPanel.js'
 import './collectionCount.js'
 
 const contentPatcher = 1915
 const gmcm = 2400
 const farmTypeManager = 1215
 const extra = 2403
+
+test('collection page mod ids skip duplicates and off-origin links', () => {
+  const hrefs = [
+    `/stardewvalley/mods/${contentPatcher}`,
+    `https://www.nexusmods.com/stardewvalley/mods/${contentPatcher}/files`,
+    `https://other.example/stardewvalley/mods/${gmcm}`,
+    `/stardewvalley/mods/${farmTypeManager}`,
+    'not a url',
+  ]
+  const root = {
+    querySelectorAll: () => hrefs.map((href) => ({ getAttribute: () => href })),
+  }
+  expect(globalThis.mortarCollectionPageModIDs(root, 'https://www.nexusmods.com')).toEqual([
+    contentPatcher,
+    farmTypeManager,
+  ])
+})
 
 test('omits the in-profile line when there are no tiles', () => {
   expect(globalThis.mortarCollectionInProfileLine([], new Set([contentPatcher]), 'Main')).toBe('')

@@ -23,9 +23,23 @@ test('collection pages are listings for installed-mod markers', () => {
   expect(globalThis.mortarIsNexusModListing('/games/stardewvalley/mods')).toBe(true)
   expect(globalThis.mortarIsNexusModListing('/games/stardewvalley/mods/')).toBe(true)
   expect(globalThis.mortarIsNexusModListing(`/stardewvalley/mods/${contentPatcher}`)).toBe(false)
+  expect(globalThis.mortarIsNexusModListing('/stardewvalley/search')).toBe(true)
+  expect(globalThis.mortarIsNexusModListing('/games/stardewvalley/search')).toBe(true)
 })
 
 test('hide-in-profile filter stays off when Mortar is disconnected or no profile is open', () => {
+  expect(
+    globalThis.mortarHideInProfileControl({
+      connected: false,
+      profileOpen: false,
+      enabled: true,
+      status: "Mortar isn't installed",
+    }),
+  ).toEqual({
+    disabled: true,
+    hide: false,
+    title: "Mortar isn't installed",
+  })
   expect(
     globalThis.mortarHideInProfileControl({
       connected: false,
@@ -167,6 +181,63 @@ test('listing marks: Hide removes tiles, gray dims them, Off clears everything',
   expect(tile.children[0].textContent).toBe('In profile')
   apply({ updates: new Set([tileModID]) })
   expect(tile.children[0].textContent).toBe('Update available')
+})
+
+test('the Nexus filter sidebar is the filters-panel, else the region around a site checkbox', () => {
+  const hideControlId = 'mortar-hide-in-profile'
+  const panel = { id: 'filters-panel' }
+  const region = { id: 'filters' }
+  const ours = { closest: (sel) => (sel === `#${hideControlId}` ? {} : undefined) }
+  const site = {
+    closest: (sel) => (sel === `#${hideControlId}` ? null : region),
+  }
+  const root = (filtersPanel, boxes) => ({
+    getElementById: (id) => (id === 'filters-panel' ? filtersPanel : null),
+    querySelectorAll: () => boxes,
+  })
+  expect(globalThis.mortarFindNexusFilterSidebar(root(panel, []), hideControlId)).toBe(panel)
+  expect(globalThis.mortarFindNexusFilterSidebar(root(null, [ours, site]), hideControlId)).toBe(
+    region,
+  )
+  expect(globalThis.mortarFindNexusFilterSidebar(root(null, [ours]), hideControlId)).toBeUndefined()
+})
+
+test('dim marks count matching tiles and Hide removes them instead of dimming', () => {
+  const tile = () => {
+    const names = new Set()
+    return {
+      names,
+      classList: {
+        toggle: (name, on) => (on ? names.add(name) : names.delete(name)),
+      },
+    }
+  }
+  const match = tile()
+  const other = tile()
+  const root = { querySelectorAll: () => [match, other] }
+  const dim = (node) => node === match
+  expect(globalThis.mortarApplyDimMarks({ root, enabled: true, dimClass: 'dim', dim })).toBe(1)
+  expect([...match.names]).toEqual(['dim'])
+  expect([...other.names]).toEqual([])
+  expect(
+    globalThis.mortarApplyDimMarks({
+      root,
+      enabled: true,
+      dimClass: 'dim',
+      dim,
+      remove: true,
+      removedClass: 'gone',
+    }),
+  ).toBe(1)
+  expect([...match.names]).toEqual(['gone'])
+  expect(
+    globalThis.mortarApplyDimMarks({
+      root,
+      enabled: false,
+      dimClass: 'dim',
+      dim: () => true,
+    }),
+  ).toBe(0)
 })
 
 test('only mod tiles are matched for marks', () => {
