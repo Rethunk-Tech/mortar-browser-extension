@@ -38,8 +38,8 @@
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://thunderstore.io/c/*/p/*"],
-      "js": ["plural.js", "settings.js", "thunderstore.js"],
+      "matches": ["https://thunderstore.io/c/*/p/*", "https://thunderstore.io/c/*"],
+      "js": ["plural.js", "settings.js", "listingMarks.js", "thunderstore.js"],
       "run_at": "document_idle"
     }
   ],

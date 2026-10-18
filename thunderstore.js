@@ -1,12 +1,36 @@
 // Thunderstore package pages for games Mortar manages: marks a package already in the open profile and offers
 // "Install in Mortar". The host's `games` reply names Thunderstore's key for each managed game (sources.thunderstore).
 const mortarThunderstorePagePattern = /^\/c\/([^/]+)\/p\/([A-Za-z0-9_]+)\/([A-Za-z0-9_]+)(?:\/|$)/
+const mortarThunderstoreListingPattern = /^\/c\/([^/]+)\/?$/
 
 // The community key, namespace and package name of a package page, or undefined for any other page.
 globalThis.mortarThunderstorePage = (pathname) => {
   const match = mortarThunderstorePagePattern.exec(pathname)
   return match ? { key: match[1], namespace: match[2], name: match[3] } : undefined
 }
+
+// A community listing or community search (`/c/<community>/`), not a package page.
+globalThis.mortarThunderstoreListing = (pathname) => {
+  const match = mortarThunderstoreListingPattern.exec(pathname)
+  return match ? { key: match[1] } : undefined
+}
+
+// Namespace-Name id from a listing tile link, lowercased to match installedPackages.
+globalThis.mortarThunderstorePackageId = (href, key) => {
+  try {
+    const page = globalThis.mortarThunderstorePage(
+      new URL(href, 'https://thunderstore.io').pathname,
+    )
+    if (!page || page.key !== key) {
+      return
+    }
+    return `${page.namespace}-${page.name}`.toLowerCase()
+  } catch {
+    return
+  }
+}
+
+globalThis.mortarThunderstoreListingLinkSelector = 'a[href*="/c/"][href*="/p/"]'
 
 // Whether the host manages a game whose Thunderstore community is key.
 globalThis.mortarThunderstoreManaged = (reply, key) =>
@@ -50,6 +74,82 @@ globalThis.mortarThunderstoreOverlay = (reply, lastError, page) => {
   return { text: 'Mortar', button: true }
 }
 
+globalThis.mortarThunderstoreListingClasses = {
+  markerClass: 'mortar-installed-mod',
+  hiddenClass: 'mortar-hidden-mod',
+  removedClass: 'mortar-removed-mod',
+  badgeClass: 'mortar-installed-mod-badge',
+}
+
+globalThis.mortarEnsureThunderstoreListingStyle = (doc) => {
+  if (doc.getElementById('mortar-installed-mod-style')) {
+    return
+  }
+  const { markerClass, badgeClass, hiddenClass, removedClass } =
+    globalThis.mortarThunderstoreListingClasses
+  const style = doc.createElement('style')
+  style.id = 'mortar-installed-mod-style'
+  style.textContent = `
+      .${markerClass} { outline: 2px solid #0CDF64 !important; outline-offset: -2px; position: relative; }
+      .${badgeClass} {
+        background: #0CDF64; border-radius: 3px; color: #1b1a17; display: inline-block;
+        font: 600 11px/1.4 sans-serif; margin: 4px; padding: 2px 5px; position: relative; z-index: 1;
+      }
+      .${hiddenClass} { opacity: 0.35; filter: grayscale(1); transition: opacity 120ms, filter 120ms; }
+      .${removedClass} { display: none !important; }
+      .${hiddenClass}:hover { opacity: 0.85; filter: grayscale(0.4); }
+    `
+  doc.documentElement.append(style)
+}
+
+globalThis.mortarClearThunderstoreListingMarks = (root) => {
+  globalThis.mortarClearUnlistedMarks({
+    root,
+    tiles: new Map(),
+    ...globalThis.mortarThunderstoreListingClasses,
+  })
+}
+
+// Outline, gray, or hide listing tiles that are in the open profile. No obsolete/broken rows.
+globalThis.mortarPaintThunderstoreListingMarks = ({
+  document,
+  listing,
+  reply,
+  lastError,
+  settings,
+}) => {
+  const classes = globalThis.mortarThunderstoreListingClasses
+  const mode = globalThis.mortarInstalledMode(settings)
+  const managed =
+    globalThis.mortarConnectionState(reply, lastError) === 'ready' &&
+    globalThis.mortarThunderstoreManaged(reply, listing.key)
+  if (mode === 'off' || !managed) {
+    globalThis.mortarClearThunderstoreListingMarks(document)
+    return
+  }
+  const ids = new Set(
+    (Array.isArray(reply.packages) ? reply.packages : []).map((id) => String(id).toLowerCase()),
+  )
+  const tiles = globalThis.mortarCollectInstalledTiles({
+    root: document,
+    ids,
+    modID: (href) => globalThis.mortarThunderstorePackageId(href, listing.key),
+    tileFor: (link) => link.closest('article, li') || link,
+    linkSelector: globalThis.mortarThunderstoreListingLinkSelector,
+  })
+  globalThis.mortarEnsureThunderstoreListingStyle(document)
+  globalThis.mortarClearUnlistedMarks({ root: document, tiles, ...classes })
+  globalThis.mortarApplyListingHideMarks({
+    document,
+    tiles,
+    gray: mode === 'highlight',
+    remove: mode === 'hide',
+    updates: new Set(),
+    showUpdates: false,
+    ...classes,
+  })
+}
+
 if (
   !globalThis.mortarThunderstoreWatch &&
   typeof chrome !== 'undefined' &&
@@ -57,6 +157,7 @@ if (
 ) {
   globalThis.mortarThunderstoreWatch = true
   const page = globalThis.mortarThunderstorePage(location.pathname)
+  const listing = globalThis.mortarThunderstoreListing(location.pathname)
   const ask = (message) =>
     new Promise((resolve) => {
       try {
@@ -93,7 +194,7 @@ if (
     document.getElementById('mortar-thunderstore')?.remove()
     document.body.append(box)
   }
-  const run = async () => {
+  const runPackage = async () => {
     if (!page) {
       return
     }
@@ -107,11 +208,47 @@ if (
     globalThis.mortarSetAccent?.(reply?.accent)
     show(overlay.text, overlay.button)
   }
+  const runListing = async () => {
+    if (!listing) {
+      return
+    }
+    const settings = await globalThis.mortarReadSettings()
+    const { reply, error } = await ask(
+      globalThis.mortarThunderstoreRequest('installedPackages', listing),
+    )
+    globalThis.mortarSetAccent?.(reply?.accent)
+    globalThis.mortarPaintThunderstoreListingMarks({
+      document,
+      listing,
+      reply,
+      lastError: error,
+      settings,
+    })
+  }
+  const run = async () => {
+    await runPackage()
+    await runListing()
+  }
+  let siteOn = false
+  try {
+    chrome.storage.onChanged.addListener((_changes, area) => {
+      if (area === 'sync' && siteOn && listing) {
+        runListing().catch(() => false)
+      }
+    })
+  } catch {
+    // Tests and a page without chrome.storage still get the first paint.
+  }
   globalThis.mortarWhenSiteEnabled(
     'siteThunderstore',
     () => {
+      siteOn = true
       run().catch(() => false)
     },
-    () => document.getElementById('mortar-thunderstore')?.remove(),
+    () => {
+      siteOn = false
+      document.getElementById('mortar-thunderstore')?.remove()
+      globalThis.mortarClearThunderstoreListingMarks(document)
+    },
   )
 }

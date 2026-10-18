@@ -1,6 +1,6 @@
 # Security policy
 
-The licence is in [`LICENSE`](LICENSE). Content scripts run on <www.nexusmods.com> and on thunderstore.io package pages. The extension talks only to the Mortar app on the same computer through native messaging (`tech.rethunk.mortar`) and makes no other network requests.
+The licence is in [`LICENSE`](LICENSE). Content scripts run on <www.nexusmods.com> and on thunderstore.io community listings and package pages. The extension talks only to the Mortar app on the same computer through native messaging (`tech.rethunk.mortar`) and makes no other network requests.
 
 ## Reporting a vulnerability
 

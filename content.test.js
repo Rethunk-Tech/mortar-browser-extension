@@ -300,6 +300,15 @@ test('only mod tiles are matched for marks', () => {
     tileFor: (a) => (a === link ? tile : undefined),
   })
   expect([...tiles.entries()]).toEqual([[tile, tileModID]])
+  const tsLink = { href: '/c/lethal-company/p/Alice/MoreCompany/' }
+  const tsTiles = globalThis.mortarCollectInstalledTiles({
+    root: { querySelectorAll: (sel) => (sel.includes('/p/') ? [tsLink] : []) },
+    ids: new Set(['alice-morecompany']),
+    modID: () => 'alice-morecompany',
+    tileFor: () => tile,
+    linkSelector: 'a[href*="/p/"]',
+  })
+  expect([...tsTiles.entries()]).toEqual([[tile, 'alice-morecompany']])
 })
 
 test('supported games come from the host reply, none until one arrives', () => {

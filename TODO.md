@@ -5,65 +5,6 @@ exists; this file is the only place that describes what does not.
 
 Sections are unordered.
 
-## Thunderstore community listings have no installed marks
-
-Nexus listings get outline, gray, hide, obsolete, broken and update badges
-through `listingMarks.js` and the Mortar filter block in `hideInProfile.js`.
-Thunderstore is wired only for package pages: `manifest.json` matches
-`https://thunderstore.io/c/*/p/*`, and `thunderstore.js` paints a single
-corner overlay. A community listing (`/c/<community>/`) has no marks, even
-when the open profile already holds those packages. `installedPackages`
-already returns `packages` as `Namespace-Name` ids.
-
-Decided shape: a second Thunderstore content-script match for community
-listings (and search, if the path is stable), a tile selector for that DOM,
-and reuse of `mortarApplyListingHideMarks` with package-name ids instead of
-Nexus mod numbers. Site enable stays `siteThunderstore`. Do not add obsolete
-or broken rows until Thunderstore pages expose the same signals Nexus does.
-
-Rejected: scraping package pages from the listing. Rejected: injecting the
-Nexus `content.js` stack onto thunderstore.io.
-
-This does not change Nexus listing behaviour or the package-page overlay.
-
-### Read
-
-1. `manifest.json:40` — Thunderstore match is package pages only.
-2. `thunderstore.js:5` `mortarThunderstorePage` — listing paths return
-   undefined at `:8`.
-3. `thunderstore.js:12` `mortarThunderstoreManaged` and `:16`
-   `mortarThunderstoreInstalled` — the host already names communities and
-   installed packages.
-4. `listingMarks.js:27` `mortarApplyListingHideMarks` — tile map is
-   id-agnostic once `tiles` is collected.
-5. `listingMarks.js:155` `mortarCollectInstalledTiles` — Nexus-specific
-   `mortarTileLinkSelector` and `modID`.
-
-### Traps
-
-- **Content-script matches are not host_permissions.** Injecting into open
-  Thunderstore tabs still needs `https://thunderstore.io/*` on
-  `host_permissions` if `scripting.executeScript` is used the way Nexus is
-  in `background.js:196`. Listing marks on navigation after install do not
-  need that permission.
-- **Package ids are case-insensitive.** `mortarThunderstoreInstalled` at
-  `:18` lowercases both sides. Listing collection must do the same or
-  `Author-Pkg` and `author-pkg` double-miss.
-- **Nexus hide-in-profile controls copy Headless UI classes.** Do not mount
-  `mortarEnsureHideInProfileControl` on Thunderstore; that DOM is Nexus's
-  `#filters-panel`.
-
-### Acceptance
-
-- A Thunderstore community listing for a managed game outlines or grays
-  packages in the open profile using the same `markInstalled` setting as
-  Nexus. Hide removes those tiles.
-- An unmanaged community listing is untouched. `siteThunderstore` off
-  removes marks.
-- Package pages still show the overlay and install button. Nexus listings
-  are unchanged.
-- `bun run gate` stays green.
-
 ## Update rows are Nexus file links only
 
 `mortarUpdatesBadge` (`updates.js:8`) maps each host `updates` entry to

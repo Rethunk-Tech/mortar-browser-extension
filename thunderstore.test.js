@@ -1,5 +1,7 @@
 import { expect, test } from 'bun:test'
 import './plural.js'
+import './settings.js'
+import './listingMarks.js'
 import './thunderstore.js'
 
 test('package pages are read, other pages are not', () => {
@@ -12,6 +14,25 @@ test('package pages are read, other pages are not', () => {
     globalThis.mortarThunderstorePage('/c/lethal-company/p/Alice/MoreCompany/v/2.0.0/')?.name,
   ).toBe('MoreCompany')
   expect(globalThis.mortarThunderstorePage('/c/lethal-company/')).toBeUndefined()
+  expect(globalThis.mortarThunderstoreListing('/c/lethal-company/')).toEqual({
+    key: 'lethal-company',
+  })
+  expect(globalThis.mortarThunderstoreListing('/c/lethal-company')).toEqual({
+    key: 'lethal-company',
+  })
+  expect(
+    globalThis.mortarThunderstoreListing('/c/lethal-company/p/Alice/MoreCompany/'),
+  ).toBeUndefined()
+})
+
+test('listing package ids match installedPackages case-insensitively', () => {
+  const id = globalThis.mortarThunderstorePackageId
+  expect(
+    id('https://thunderstore.io/c/lethal-company/p/Alice/MoreCompany/', 'lethal-company'),
+  ).toBe('alice-morecompany')
+  expect(id('/c/lethal-company/p/Alice/MoreCompany/', 'lethal-company')).toBe('alice-morecompany')
+  expect(id('/c/lethal-company/p/Alice/MoreCompany/', 'risk-of-rain-2')).toBeUndefined()
+  expect(id('/c/lethal-company/', 'lethal-company')).toBeUndefined()
 })
 
 test('install result never shows a raw host error', () => {
@@ -73,4 +94,57 @@ test('only managed communities with a package in the profile are marked', () => 
     sourceGameKey: 'lethal-company',
     package: 'Alice-MoreCompany',
   })
+})
+
+test('a managed listing marks installed packages; unmanaged and Off do not', () => {
+  const names = new Set()
+  const children = []
+  const tile = {
+    names,
+    classList: {
+      toggle: (name, on) => (on ? names.add(name) : names.delete(name)),
+      remove: (...list) => {
+        for (const name of list) {
+          names.delete(name)
+        }
+      },
+    },
+    querySelector: () => children[0],
+    prepend: (node) => children.unshift(node),
+  }
+  const link = { href: '/c/lethal-company/p/Alice/MoreCompany/', closest: () => tile }
+  const root = {
+    querySelectorAll: (sel) => {
+      if (sel.includes('/p/')) {
+        return [link]
+      }
+      return names.size > 0 ? [tile] : []
+    },
+    getElementById: () => undefined,
+    createElement: () => ({ textContent: '', classList: { toggle: () => undefined } }),
+    documentElement: { append: () => undefined },
+  }
+  const listing = { key: 'lethal-company' }
+  const reply = {
+    protocol: 2,
+    state: 'ready',
+    connected: true,
+    games: [{ sources: { thunderstore: 'lethal-company' } }],
+    packages: ['Alice-MoreCompany'],
+  }
+  const paint = (settings, host = reply) =>
+    globalThis.mortarPaintThunderstoreListingMarks({
+      document: root,
+      listing,
+      reply: host,
+      settings,
+    })
+  paint({ markInstalled: 'gray' })
+  expect([...names].sort()).toEqual(['mortar-hidden-mod', 'mortar-installed-mod'])
+  paint({ markInstalled: 'hide' })
+  expect([...names]).toEqual(['mortar-removed-mod'])
+  paint({ markInstalled: 'off' })
+  expect([...names]).toEqual([])
+  paint({ markInstalled: 'gray' }, { ...reply, games: [{ sources: { thunderstore: 'other' } }] })
+  expect([...names]).toEqual([])
 })

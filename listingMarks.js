@@ -152,9 +152,9 @@ globalThis.mortarMarkInstalledListing = async (ctx) => {
   )
 }
 
-globalThis.mortarCollectInstalledTiles = ({ root, ids, modID, tileFor }) => {
+globalThis.mortarCollectInstalledTiles = ({ root, ids, modID, tileFor, linkSelector }) => {
   const tiles = new Map()
-  for (const link of root.querySelectorAll(globalThis.mortarTileLinkSelector)) {
+  for (const link of root.querySelectorAll(linkSelector ?? globalThis.mortarTileLinkSelector)) {
     const id = modID(link.href)
     const tile = id !== undefined && ids.has(id) ? tileFor(link) : undefined
     if (tile) {
