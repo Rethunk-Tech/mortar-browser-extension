@@ -35,6 +35,17 @@ test('collection link result never shows a raw host error', () => {
     globalThis.mortarInstallHint,
   )
   expect(text({ nativeMessagingError: true })).toBe(globalThis.mortarInstallHint)
+  expect(text({ protocol: 2, state: 'notRunning' })).toBe("Mortar isn't running")
+  expect(text({ protocol: 2, state: 'off' })).toBe('Browser extension connection is off in Mortar')
+})
+
+test('skipped sources use the same names as the rest of the UI', () => {
+  const label = globalThis.mortarSkipSourceLabel
+  expect(label('github')).toBe('GitHub')
+  expect(label('nexus')).toBe('Nexus Mods')
+  expect(label('thunderstore')).toBe('Thunderstore')
+  expect(label('Thunderstore')).toBe('Thunderstore')
+  expect(label('other')).toBe('other')
 })
 
 test('a protocol mismatch names the side to update', () => {

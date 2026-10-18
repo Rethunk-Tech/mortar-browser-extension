@@ -40,7 +40,7 @@ describe('mortarBuildSections', () => {
       version: '1.2.3',
       pinned: true,
       skipVersion: '1.0.0',
-      skipSources: [],
+      skipSources: ['thunderstore'],
       nexusNewer: true,
       updateCount: 2,
       alsoIn: [{ profile: 'Co-op', version: '1.1.0' }],
@@ -60,6 +60,7 @@ describe('mortarBuildSections', () => {
     )
     expect(byLabel['This mod']).toContain('Version 1.2.3 in this profile')
     expect(byLabel['This mod']).toContain('Pinned at this version')
+    expect(byLabel['This mod']).toContain('Skipped source: Thunderstore')
     const pinnedReason = sections({
       connected: true,
       kind: 'mod',

@@ -8,6 +8,9 @@ globalThis.mortarSkipSourceLabel = (source) => {
   if (key === 'nexus') {
     return 'Nexus Mods'
   }
+  if (key === 'thunderstore') {
+    return 'Thunderstore'
+  }
   return String(source || '')
 }
 
@@ -110,7 +113,11 @@ globalThis.mortarLinkResultText = (reply, lastError) => {
   if (state === 'missing') {
     return globalThis.mortarInstallHint
   }
-  if (state === 'mortarOld' || state === 'extensionOld') {
+  if (
+    state === 'mortarOld' ||
+    state === 'extensionOld' ||
+    ['off', 'notRunning', 'noProfile'].includes(reply?.state)
+  ) {
     return globalThis.mortarStateText(state)
   }
   return reply.ok === true ? 'Sent to Mortar' : "Mortar couldn't open this collection"
