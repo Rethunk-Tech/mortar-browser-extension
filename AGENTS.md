@@ -25,4 +25,4 @@ The developer dashboard cannot be automated: Chrome refuses every extension acti
 
 ## Gate budget
 
-The detected gates match CI, which runs `bun run gate` (`lint`, `test`, then `build` and `web-ext lint` on `dist/firefox`); `gate` runs the build and web-ext lint chained and the rest concurrently. Measured 2026-10-09 with `gate --profile` at load 5 to 6 (CPU is the evidence): warm 0.85 to 0.94 s wall and 1.5 CPU-s; cold (a clone without `dist`, throwaway bun cache) 1.6 s wall and 2.4 CPU-s, 1.2 s of it `web-ext lint`. Within budget; nothing is duplicated or oversubscribed. `bunx` keeps its own download cache outside `BUN_INSTALL_CACHE_DIR`, so the cold figure does not include fetching web-ext.
+`bun run gate` is the `lint`, `test` and `webext` scripts in `package.json` (`biome check`, `bun test`, then `build` and `web-ext lint` on `dist/firefox`), each run even if an earlier one fails, with a non-zero exit if any failed. Lefthook's pre-push job runs that script; CI lists the three as separate steps with `if: ${{ !cancelled() }}` so a lint miss still reports the later checks. There is no `.gate.toml` and no `gate --profile`.
