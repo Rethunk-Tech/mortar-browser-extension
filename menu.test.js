@@ -16,7 +16,6 @@ describe('mortarBuildSections', () => {
         kind: 'collection',
         profileName: 'Main',
         installed: true,
-        inProfile: true,
       }),
     ).toEqual([])
   })
@@ -27,7 +26,6 @@ describe('mortarBuildSections', () => {
       kind: 'mod',
       profileName: '',
       installed: false,
-      inProfile: false,
     }
     expect(labels(empty)).toEqual([])
 
@@ -36,7 +34,6 @@ describe('mortarBuildSections', () => {
       kind: 'mod',
       profileName: 'Main',
       installed: true,
-      inProfile: true,
       version: '1.2.3',
       pinned: true,
       skipVersion: '1.0.0',
@@ -66,7 +63,6 @@ describe('mortarBuildSections', () => {
       kind: 'mod',
       profileName: 'Main',
       installed: true,
-      inProfile: true,
       version: '1.0.0',
       pinned: true,
       pinReason: 'SVE stable',
@@ -91,7 +87,6 @@ describe('mortarBuildSections', () => {
       kind: 'mod',
       profileName: 'Main',
       installed: true,
-      inProfile: true,
       version: '1.0.0',
       problems: [],
     })
@@ -101,11 +96,9 @@ describe('mortarBuildSections', () => {
 
 describe('mortarStatusDot', () => {
   test('none when disconnected, not in profile, or collection', () => {
-    expect(dot({ connected: false, inProfile: true, installed: true })).toBeNull()
-    expect(
-      dot({ connected: true, kind: 'collection', inProfile: true, installed: true }),
-    ).toBeNull()
-    expect(dot({ connected: true, kind: 'mod', inProfile: false, installed: false })).toBeNull()
+    expect(dot({ connected: false, installed: true })).toBeNull()
+    expect(dot({ connected: true, kind: 'collection', installed: true })).toBeNull()
+    expect(dot({ connected: true, kind: 'mod', installed: false })).toBeNull()
   })
 
   test('red for problems, sand for updates, green when installed and fine', () => {
@@ -113,7 +106,6 @@ describe('mortarStatusDot', () => {
       dot({
         connected: true,
         kind: 'mod',
-        inProfile: true,
         installed: true,
         hasProblems: true,
         updateAvailable: true,
@@ -123,7 +115,6 @@ describe('mortarStatusDot', () => {
       dot({
         connected: true,
         kind: 'mod',
-        inProfile: true,
         installed: true,
         hasProblems: false,
         updateAvailable: true,
@@ -133,7 +124,6 @@ describe('mortarStatusDot', () => {
       dot({
         connected: true,
         kind: 'mod',
-        inProfile: true,
         installed: true,
         hasProblems: false,
         updateAvailable: false,
@@ -175,7 +165,7 @@ describe('mortarMenuModData', () => {
   })
   test('not in the profile when there is no installed version', () => {
     const data = globalThis.mortarMenuModData({ open: { profile: 'Main', version: '' } }, '1.0.0')
-    expect(data.inProfile).toBe(false)
+    expect(data.installed).toBe(false)
     expect(globalThis.mortarStatusDot(data)).toBe(null)
   })
 })

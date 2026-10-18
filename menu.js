@@ -167,7 +167,7 @@ const mortarProblemLines = (data) => {
 }
 
 globalThis.mortarStatusDot = (data) => {
-  if (!data?.connected || data.kind === 'collection' || !data.inProfile) {
+  if (!data?.connected || data.kind === 'collection' || !data.installed) {
     return null
   }
   if (data.hasProblems) {
@@ -245,7 +245,6 @@ globalThis.mortarMenuModData = (reply, pageVer) => {
     kind: 'mod',
     profileName: open.profile || '',
     installed: Boolean(installed),
-    inProfile: Boolean(installed),
     version: installed || '',
     pinned: Boolean(open.pinned),
     pinReason: open.pinReason || '',
