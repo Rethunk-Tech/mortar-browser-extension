@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "biome check --error-on-warnings .",
     "test": "bun test",
-    "webext": "bun run build && bunx web-ext@10.7.0 lint --source-dir dist/firefox",
+    "webext": "bun run build && bunx web-ext@10.8.0 lint --source-dir dist/firefox",
     "gate": "bun run lint; l=$?; bun run test; t=$?; bun run webext; w=$?; exit $((l|t|w))",
     "build": "sh scripts/build.sh"
   },

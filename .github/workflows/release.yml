@@ -85,7 +85,7 @@ jobs:
           fi
           bun scripts/amo-signed.mjs "$(jq -r .browser_specific_settings.gecko.id manifest.json)" "${TAG#v}" "$xpi"
           if [ ! -f "$xpi" ]; then
-            bunx web-ext@10.7.0 sign --source-dir dist/firefox --channel unlisted --artifacts-dir "$RUNNER_TEMP/xpi"
+            bunx web-ext@10.8.0 sign --source-dir dist/firefox --channel unlisted --artifacts-dir "$RUNNER_TEMP/xpi"
             mv "$RUNNER_TEMP"/xpi/*.xpi "$xpi"
           fi
 
