@@ -115,3 +115,7 @@ globalThis.mortarLinkResultText = (reply, lastError) => {
   }
   return reply.ok === true ? 'Sent to Mortar' : "Mortar couldn't open this collection"
 }
+
+// A failed native send must not stay in the "already sent" set: Mortar coming back later still gets that nxm URL.
+globalThis.mortarNxmKeepSent = (reply, lastError) =>
+  !lastError && reply?.nativeMessagingError !== true

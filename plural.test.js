@@ -19,6 +19,12 @@ test('installed reply status follows the host state', () => {
   expect(status({ protocol: 2, connected: true }, false)).toBe('Mortar could not read this profile')
 })
 
+test('a failed nxm send can be retried', () => {
+  expect(globalThis.mortarNxmKeepSent({ ok: true })).toBe(true)
+  expect(globalThis.mortarNxmKeepSent({ nativeMessagingError: true })).toBe(false)
+  expect(globalThis.mortarNxmKeepSent({ ok: true }, { message: 'disconnected' })).toBe(false)
+})
+
 test('collection link result never shows a raw host error', () => {
   const text = globalThis.mortarLinkResultText
   expect(text({ protocol: 2, ok: true })).toBe('Sent to Mortar')
