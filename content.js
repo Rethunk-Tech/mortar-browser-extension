@@ -86,7 +86,9 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
 
   const installedIDs = () => {
     const now = Date.now()
-    if (installedCache.game === pageGame() && now - installedCache.at < installedCacheDuration) {
+    if (
+      globalThis.mortarInstalledCacheHit(installedCache, pageGame(), now, installedCacheDuration)
+    ) {
       return Promise.resolve(installedCache.ids)
     }
     if (installedRequest) {

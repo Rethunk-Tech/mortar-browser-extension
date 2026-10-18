@@ -280,12 +280,16 @@ globalThis.mortarTileObsolete = (tile) =>
     (tile.querySelector('[data-e2eid="mod-tile-summary"]') || tile).textContent || '',
   )
 
+globalThis.mortarInstalledCacheHit = (cache, game, now, ttl) =>
+  cache.game === game && cache.at > 0 && now - cache.at < ttl
+
 globalThis.mortarInstalledListingState = (reply, lastError, ids) => {
   const nativeFail = Boolean(lastError) || reply?.nativeMessagingError === true
   const connected =
     !nativeFail && reply?.connected === true && globalThis.mortarProtocolMismatch(reply) === ''
+  const status = globalThis.mortarInstalledReplyStatus(reply, lastError)
   return {
-    at: Date.now(),
+    at: status === '' ? Date.now() : 0,
     ids: ids || new Set(),
     broken: new Set(Array.isArray(reply?.brokenIds) ? reply.brokenIds : []),
     nativeFail,
@@ -295,6 +299,6 @@ globalThis.mortarInstalledListingState = (reply, lastError, ids) => {
     updates: new Set(Array.isArray(reply?.updateIds) ? reply.updateIds : []),
     games: globalThis.mortarSupportedGames(reply),
     state: globalThis.mortarConnectionState(reply, lastError),
-    status: globalThis.mortarInstalledReplyStatus(reply, lastError),
+    status,
   }
 }

@@ -113,6 +113,31 @@ test('obsolete listing tiles follow Mortar author-marked rule', () => {
   expect(obsolete('Normal Mod', 'A normal summary.')).toBe(false)
 })
 
+test('a failed installed lookup is asked again on the next installedIDs()', () => {
+  const ttl = 60_000
+  const now = Date.now()
+  const failed = globalThis.mortarInstalledListingState({ nativeMessagingError: true }, true)
+  failed.game = 'stardewvalley'
+  expect(failed.at).toBe(0)
+  expect(failed.nativeFail).toBe(true)
+  expect(globalThis.mortarInstalledCacheHit(failed, 'stardewvalley', now, ttl)).toBe(false)
+  const unusable = globalThis.mortarInstalledListingState(
+    { protocol: 2, state: 'notRunning', connected: false, modIds: [] },
+    undefined,
+  )
+  unusable.game = 'stardewvalley'
+  expect(unusable.at).toBe(0)
+  expect(globalThis.mortarInstalledCacheHit(unusable, 'stardewvalley', now, ttl)).toBe(false)
+  const ok = globalThis.mortarInstalledListingState(
+    { protocol: 2, state: 'ready', connected: true, profile: 'Main', modIds: [1] },
+    undefined,
+    new Set([1]),
+  )
+  ok.game = 'stardewvalley'
+  expect(ok.at).toBeGreaterThan(0)
+  expect(globalThis.mortarInstalledCacheHit(ok, 'stardewvalley', ok.at, ttl)).toBe(true)
+})
+
 test('broken ids from the installed reply dim matching tiles', () => {
   const brokenModId = 42
   const state = globalThis.mortarInstalledListingState(
