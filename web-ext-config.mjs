@@ -7,6 +7,7 @@ export const ignoreFiles = [
   'bun.lock',
   'biome.jsonc',
   'knip.json',
+  'turbo.json',
   'lefthook.yml',
   'scripts',
   '*.md',

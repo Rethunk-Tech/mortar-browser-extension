@@ -1,0 +1,10 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "agentGuidance": false,
+  "globalDependencies": ["biome.jsonc", "knip.json", "package.json", "web-ext-config.mjs"],
+  "tasks": {
+    "lint": { "inputs": ["$TURBO_DEFAULT$"], "outputs": [] },
+    "test": { "inputs": ["$TURBO_DEFAULT$"], "outputs": [] },
+    "webext": { "inputs": ["$TURBO_DEFAULT$"], "outputs": ["dist/**"] }
+  }
+}
