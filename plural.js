@@ -116,8 +116,7 @@ globalThis.mortarInstalledReplyStatus = (reply, lastError) => {
   return Array.isArray(reply?.modIds) ? '' : 'Mortar could not read this profile'
 }
 
-// What the collection panel says after handing the collection link to Mortar.
-globalThis.mortarLinkResultText = (reply, lastError) => {
+globalThis.mortarHostResultText = (reply, lastError, fail) => {
   const state = globalThis.mortarConnectionState(reply, lastError)
   if (state === 'missing') {
     return globalThis.mortarInstallHint
@@ -129,8 +128,12 @@ globalThis.mortarLinkResultText = (reply, lastError) => {
   ) {
     return globalThis.mortarStateText(state)
   }
-  return reply.ok === true ? 'Sent to Mortar' : "Mortar couldn't open this collection"
+  return reply.ok === true ? 'Sent to Mortar' : fail
 }
+
+// What the collection panel says after handing the collection link to Mortar.
+globalThis.mortarLinkResultText = (reply, lastError) =>
+  globalThis.mortarHostResultText(reply, lastError, "Mortar couldn't open this collection")
 
 // A failed native send must not stay in the "already sent" set: Mortar coming back later still gets that nxm URL.
 globalThis.mortarNxmKeepSent = (reply, lastError) =>

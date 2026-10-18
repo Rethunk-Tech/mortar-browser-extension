@@ -28,20 +28,8 @@ globalThis.mortarThunderstoreRequest = (type, page) => ({
 })
 
 // What the page shows after a click on the button.
-globalThis.mortarThunderstoreResultText = (reply, lastError) => {
-  const state = globalThis.mortarConnectionState(reply, lastError)
-  if (state === 'missing') {
-    return globalThis.mortarInstallHint
-  }
-  if (
-    state === 'mortarOld' ||
-    state === 'extensionOld' ||
-    ['off', 'notRunning', 'noProfile'].includes(reply?.state)
-  ) {
-    return globalThis.mortarStateText(state)
-  }
-  return reply.ok === true ? 'Sent to Mortar' : "Mortar couldn't install this package"
-}
+globalThis.mortarThunderstoreResultText = (reply, lastError) =>
+  globalThis.mortarHostResultText(reply, lastError, "Mortar couldn't install this package")
 
 // What the package page overlay shows: a connection problem, In Mortar profile, or the install button.
 // An unmanaged community stays untouched, the same as a page that is not a package page.
