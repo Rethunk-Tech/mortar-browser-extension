@@ -47,10 +47,31 @@ globalThis.mortarInstalledMode = (settings) =>
   ({ off: 'off', hide: 'hide', gray: 'highlight' })[settings.markInstalled] ?? 'highlight'
 
 // Runs start on a page whose site is switched on in the options; a site that is off stays untouched.
-globalThis.mortarWhenSiteEnabled = (key, start) => {
-  globalThis.mortarReadSettings().then((settings) => {
-    if (settings[key]) {
-      start()
+// Options checkboxes flip the key in chrome.storage.sync: start then, and stop so marks and panels leave.
+globalThis.mortarWhenSiteEnabled = (key, start, stop) => {
+  let on = false
+  const enabledFrom = (value) =>
+    typeof value === 'boolean' ? value : globalThis.mortarSettingDefaults[key]
+  const apply = (enabled) => {
+    if (enabled === on) {
+      return
     }
-  })
+    on = enabled
+    if (enabled) {
+      start()
+    } else {
+      stop?.()
+    }
+  }
+  globalThis.mortarReadSettings().then((settings) => apply(Boolean(settings[key])))
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'sync' || !Object.hasOwn(changes, key)) {
+        return
+      }
+      apply(enabledFrom(changes[key].newValue))
+    })
+  } catch {
+    // Tests and a page without chrome.storage still get the first read.
+  }
 }

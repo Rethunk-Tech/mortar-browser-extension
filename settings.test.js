@@ -18,3 +18,37 @@ test('the installed row maps to the listing mode', () => {
   expect(mode('hide')).toBe('hide')
   expect(mode('gray')).toBe('highlight')
 })
+
+test('a site checkbox starts work on enable and stops it on disable', async () => {
+  const events = []
+  const listeners = []
+  const previous = globalThis.chrome
+  globalThis.chrome = {
+    runtime: {},
+    storage: {
+      onChanged: { addListener: (fn) => listeners.push(fn) },
+      sync: {
+        get: (_defaults, cb) => cb({ ...globalThis.mortarSettingDefaults, siteNexus: false }),
+      },
+    },
+  }
+  try {
+    globalThis.mortarWhenSiteEnabled(
+      'siteNexus',
+      () => events.push('start'),
+      () => events.push('stop'),
+    )
+    await Promise.resolve()
+    expect(events).toEqual([])
+    for (const fn of listeners) {
+      fn({ siteNexus: { newValue: true } }, 'sync')
+    }
+    expect(events).toEqual(['start'])
+    for (const fn of listeners) {
+      fn({ siteNexus: { newValue: false } }, 'sync')
+    }
+    expect(events).toEqual(['start', 'stop'])
+  } finally {
+    globalThis.chrome = previous
+  }
+})
