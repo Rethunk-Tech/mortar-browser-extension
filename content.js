@@ -4,7 +4,6 @@
 // Mutation observers, not a timer, find the link: background tabs throttle timers to as little as once a minute.
 // The background script also injects this file into Nexus tabs that were open before the extension loaded, so a
 // tab can run it twice; the flag keeps one copy.
-// biome-ignore lint/style/noExcessiveLinesPerFile: site enable/disable teardown
 if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   globalThis.mortarNxmWatch = true
   const sent = new Set()
@@ -430,98 +429,30 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     renderCollectionPanel().catch(() => false)
   }
 
-  const scanDelayMs = 150
-  const ownSelector = `.${panelClass}, .${badgeClass}, #mortar-installed-mod-style, #${hideControlId}`
-  const isOwn = (node) =>
-    node instanceof Element
-      ? node.closest(ownSelector) !== null
-      : Boolean(node.parentElement?.closest(ownSelector))
-  // Changes Mortar makes to the page (the panel, badges, its style) never call for another scan.
-  const ownMutation = (record) =>
-    isOwn(record.target) ||
-    ([...record.addedNodes, ...record.removedNodes].length > 0 &&
-      [...record.addedNodes, ...record.removedNodes].every(isOwn))
-
-  // Shadow roots are looked for when a node arrives, not on every scan; Mortar's own hosts are never watched, since
-  // the panel's changes inside its root would otherwise schedule scans that redraw it.
-  const watchShadows = (node) => {
-    const hosts = [node, ...(node.querySelectorAll?.('*') ?? [])]
-    for (const el of hosts) {
-      if (el.shadowRoot && !el.matches(ownSelector)) {
-        watch(el.shadowRoot)
-      }
-    }
-  }
-
-  const watch = (root) => {
-    if (!siteActive) {
-      return
-    }
-    let pending
-    const started = siteWatch.watch(
-      root,
-      (records) => {
-        for (const record of records) {
-          for (const node of record.addedNodes) {
-            if (node instanceof Element && !isOwn(node)) {
-              watchShadows(node)
-            }
-          }
-        }
-        if (records.every(ownMutation) || pending !== undefined) {
-          return
-        }
-        pending = setTimeout(() => {
-          pending = undefined
-          scan(root)
-        }, scanDelayMs)
-      },
-      {
-        subtree: true,
-        childList: true,
-        attributes: true,
-        attributeFilter: ['href'],
-      },
-    )
-    if (!started) {
-      return
-    }
-    watchShadows(root)
-    scan(root)
-  }
-
-  const onVisible = () => {
-    if (siteActive && document.visibilityState === 'visible') {
+  globalThis.mortarBindNexusSiteToggle({
+    siteActive: () => siteActive,
+    setSiteActive: (active) => {
+      siteActive = active
+    },
+    siteWatch,
+    scanDelayMs: 150,
+    panelClass,
+    badgeClass,
+    hideControlId,
+    scan,
+    onVisible: () => {
       installedCache = emptyInstalledCache()
       panelKey = ''
       requestMark()
       renderModPanel().catch(() => false)
       renderCollectionPanel().catch(() => false)
-    }
-  }
-
-  const stopSite = () => {
-    siteActive = false
-    document.removeEventListener('visibilitychange', onVisible)
-    siteWatch.stop()
-    removePanels()
-    clearFileBadge()
-    panelKey = ''
-    lastModReply = undefined
-    document.getElementById(hideControlId)?.remove()
-    document.getElementById('mortar-installed-mod-style')?.remove()
-    globalThis.mortarClearListingMarks(listingMarkCtx())
-  }
-
-  // Mortar's profile, installed mods and Appearance setting change while the tab is in the background, so coming
-  // back re-reads all of it.
-  globalThis.mortarWhenSiteEnabled(
-    'siteNexus',
-    () => {
-      siteActive = true
-      document.addEventListener('visibilitychange', onVisible)
-      watch(document)
     },
-    stopSite,
-  )
+    removePanels,
+    clearFileBadge,
+    resetPanel: () => {
+      panelKey = ''
+      lastModReply = undefined
+    },
+    listingMarkCtx,
+  })
 }

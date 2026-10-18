@@ -3,6 +3,7 @@
   "entry": [
     "background.js",
     "content.js",
+    "siteToggle.js",
     "options.js",
     "popup.js",
     "popupActions.js",

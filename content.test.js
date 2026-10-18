@@ -3,6 +3,7 @@ import './plural.js'
 import './modPanel.js'
 import './hideInProfile.js'
 import './listingMarks.js'
+import './siteToggle.js'
 import './content.js'
 
 const contentPatcher = 1915

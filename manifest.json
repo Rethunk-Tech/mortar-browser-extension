@@ -33,6 +33,7 @@
         "menuRequirements.js",
         "hideInProfile.js",
         "listingMarks.js",
+        "siteToggle.js",
         "content.js"
       ],
       "run_at": "document_idle"
