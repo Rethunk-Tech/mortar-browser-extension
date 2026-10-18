@@ -74,6 +74,39 @@ test('AskEachGame picks the first ready game reply, else the first, else the pro
   }
 })
 
+test('popup ready copy names Nexus and Thunderstore counts separately', () => {
+  const line = globalThis.mortarPopupReadyStatus
+  expect(line({ modIds: [1, 2], profile: 'Main' })).toBe(
+    'Connected to Mortar · 2 Nexus mods in Main',
+  )
+  expect(line({ modIds: [1], profile: 'Main', packages: [] })).toBe(
+    'Connected to Mortar · 1 Nexus mod in Main',
+  )
+  expect(line({ modIds: [], profile: 'Main', packages: ['A-B'] })).toBe(
+    'Connected to Mortar · 1 Thunderstore package in Main',
+  )
+  expect(line({ modIds: [1], profile: 'Main', packages: ['A-B', 'C-D'] })).toBe(
+    'Connected to Mortar · 1 Nexus mod and 2 Thunderstore packages in Main',
+  )
+  expect(line({ modIds: [], packages: [] })).toBe(
+    'Connected to Mortar · the open profile has no mods',
+  )
+})
+
+test('Thunderstore communities come from sources.thunderstore, not Nexus domains', () => {
+  expect(globalThis.mortarThunderstoreCommunities(undefined)).toEqual([])
+  expect(
+    globalThis.mortarThunderstoreCommunities({
+      games: [
+        { sources: { nexus: 'stardewvalley', thunderstore: 'stardewvalley' } },
+        { sources: { nexus: 'skyrimspecialedition', thunderstore: '' } },
+        { sources: { thunderstore: 'lethal-company' } },
+        { sources: { nexus: 'only-nexus' } },
+      ],
+    }),
+  ).toEqual(['stardewvalley', 'lethal-company'])
+})
+
 test('popup status uses lastError only when the painted reply is not ready', () => {
   const sendFail = { message: 'Could not establish connection' }
   const ready = {

@@ -10,13 +10,7 @@ const paintStatus = (reply, lastError) => {
     status.textContent = state === 'missing' ? globalThis.mortarInstallHint : problem
     return
   }
-  const { modIds, profile } = reply
-  if (modIds.length === 0) {
-    status.textContent = `Connected to Mortar · ${profile || 'the open profile'} has no Nexus mods`
-    return
-  }
-  const modCount = globalThis.mortarPlural(modIds.length, 'Nexus mod', 'Nexus mods')
-  status.textContent = `Connected to Mortar · ${modCount} in ${profile || 'the open profile'}`
+  status.textContent = globalThis.mortarPopupReadyStatus(reply)
 }
 
 const refreshStatus = () => {
@@ -28,13 +22,26 @@ const refreshStatus = () => {
         resolve(reply)
       })
     })
-  globalThis.mortarAskEachGame(ask).then(({ replies, primary }) => {
+  const askPackages = (key) =>
+    new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        { type: 'installedPackages', source: 'thunderstore', sourceGameKey: key },
+        (reply) => {
+          lastError ??= chrome.runtime.lastError
+          resolve(reply)
+        },
+      )
+    })
+  globalThis.mortarAskEachGame(ask).then(async ({ replies, primary }) => {
     const { reply, lastError: paintError } = globalThis.mortarPopupStatusInput(
       replies,
       primary,
       lastError,
     )
-    paintStatus(reply, paintError)
+    const keys = globalThis.mortarThunderstoreCommunities(reply)
+    const packageReplies = await Promise.all(keys.map(askPackages))
+    const packages = packageReplies.flatMap((r) => (Array.isArray(r?.packages) ? r.packages : []))
+    paintStatus({ ...reply, packages }, paintError)
   })
 }
 globalThis.mortarRefreshPopupStatus = refreshStatus

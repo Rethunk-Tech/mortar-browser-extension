@@ -64,57 +64,6 @@ This does not change Nexus listing behaviour or the package-page overlay.
   are unchanged.
 - `bun run gate` stays green.
 
-## The popup status line counts only Nexus mods
-
-`popup.js` asks `installed` per Nexus domain via `mortarAskEachGame` and
-paints "N Nexus mods in {profile}" or "has no Nexus mods". A profile that
-holds only Thunderstore packages still reads as empty of Nexus mods. The
-host already answers `installedPackages` for a Thunderstore community
-(`thunderstore.js:23`, `background.js:163`).
-
-Decided shape: after the existing Nexus fan-out, ask `installedPackages`
-for each game whose `sources.thunderstore` is a non-empty string, flatten
-`packages` the way `modIds` are flattened, and extend the status copy to
-name both counts when either is non-zero (and "no mods" only when both
-are empty). Keep `mortarAskEachGame` Nexus-only; do not change
-`mortarSupportedGames` (`plural.js:57`), which listings use as Nexus
-domains.
-
-Rejected: replacing the Nexus sentence with a single untyped count.
-Rejected: changing `mortarGameRequest` to omit `source: 'nexus'`.
-
-### Read
-
-1. `popup.js:13` — status uses `modIds` only.
-2. `popup.js:31` `mortarAskEachGame` — `ask` is `installed` with a Nexus
-   domain.
-3. `plural.js:79` `mortarAskEachGame` — games from
-   `mortarSupportedGames` (`:57`), Nexus domains only.
-4. `background.js:163` — `installedPackages` is already forwarded.
-5. `HUMANS.md:24` — `games[].sources.thunderstore` is on every reply.
-
-### Traps
-
-- **`installed` replies are not `installedPackages` replies.** Mixing
-  `modIds` with `packages` on one request is a protocol change. Two
-  request types.
-- **A game can have Nexus, Thunderstore, both, or neither.** Fan-out must
-  key Thunderstore asks on `sources.thunderstore`, not on the Nexus
-  domain `mortarAskEachGame` already used.
-- **Popup copy is user-visible.** Keep "Nexus mod(s)" for the Nexus count;
-  add a Thunderstore clause rather than renaming the existing sentence.
-
-### Acceptance
-
-- A ready profile with Nexus mods and no Thunderstore packages still
-  paints the current Nexus-only sentence.
-- A ready profile with Thunderstore packages and no Nexus mods names those
-  packages instead of "has no Nexus mods".
-- Both non-zero: both counts appear. Both empty: a single empty-profile
-  sentence.
-- `mortarAskEachGame` and Nexus listing marks are unchanged.
-- `bun run gate` stays green.
-
 ## Update rows are Nexus file links only
 
 `mortarUpdatesBadge` (`updates.js:8`) maps each host `updates` entry to
