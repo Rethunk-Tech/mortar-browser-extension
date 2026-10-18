@@ -36,9 +36,7 @@ globalThis.mortarThunderstoreResultText = (reply, lastError) => {
   if (state === 'mortarOld' || state === 'extensionOld') {
     return globalThis.mortarStateText(state)
   }
-  return reply.ok === true
-    ? 'Sent to Mortar'
-    : reply.error || "Mortar couldn't install this package"
+  return reply.ok === true ? 'Sent to Mortar' : "Mortar couldn't install this package"
 }
 
 if (
@@ -104,7 +102,11 @@ if (
       show('Mortar', true)
     }
   }
-  globalThis.mortarWhenSiteEnabled('siteThunderstore', () => {
-    run().catch(() => false)
-  })
+  globalThis.mortarWhenSiteEnabled(
+    'siteThunderstore',
+    () => {
+      run().catch(() => false)
+    },
+    () => document.getElementById('mortar-thunderstore')?.remove(),
+  )
 }

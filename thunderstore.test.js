@@ -14,6 +14,18 @@ test('package pages are read, other pages are not', () => {
   expect(globalThis.mortarThunderstorePage('/c/lethal-company/')).toBeUndefined()
 })
 
+test('install result never shows a raw host error', () => {
+  const text = globalThis.mortarThunderstoreResultText
+  expect(text({ protocol: 2, ok: true })).toBe('Sent to Mortar')
+  expect(text({ protocol: 2, error: 'package not in catalog: "x"' })).toBe(
+    "Mortar couldn't install this package",
+  )
+  expect(text(undefined, 'Specified native messaging host not found.')).toBe(
+    globalThis.mortarInstallHint,
+  )
+  expect(text({ nativeMessagingError: true })).toBe(globalThis.mortarInstallHint)
+})
+
 test('only managed communities with a package in the profile are marked', () => {
   const page = { key: 'lethal-company', namespace: 'Alice', name: 'MoreCompany' }
   const reply = {
