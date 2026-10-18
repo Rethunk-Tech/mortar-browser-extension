@@ -431,7 +431,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   }
 
   const scanDelayMs = 150
-  const ownSelector = `.${panelClass}, .${badgeClass}, #mortar-installed-mod-style, .mortar-collection-status, #${hideControlId}`
+  const ownSelector = `.${panelClass}, .${badgeClass}, #mortar-installed-mod-style, #${hideControlId}`
   const isOwn = (node) =>
     node instanceof Element
       ? node.closest(ownSelector) !== null
