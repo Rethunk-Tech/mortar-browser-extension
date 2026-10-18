@@ -7,7 +7,8 @@
     "lint": "biome check --error-on-warnings .",
     "test": "bun test",
     "webext": "bun run build && bunx web-ext@10.8.0 lint --source-dir dist/firefox",
-    "gate": "bun run lint; l=$?; bun run test; t=$?; bun run webext; w=$?; exit $((l|t|w))",
+    "knip": "bunx knip@6.41.0 --treat-config-hints-as-errors",
+    "gate": "bun run lint; l=$?; bun run test; t=$?; bun run webext; w=$?; bun run knip; k=$?; exit $((l|t|w|k))",
     "build": "sh scripts/build.sh"
   },
   "devDependencies": {
