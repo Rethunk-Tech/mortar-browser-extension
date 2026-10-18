@@ -1,3 +1,5 @@
+const mortarAccentHex = /^#[0-9a-f]{6}$/i
+
 const mortarUpdateRowText = ({ name, installed, latest }) => {
   if (installed && latest) {
     return `${name} ${installed} → ${latest}`
@@ -18,13 +20,13 @@ globalThis.mortarUpdatesBadge = (reply, error) => {
     }
   }
   const { accent, updates, profile } = reply
-  const background = typeof accent === 'string' && accent ? accent : '#D6B17A'
+  const background = typeof accent === 'string' && mortarAccentHex.test(accent) ? accent : '#D6B17A'
   const rows = updates.map((u) => {
     const row = { modId: u.modId, name: u.name, installed: u.installed, latest: u.latest ?? '' }
     return {
       ...row,
       text: mortarUpdateRowText(row),
-      href: `https://www.nexusmods.com/${u.game}/mods/${u.modId}?tab=files`,
+      href: `https://www.nexusmods.com/${encodeURIComponent(String(u.game ?? ''))}/mods/${encodeURIComponent(String(u.modId ?? ''))}?tab=files`,
     }
   })
   return {

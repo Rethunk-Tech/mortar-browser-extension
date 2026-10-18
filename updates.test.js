@@ -68,6 +68,19 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
     status: 'unreachable',
     state: 'missing',
   })
+
+  const injected = globalThis.mortarUpdatesBadge(
+    {
+      protocol: 2,
+      accent: 'url(https://evil.example)',
+      updates: [{ game: 'a/../../x', modId: '1/2', name: 'A', installed: '1', latest: '2' }],
+    },
+    false,
+  )
+  expect(injected.background).toBe('#D6B17A')
+  expect(injected.rows[0].href).toBe(
+    'https://www.nexusmods.com/a%2F..%2F..%2Fx/mods/1%2F2?tab=files',
+  )
 })
 
 test('update rows print only the versions that are known', () => {

@@ -26,3 +26,18 @@ test('lists missing requirements first, with Nexus links, then present count', (
     { text: '1 requirement in this profile' },
   ])
 })
+
+test('requirement links encode the game and mod id from the host reply', () => {
+  expect(
+    globalThis.mortarRequirementLines({
+      game: 'a/../../x',
+      requirements: [{ name: 'GMCM', modId: 2400, present: false }],
+    }),
+  ).toEqual([
+    {
+      text: 'Needs GMCM',
+      problem: true,
+      href: 'https://www.nexusmods.com/a%2F..%2F..%2Fx/mods/2400',
+    },
+  ])
+})
