@@ -76,16 +76,3 @@ globalThis.mortarFillCollectionInProfile = async (
     row.textContent = line
   }
 }
-
-if (
-  typeof globalThis.mortarRenderCollectionPanel === 'function' &&
-  !globalThis.mortarRenderCollectionPanel._mortarCount
-) {
-  const inner = globalThis.mortarRenderCollectionPanel
-  const wrapped = async (doc, pathname, opts) => {
-    await inner(doc, pathname, opts)
-    await globalThis.mortarFillCollectionInProfile?.(doc, doc?.location?.origin || '', opts)
-  }
-  wrapped._mortarCount = true
-  globalThis.mortarRenderCollectionPanel = wrapped
-}

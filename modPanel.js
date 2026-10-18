@@ -210,7 +210,7 @@ globalThis.mortarSyncCollectionPanel = (
 globalThis.mortarRenderCollectionPanel = async (
   doc,
   pathname,
-  { panelClass, collectionPanelClass, currentMode, ensureMarkerStyle, unavailable },
+  { panelClass, collectionPanelClass, currentMode, ensureMarkerStyle, unavailable, ...opts },
 ) => {
   const selectedMode = await currentMode()
   const collectionURL = globalThis.mortarCollectionURL(pathname)
@@ -230,4 +230,5 @@ globalThis.mortarRenderCollectionPanel = async (
       }
     },
   })
+  await globalThis.mortarFillCollectionInProfile?.(doc, doc?.location?.origin || '', opts)
 }
