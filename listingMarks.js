@@ -155,7 +155,7 @@ globalThis.mortarMarkInstalledListing = async (ctx) => {
 globalThis.mortarCollectInstalledTiles = ({ root, ids, modID, tileFor, linkSelector }) => {
   const tiles = new Map()
   for (const link of root.querySelectorAll(linkSelector ?? globalThis.mortarTileLinkSelector)) {
-    const id = modID(link.href)
+    const id = modID(link.href, link)
     const tile = id !== undefined && ids.has(id) ? tileFor(link) : undefined
     if (tile) {
       tiles.set(tile, id)
@@ -178,4 +178,40 @@ globalThis.mortarClearUnlistedMarks = ({
       tile.querySelector(`.${badgeClass}`)?.remove()
     }
   }
+}
+
+// Marks for sites whose tiles Mortar draws no sidebar into: the same outline, badge and gray as the Nexus tiles, plus the
+// dim and removal of deprecated packages.
+globalThis.mortarDeprecatedClasses = {
+  dim: 'mortar-deprecated-mod',
+  removed: 'mortar-deprecated-removed',
+}
+
+globalThis.mortarSimpleListingClasses = {
+  markerClass: 'mortar-installed-mod',
+  hiddenClass: 'mortar-hidden-mod',
+  removedClass: 'mortar-removed-mod',
+  badgeClass: 'mortar-installed-mod-badge',
+}
+
+globalThis.mortarEnsureSimpleListingStyle = (doc) => {
+  if (doc.getElementById('mortar-installed-mod-style')) {
+    return
+  }
+  const { markerClass, badgeClass, hiddenClass, removedClass } =
+    globalThis.mortarSimpleListingClasses
+  const style = doc.createElement('style')
+  style.id = 'mortar-installed-mod-style'
+  style.textContent = `
+      .${markerClass} { outline: 2px solid #0CDF64 !important; outline-offset: -2px; position: relative; }
+      .${badgeClass} {
+        background: #0CDF64; border-radius: 3px; color: #1b1a17; display: inline-block;
+        font: 600 11px/1.4 sans-serif; margin: 4px; padding: 2px 5px; position: relative; z-index: 1;
+      }
+      .${hiddenClass} { opacity: 0.35; filter: grayscale(1); transition: opacity 120ms, filter 120ms; }
+      .${removedClass}, .${globalThis.mortarDeprecatedClasses.removed} { display: none !important; }
+      .${hiddenClass}:hover, .${globalThis.mortarDeprecatedClasses.dim}:hover { opacity: 0.85; filter: grayscale(0.4); }
+      .${globalThis.mortarDeprecatedClasses.dim} { opacity: 0.35; filter: grayscale(1); transition: opacity 120ms, filter 120ms; }
+    `
+  doc.documentElement.append(style)
 }

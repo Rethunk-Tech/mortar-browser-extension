@@ -11,17 +11,18 @@
 
 ## Short description (132 characters max)
 
-Sends Nexus Mods downloads and Thunderstore installs to the Mortar desktop mod manager and marks mods you already have.
+Sends Nexus, Thunderstore, CurseForge and Mod DB installs to the Mortar desktop mod manager and marks mods you already have.
 
 ## Long description
 
-Mortar is a desktop mod manager for PC games. This extension connects the browser to it on Nexus Mods and Thunderstore.
+Mortar is a desktop mod manager for PC games. This extension connects the browser to it on Nexus Mods, Thunderstore, CurseForge and the Vintage Story Mod DB.
 
 - Relays Mod Manager Download clicks to Mortar so nxm:// links are not dropped when many tabs fire at once. When Mortar is installed and the connection is on, the extension clicks Nexus's "Download mod file" dialog so the link reaches Mortar. Mortar shows the file's requirements.
 - Marks mods and files already in the open profile. Options: Off, Gray out or Hide for in-profile, obsolete, and broken-for-this-game-version; Off or Show badge for updates.
 - Listing sidebar checkboxes switch those rows between Gray out and Off only (Hide is options-only).
 - Mod pages show installed files, requirements and known problems from Mortar. Collection pages have Open in Mortar.
-- thunderstore.io package pages mark an installed package and offer Install in Mortar. Community listings mark packages already in the open profile.
+- thunderstore.io package pages mark an installed package and offer Install in Mortar. Community listings mark packages already in the open profile, and a filter box grays out or hides them and deprecated packages.
+- curseforge.com and mods.vintagestory.at mark mods already in the open profile and hand the Install button (`curseforge://install`, `vintagestorymodinstall://`) to Mortar.
 - Toolbar badge and popup show profile updates, checked every 30 minutes.
 
 UI only on Nexus game domains and Thunderstore communities Mortar lists. The extension never downloads or opens Nexus pages itself.
@@ -39,7 +40,8 @@ Relay Nexus Mods "Mod Manager Download" clicks and Thunderstore package installs
 - `storage`: `chrome.storage.sync` options keys in `settings.js`. `chrome.storage.session` holds the last update check (`updatesReply`, `updatesError`).
 - `alarms`: update check every 30 minutes for the toolbar badge.
 - Host `https://www.nexusmods.com/*`: read mod ids and download links; follow the dialog Download link; relay Mod Manager Download; inject into already-open Nexus tabs.
-- Host `https://thunderstore.io/*`: read community, namespace and package name from listing and package pages; inject into already-open Thunderstore tabs. Reads nothing else. No other site.
+- Host `https://thunderstore.io/*`: read community, namespace and package name from listing and package pages, ask Thunderstore's package API whether a package is deprecated; inject into already-open Thunderstore tabs.
+- Hosts `https://www.curseforge.com/*` and `https://mods.vintagestory.at/*`: read mod links and names on listing and mod pages, and the Install button's link; inject into already-open tabs. Reads nothing else. No other site.
 
 Remote code: none.
 

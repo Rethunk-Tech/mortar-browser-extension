@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Mortar",
   "version": "0.3.3",
-  "description": "Sends Nexus Mods downloads and Thunderstore installs to the Mortar desktop mod manager and marks mods you already have.",
+  "description": "Sends Nexus, Thunderstore, CurseForge and Mod DB installs to the Mortar desktop mod manager and marks mods you already have.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqe3SnpMoNtzpFRKV0eOAaBgMy8Mx35rDG+laj5z1skoFi9E4ktRYlItpNsxkQFHcKjGwyQD329OfTAgHR9ibrHyvCi9RWyhreZTXVb0Epjq3i4dPj3Lsi1R5Z50kY+SJMXQ0FDmlXJXkbANGzXdmQfzAJyYdE8WiJIbW6qFEUJ6XetzqDyiaqMs+VNOicsRs4GAwKoEjgaoJid/IjNgrMUoZ3m8/MUoyJ5TynmOJIJQ964h9VGKXZv3Qg/hHABqHKo7xkpPQadizyI4ogPyCcqD2xxzFTWO3ZeLlbpZCIqEnHwJT1hSydu6j/OKd2+6SoP7zdatMGXOg8sN3bzhtUwIDAQAB",
   "permissions": ["alarms", "nativeMessaging", "scripting", "storage"],
   "options_ui": {
@@ -40,7 +40,17 @@
     },
     {
       "matches": ["https://thunderstore.io/c/*/p/*", "https://thunderstore.io/c/*"],
-      "js": ["plural.js", "settings.js", "listingMarks.js", "thunderstore.js"],
+      "js": ["plural.js", "settings.js", "filterBox.js", "listingMarks.js", "thunderstore.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.curseforge.com/*"],
+      "js": ["plural.js", "settings.js", "filterBox.js", "listingMarks.js", "projectSites.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://mods.vintagestory.at/*"],
+      "js": ["plural.js", "settings.js", "filterBox.js", "listingMarks.js", "projectSites.js"],
       "run_at": "document_idle"
     }
   ],
@@ -57,7 +67,12 @@
       "strict_min_version": "142.0"
     }
   },
-  "host_permissions": ["https://www.nexusmods.com/*", "https://thunderstore.io/*"],
+  "host_permissions": [
+    "https://www.nexusmods.com/*",
+    "https://thunderstore.io/*",
+    "https://www.curseforge.com/*",
+    "https://mods.vintagestory.at/*"
+  ],
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",

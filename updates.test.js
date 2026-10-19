@@ -5,7 +5,7 @@ import './updates.js'
 test('updates reply becomes badge text, colour, and popup rows', () => {
   const counted = globalThis.mortarUpdatesBadge(
     {
-      protocol: 2,
+      protocol: 3,
       accent: '#aabbcc',
       profile: 'Default',
       updates: [
@@ -42,7 +42,7 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
   })
 
   const empty = globalThis.mortarUpdatesBadge(
-    { protocol: 2, accent: '#111111', profile: 'Co-op', updates: [] },
+    { protocol: 3, accent: '#111111', profile: 'Co-op', updates: [] },
     false,
   )
   expect(empty.text).toBe('')
@@ -50,7 +50,7 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
   expect(empty.background).toBe('#111111')
 
   const missingAccent = globalThis.mortarUpdatesBadge(
-    { protocol: 2, updates: [{ modId: 1, name: 'A', installed: '1', latest: '2' }] },
+    { protocol: 3, updates: [{ modId: 1, name: 'A', installed: '1', latest: '2' }] },
     false,
   )
   expect(missingAccent.background).toBe('#D6B17A')
@@ -68,7 +68,7 @@ test('updates reply becomes badge text, colour, and popup rows', () => {
 
   const injected = globalThis.mortarUpdatesBadge(
     {
-      protocol: 2,
+      protocol: 3,
       accent: 'url(https://evil.example)',
       updates: [{ game: 'a/../../x', modId: '1/2', name: 'A', installed: '1', latest: '2' }],
     },
@@ -84,7 +84,7 @@ test('update rows print only the versions that are known', () => {
   const rows = globalThis
     .mortarUpdatesBadge(
       {
-        protocol: 2,
+        protocol: 3,
         state: 'ready',
         updates: [
           { modId: 1, name: 'A', installed: '', latest: '2.0' },

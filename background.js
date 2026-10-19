@@ -118,8 +118,18 @@ const pageHost = (url, names) => {
 }
 const isNexusPage = (url) => pageHost(url, ['nexusmods.com'])
 const isThunderstorePage = (url) => pageHost(url, ['thunderstore.io'])
+const isCurseForgePage = (url) => pageHost(url, ['curseforge.com'])
+const isVsModDbPage = (url) => pageHost(url, ['mods.vintagestory.at'])
 const isLinkSender = (sender) =>
   isNexusPage(sender?.tab?.url) || isThunderstorePage(sender?.tab?.url)
+
+// Each site's own Install button link goes to Mortar from that site's tabs only.
+const siteInstallLinks = [
+  [isCurseForgePage, 'curseforge://install'],
+  [isVsModDbPage, 'vintagestorymodinstall://'],
+]
+const isSiteInstallLink = (sender, link) =>
+  siteInstallLinks.some(([onSite, prefix]) => onSite(sender?.tab?.url) && link.startsWith(prefix))
 
 const isNexusHttpsLink = (link) => {
   try {
@@ -199,7 +209,9 @@ const relayLink = (msg, sender, sendResponse) => {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (typeof msg?.link === 'string') {
-    if (!(isLinkSender(sender) && isAllowedLink(msg.link))) {
+    if (
+      !((isLinkSender(sender) && isAllowedLink(msg.link)) || isSiteInstallLink(sender, msg.link))
+    ) {
       return
     }
     relayLink(msg, sender, sendResponse)
@@ -223,6 +235,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       sourceGameKey: msg.sourceGameKey,
       ...(msg.type === 'installPackage' ? { package: msg.package } : {}),
     }).then(sendResponse, (error) => sendResponse(failure(error)))
+    return true
+  }
+  if (
+    msg?.type === 'installedProjects' &&
+    (msg.source === 'curseforge' || msg.source === 'vsmoddb') &&
+    typeof msg.sourceGameKey === 'string'
+  ) {
+    send({ type: msg.type, source: msg.source, sourceGameKey: msg.sourceGameKey }).then(
+      sendResponse,
+      (error) => sendResponse(failure(error)),
+    )
     return true
   }
   if (
@@ -259,4 +282,6 @@ chrome.runtime.onInstalled.addListener(async () => {
   const scripts = chrome.runtime.getManifest().content_scripts
   await injectOpenTabs('https://www.nexusmods.com/*', scripts[0].js)
   await injectOpenTabs('https://thunderstore.io/c/*', scripts[1].js)
+  await injectOpenTabs('https://www.curseforge.com/*', scripts[2].js)
+  await injectOpenTabs('https://mods.vintagestory.at/*', scripts[3].js)
 })

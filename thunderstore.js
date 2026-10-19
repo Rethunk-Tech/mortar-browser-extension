@@ -15,19 +15,22 @@ globalThis.mortarThunderstoreListing = (pathname) => {
   return match ? { key: match[1] } : undefined
 }
 
-// Namespace-Name id from a listing tile link, lowercased to match installedPackages.
-globalThis.mortarThunderstorePackageId = (href, key) => {
+// The package page a listing tile link points at, or undefined for another community or a non-package link.
+globalThis.mortarThunderstoreLinkPage = (href, key) => {
   try {
     const page = globalThis.mortarThunderstorePage(
       new URL(href, 'https://thunderstore.io').pathname,
     )
-    if (!page || page.key !== key) {
-      return
-    }
-    return `${page.namespace}-${page.name}`.toLowerCase()
+    return page?.key === key ? page : undefined
   } catch {
     return
   }
+}
+
+// Namespace-Name id from a listing tile link, lowercased to match installedPackages.
+globalThis.mortarThunderstorePackageId = (href, key) => {
+  const page = globalThis.mortarThunderstoreLinkPage(href, key)
+  return page ? `${page.namespace}-${page.name}`.toLowerCase() : undefined
 }
 
 globalThis.mortarThunderstoreListingLinkSelector = 'a[href*="/c/"][href*="/p/"]'
@@ -74,39 +77,70 @@ globalThis.mortarThunderstoreOverlay = (reply, lastError, page) => {
   return { text: 'Mortar', button: true }
 }
 
-globalThis.mortarThunderstoreListingClasses = {
-  markerClass: 'mortar-installed-mod',
-  hiddenClass: 'mortar-hidden-mod',
-  removedClass: 'mortar-removed-mod',
-  badgeClass: 'mortar-installed-mod-badge',
+const mortarDeprecatedCache = new Map()
+
+// Whether Thunderstore marks the package deprecated; the listing carries no flag, so the package's API record says.
+// A failed lookup counts as not deprecated, and each package is asked once per page.
+globalThis.mortarThunderstoreDeprecated = (fetchJson, page) => {
+  const id = `${page.namespace}-${page.name}`.toLowerCase()
+  if (!mortarDeprecatedCache.has(id)) {
+    mortarDeprecatedCache.set(
+      id,
+      fetchJson(`/api/experimental/package/${page.namespace}/${page.name}/`).then(
+        (body) => body?.is_deprecated === true,
+        () => false,
+      ),
+    )
+  }
+  return mortarDeprecatedCache.get(id)
 }
 
-globalThis.mortarEnsureThunderstoreListingStyle = (doc) => {
-  if (doc.getElementById('mortar-installed-mod-style')) {
-    return
+globalThis.mortarThunderstoreFetchJson = async (path) => {
+  const response = await fetch(path)
+  return response.ok ? response.json() : undefined
+}
+
+// Dims (Gray out) or removes (Hide) the listing tiles of deprecated packages while the Obsolete row is not Off, and
+// returns how many tiles it marked.
+globalThis.mortarPaintThunderstoreDeprecated = async ({
+  document,
+  listing,
+  settings,
+  fetchJson,
+}) => {
+  const mode = settings.markObsolete
+  const tiles = new Map()
+  for (const link of document.querySelectorAll(globalThis.mortarThunderstoreListingLinkSelector)) {
+    const page = globalThis.mortarThunderstoreLinkPage(link.href, listing.key)
+    if (page) {
+      tiles.set(link.closest('article, li') || link, page)
+    }
   }
-  const { markerClass, badgeClass, hiddenClass, removedClass } =
-    globalThis.mortarThunderstoreListingClasses
-  const style = doc.createElement('style')
-  style.id = 'mortar-installed-mod-style'
-  style.textContent = `
-      .${markerClass} { outline: 2px solid #0CDF64 !important; outline-offset: -2px; position: relative; }
-      .${badgeClass} {
-        background: #0CDF64; border-radius: 3px; color: #1b1a17; display: inline-block;
-        font: 600 11px/1.4 sans-serif; margin: 4px; padding: 2px 5px; position: relative; z-index: 1;
-      }
-      .${hiddenClass} { opacity: 0.35; filter: grayscale(1); transition: opacity 120ms, filter 120ms; }
-      .${removedClass} { display: none !important; }
-      .${hiddenClass}:hover { opacity: 0.85; filter: grayscale(0.4); }
-    `
-  doc.documentElement.append(style)
+  let count = 0
+  await Promise.all(
+    [...tiles].map(async ([tile, page]) => {
+      const on = mode !== 'off' && (await globalThis.mortarThunderstoreDeprecated(fetchJson, page))
+      tile.classList.toggle(globalThis.mortarDeprecatedClasses.dim, on && mode === 'gray')
+      tile.classList.toggle(globalThis.mortarDeprecatedClasses.removed, on && mode === 'hide')
+      count += on ? 1 : 0
+    }),
+  )
+  return count
 }
 
 globalThis.mortarClearThunderstoreListingMarks = (root) => {
+  for (const tile of root.querySelectorAll(
+    `.${globalThis.mortarDeprecatedClasses.dim}, .${globalThis.mortarDeprecatedClasses.removed}`,
+  )) {
+    tile.classList.remove(
+      globalThis.mortarDeprecatedClasses.dim,
+      globalThis.mortarDeprecatedClasses.removed,
+    )
+  }
   globalThis.mortarClearUnlistedMarks({
     root,
     tiles: new Map(),
-    ...globalThis.mortarThunderstoreListingClasses,
+    ...globalThis.mortarSimpleListingClasses,
   })
 }
 
@@ -118,7 +152,7 @@ globalThis.mortarPaintThunderstoreListingMarks = ({
   lastError,
   settings,
 }) => {
-  const classes = globalThis.mortarThunderstoreListingClasses
+  const classes = globalThis.mortarSimpleListingClasses
   const mode = globalThis.mortarInstalledMode(settings)
   const managed =
     globalThis.mortarConnectionState(reply, lastError) === 'ready' &&
@@ -137,7 +171,7 @@ globalThis.mortarPaintThunderstoreListingMarks = ({
     tileFor: (link) => link.closest('article, li') || link,
     linkSelector: globalThis.mortarThunderstoreListingLinkSelector,
   })
-  globalThis.mortarEnsureThunderstoreListingStyle(document)
+  globalThis.mortarEnsureSimpleListingStyle(document)
   globalThis.mortarClearUnlistedMarks({ root: document, tiles, ...classes })
   globalThis.mortarApplyListingHideMarks({
     document,
@@ -211,7 +245,11 @@ if (
       return
     }
     globalThis.mortarSetAccent?.(reply?.accent)
-    show(overlay.text, overlay.button)
+    const settings = await globalThis.mortarReadSettings()
+    const deprecated =
+      settings.markObsolete !== 'off' &&
+      (await globalThis.mortarThunderstoreDeprecated(globalThis.mortarThunderstoreFetchJson, page))
+    show(deprecated ? `${overlay.text} · Deprecated` : overlay.text, overlay.button)
   }
   const runListing = async () => {
     if (!listing) {
@@ -229,6 +267,30 @@ if (
       lastError: error,
       settings,
     })
+    const deprecated = await globalThis.mortarPaintThunderstoreDeprecated({
+      document,
+      listing,
+      settings,
+      fetchJson: globalThis.mortarThunderstoreFetchJson,
+    })
+    const ready =
+      globalThis.mortarConnectionState(reply, error) === 'ready' &&
+      globalThis.mortarThunderstoreManaged(reply, listing.key)
+    globalThis.mortarShowFilterBox(
+      document,
+      globalThis.mortarFilterBoxRows(settings, [
+        {
+          row: 'installed',
+          label: 'Gray out in profile',
+          count: document.querySelectorAll('.mortar-installed-mod, .mortar-removed-mod').length,
+          disabled: !ready,
+          title: ready
+            ? ''
+            : globalThis.mortarStateText(globalThis.mortarConnectionState(reply, error)),
+        },
+        { row: 'deprecated', label: 'Gray out deprecated', count: deprecated },
+      ]),
+    )
   }
   const run = async () => {
     await runPackage()
@@ -253,6 +315,7 @@ if (
     () => {
       siteOn = false
       document.getElementById('mortar-thunderstore')?.remove()
+      globalThis.mortarRemoveFilterBox(document)
       globalThis.mortarClearThunderstoreListingMarks(document)
     },
   )

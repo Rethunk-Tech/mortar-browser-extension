@@ -37,16 +37,16 @@ test('listing package ids match installedPackages case-insensitively', () => {
 
 test('install result never shows a raw host error', () => {
   const text = globalThis.mortarThunderstoreResultText
-  expect(text({ protocol: 2, ok: true })).toBe('Sent to Mortar')
-  expect(text({ protocol: 2, error: 'package not in catalog: "x"' })).toBe(
+  expect(text({ protocol: 3, ok: true })).toBe('Sent to Mortar')
+  expect(text({ protocol: 3, error: 'package not in catalog: "x"' })).toBe(
     "Mortar couldn't install this package",
   )
   expect(text(undefined, 'Specified native messaging host not found.')).toBe(
     globalThis.mortarInstallHint,
   )
   expect(text({ nativeMessagingError: true })).toBe(globalThis.mortarInstallHint)
-  expect(text({ protocol: 2, state: 'notRunning' })).toBe("Mortar isn't running")
-  expect(text({ protocol: 2, state: 'noProfile' })).toBe('Open a profile in Mortar')
+  expect(text({ protocol: 3, state: 'notRunning' })).toBe("Mortar isn't running")
+  expect(text({ protocol: 3, state: 'noProfile' })).toBe('Open a profile in Mortar')
 })
 
 test('a disconnected package page still names the connection problem', () => {
@@ -56,15 +56,15 @@ test('a disconnected package page still names the connection problem', () => {
     text: globalThis.mortarInstallHint,
     button: false,
   })
-  expect(overlay({ protocol: 2, state: 'notRunning' }, undefined, page)).toEqual({
+  expect(overlay({ protocol: 3, state: 'notRunning' }, undefined, page)).toEqual({
     text: "Mortar isn't running",
     button: false,
   })
-  expect(overlay({ protocol: 2, state: 'ready', games: [], packages: [] }, undefined, page)).toBe(
+  expect(overlay({ protocol: 3, state: 'ready', games: [], packages: [] }, undefined, page)).toBe(
     undefined,
   )
   const managed = {
-    protocol: 2,
+    protocol: 3,
     state: 'ready',
     games: [{ sources: { thunderstore: 'lethal-company' } }],
     packages: [],
@@ -126,7 +126,7 @@ test('a managed listing marks installed packages; unmanaged and Off do not', () 
   }
   const listing = { key: 'lethal-company' }
   const reply = {
-    protocol: 2,
+    protocol: 3,
     state: 'ready',
     connected: true,
     games: [{ sources: { thunderstore: 'lethal-company' } }],
@@ -147,4 +147,51 @@ test('a managed listing marks installed packages; unmanaged and Off do not', () 
   expect([...names]).toEqual([])
   paint({ markInstalled: 'gray' }, { ...reply, games: [{ sources: { thunderstore: 'other' } }] })
   expect([...names]).toEqual([])
+})
+
+test('a package is deprecated when its API record says so, and asked once', async () => {
+  const asked = []
+  const fetchJson = (path) => {
+    asked.push(path)
+    if (path.includes('/Broken/')) {
+      return Promise.reject(new Error('offline'))
+    }
+    return Promise.resolve({ is_deprecated: path.includes('/Gone/') })
+  }
+  const check = (name) =>
+    globalThis.mortarThunderstoreDeprecated(fetchJson, { namespace: 'Alice', name })
+  expect(await check('Gone')).toBe(true)
+  expect(await check('Gone')).toBe(true)
+  expect(await check('Fine')).toBe(false)
+  expect(await check('Broken')).toBe(false)
+  expect(asked).toEqual([
+    '/api/experimental/package/Alice/Gone/',
+    '/api/experimental/package/Alice/Fine/',
+    '/api/experimental/package/Alice/Broken/',
+  ])
+})
+
+test('Gray out dims deprecated tiles, Hide removes them, Off clears them', async () => {
+  const classes = globalThis.mortarDeprecatedClasses
+  const names = new Set()
+  const tile = {
+    classList: { toggle: (name, on) => (on ? names.add(name) : names.delete(name)) },
+  }
+  const link = { href: '/c/lethal-company/p/Alice/Old/', closest: () => tile }
+  const document = { querySelectorAll: () => [link] }
+  const listing = { key: 'lethal-company' }
+  const fetchJson = () => Promise.resolve({ is_deprecated: true })
+  const paint = (markObsolete) =>
+    globalThis.mortarPaintThunderstoreDeprecated({
+      document,
+      listing,
+      settings: { markObsolete },
+      fetchJson,
+    })
+  expect(await paint('gray')).toBe(1)
+  expect([...names]).toEqual([classes.dim])
+  expect(await paint('hide')).toBe(1)
+  expect([...names]).toEqual([classes.removed])
+  expect(await paint('off')).toBe(0)
+  expect(names.size).toBe(0)
 })

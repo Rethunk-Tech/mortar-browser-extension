@@ -78,13 +78,13 @@ test('hide-in-profile filter stays off when Mortar is disconnected or no profile
   expect(disconnected.connected).toBe(false)
   expect(disconnected.profileOpen).toBe(false)
   const connectedNoProfile = globalThis.mortarInstalledListingState(
-    { protocol: 2, connected: true },
+    { protocol: 3, connected: true },
     undefined,
   )
   expect(connectedNoProfile.connected).toBe(true)
   expect(connectedNoProfile.profileOpen).toBe(false)
   const open = globalThis.mortarInstalledListingState(
-    { protocol: 2, connected: true, profile: 'Main' },
+    { protocol: 3, connected: true, profile: 'Main' },
     undefined,
     new Set([contentPatcher]),
   )
@@ -146,14 +146,14 @@ test('a failed installed lookup is asked again on the next installedIDs()', () =
   expect(failed.nativeFail).toBe(true)
   expect(globalThis.mortarInstalledCacheHit(failed, 'stardewvalley', now, ttl)).toBe(false)
   const unusable = globalThis.mortarInstalledListingState(
-    { protocol: 2, state: 'notRunning', connected: false, modIds: [] },
+    { protocol: 3, state: 'notRunning', connected: false, modIds: [] },
     undefined,
   )
   unusable.game = 'stardewvalley'
   expect(unusable.at).toBe(0)
   expect(globalThis.mortarInstalledCacheHit(unusable, 'stardewvalley', now, ttl)).toBe(false)
   const ok = globalThis.mortarInstalledListingState(
-    { protocol: 2, state: 'ready', connected: true, profile: 'Main', modIds: [1] },
+    { protocol: 3, state: 'ready', connected: true, profile: 'Main', modIds: [1] },
     undefined,
     new Set([1]),
   )

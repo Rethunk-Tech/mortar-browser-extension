@@ -16,9 +16,9 @@ globalThis.mortarSkipSourceLabel = (source) => {
 
 // The native-messaging protocol this extension speaks, sent with every message, and the range of Mortar protocols
 // it understands. A reply that names none counts as protocol 0.
-globalThis.mortarProtocol = 2
-const mortarProtocolMin = 2
-const mortarProtocolMax = 2
+const mortarProtocolMin = 3
+const mortarProtocolMax = 3
+globalThis.mortarProtocol = mortarProtocolMax
 
 // 'mortarOld' or 'extensionOld' when the two sides do not speak a common protocol, else ''. Mortar's own verdict on
 // this extension's protocol wins; otherwise Mortar's protocol is checked against this extension's range.

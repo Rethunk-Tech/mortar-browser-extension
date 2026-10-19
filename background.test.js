@@ -39,7 +39,12 @@ globalThis.chrome = {
     onStartup: listeners(),
     onInstalled: listeners(),
     getManifest: () => ({
-      content_scripts: [{ js: ['nexus.js'] }, { js: ['thunderstore.js'] }],
+      content_scripts: [
+        { js: ['nexus.js'] },
+        { js: ['thunderstore.js'] },
+        { js: ['curseforge.js'] },
+        { js: ['vsmoddb.js'] },
+      ],
     }),
   },
   alarms: { onAlarm: listeners(), create: () => undefined },
@@ -50,8 +55,10 @@ globalThis.chrome = {
         if (!tab.url) {
           return false
         }
-        if (url.includes('nexusmods.com')) {
-          return tab.url.includes('nexusmods.com')
+        for (const host of ['nexusmods.com', 'curseforge.com', 'mods.vintagestory.at']) {
+          if (url.includes(host)) {
+            return tab.url.includes(host)
+          }
         }
         return tab.url.includes('thunderstore.io/c/')
       }),
@@ -92,7 +99,10 @@ test('replies pair with requests first in, first out, and every message carries 
   const second = route({ link: 'https://www.nexusmods.com/x' })
   await settle()
   const [port] = ports
-  expect(port.sent.map((m) => m.protocol)).toEqual([2, 2])
+  expect(port.sent.map((m) => m.protocol)).toEqual([
+    globalThis.mortarProtocol,
+    globalThis.mortarProtocol,
+  ])
   expect(port.sent.map((m) => m.link)).toEqual([
     'nxm://game/mods/1/files/2',
     'https://www.nexusmods.com/x',
@@ -234,7 +244,7 @@ test('an installed request does not forward a spoofed modId', async () => {
     type: 'installed',
     source: 'nexus',
     sourceGameKey: 'g',
-    protocol: 2,
+    protocol: 3,
   })
   for (const fn of ports[0].onMessage.fns) {
     fn({ ok: true })
@@ -242,19 +252,23 @@ test('an installed request does not forward a spoofed modId', async () => {
   expect(await reply).toEqual({ ok: true })
 })
 
-test('onInstalled injects Nexus and Thunderstore tabs that have an id', async () => {
+test('onInstalled injects every supported site tab that has an id', async () => {
   queryTabs = [
     { id: 3, url: 'https://www.nexusmods.com/stardewvalley' },
     { url: 'https://www.nexusmods.com/x' },
     { id: 8, url: 'https://thunderstore.io/c/lethal-company/p/A/B/' },
     { id: 9, url: 'https://thunderstore.io/' },
     { id: 10, url: 'https://thunderstore.io/c/lethal-company/' },
+    { id: 11, url: 'https://www.curseforge.com/stardewvalley/mods/smapi' },
+    { id: 12, url: 'https://mods.vintagestory.at/show/mod/1' },
   ]
   await chrome.runtime.onInstalled.fns[0]()
   expect(injected).toEqual([
     { target: { tabId: 3, allFrames: false }, files: ['nexus.js'] },
     { target: { tabId: 8, allFrames: false }, files: ['thunderstore.js'] },
     { target: { tabId: 10, allFrames: false }, files: ['thunderstore.js'] },
+    { target: { tabId: 11, allFrames: false }, files: ['curseforge.js'] },
+    { target: { tabId: 12, allFrames: false }, files: ['vsmoddb.js'] },
   ])
 })
 
@@ -272,12 +286,59 @@ test('an installPackage with a string package is forwarded as sent', async () =>
     source: 'thunderstore',
     sourceGameKey: 'g',
     package: 'Owner-Pkg',
-    protocol: 2,
+    protocol: 3,
   })
   for (const fn of ports[0].onMessage.fns) {
     fn({ ok: true })
   }
   expect(await reply).toEqual({ ok: true })
+})
+
+test('install links go to Mortar only from their own site', async () => {
+  const cf = 'curseforge://install?addonId=1&fileId=2'
+  const vs = 'vintagestorymodinstall://carryon@1.0.0'
+  const cfTab = { tab: { url: 'https://www.curseforge.com/stardewvalley/mods/x' } }
+  const vsTab = { tab: { url: 'https://mods.vintagestory.at/show/mod/1' } }
+  for (const [link, sender] of [
+    [cf, vsTab],
+    [vs, cfTab],
+    [cf, nexusSender],
+    [vs, { tab: { url: 'https://evil.test/' } }],
+    ['curseforge://other', cfTab],
+  ]) {
+    expect(await route({ link }, sender)).toBe('dropped')
+  }
+  const sent = [route({ link: cf }, cfTab), route({ link: vs }, vsTab)]
+  await settle()
+  expect(ports[0].sent.map((m) => m.link)).toEqual([cf, vs])
+  for (const fn of ports[0].onMessage.fns) {
+    fn({ ok: true })
+    fn({ ok: true })
+  }
+  expect((await Promise.all(sent)).map((r) => r.ok)).toEqual([true, true])
+})
+
+test('an installedProjects request forwards source and key only', async () => {
+  expect(await route({ type: 'installedProjects', source: 'github', sourceGameKey: '' })).toBe(
+    'dropped',
+  )
+  const reply = route({
+    type: 'installedProjects',
+    source: 'curseforge',
+    sourceGameKey: '',
+    extra: 1,
+  })
+  await settle()
+  expect(ports[0].sent[0]).toEqual({
+    type: 'installedProjects',
+    source: 'curseforge',
+    sourceGameKey: '',
+    protocol: globalThis.mortarProtocol,
+  })
+  for (const fn of ports[0].onMessage.fns) {
+    fn({ projects: [] })
+  }
+  expect(await reply).toEqual({ projects: [] })
 })
 
 // Other test files run in this process and treat a global `chrome` as "inside the extension".
