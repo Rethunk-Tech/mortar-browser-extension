@@ -21,8 +21,8 @@ JSON native messaging. Outbound carries this `protocol`; replies carry Mortar's.
 - `{ "type": "updates", "source": "nexus", "sourceGameKey": "<nexus domain>" }`
 - `{ "type": "installedPackages", "source": "thunderstore", "sourceGameKey": "<community>" }`
 - `{ "type": "installPackage", "source": "thunderstore", "sourceGameKey": "<community>", "package": "<Namespace-Name>" }`
-- `{ "type": "installedProjects", "source": "curseforge" | "vsmoddb", "sourceGameKey": "<source key, or empty to learn the games>" }` — reply `projects: [{id, name}]` (CurseForge project id, Mod DB asset id).
-- `{ "link": "<nxm:// or https:// URL>", "close": true }` — `close` optional; true closes the tab after accept. From CurseForge tabs `curseforge://install...` and from Mod DB tabs `vintagestorymodinstall://...` are forwarded too. Other schemes are not.
+- `{ "type": "installedProjects", "source": "curseforge" | "vsmoddb", "sourceGameKey": "<source key, or empty to learn the games>" }` — reply `projects: [{id, name, slug}]` (CurseForge project id or Mod DB asset id; slug or alias once Mortar has looked it up).
+- `{ "link": "<nxm:// or https:// URL>", "close": true }` — `close` optional; true closes the tab after accept. From CurseForge tabs `curseforge://install...` (read off the /install/ page CurseForge's Install button opens) and from Mod DB tabs `vintagestorymodinstall://...` are forwarded too. Other schemes are not.
 
 Popup Check now is `{ "type": "checkNow" }` to the background script, which then sends `updates`. Reply `games`: `[{id, name, sources: {nexus: "<domain>", thunderstore: "<community>"}}]`. Nexus UI only on listed domains; `mortar://<game id>/mod/<id>` uses that `id`. Thunderstore community key is `sources.thunderstore`.
 

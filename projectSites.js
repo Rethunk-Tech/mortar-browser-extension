@@ -7,56 +7,98 @@ const mortarProjectName = (text) =>
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim()
-const mortarCurseForgeModPath = /^\/[^/]+\/[^/]+\/[^/]+\/?$/
+const mortarCurseForgeModPath = /^\/[^/]+\/[^/]+\/([^/]+)\/?$/
 const mortarVsModPath = /^\/show\/mod\/(\d+)/
+const mortarVsAliasPath = /^\/([A-Za-z0-9_-]+)\/?$/
+const mortarCurseForgeInstallPath = /\/install\/\d+/
+const mortarCurseForgeInstallLink = /curseforge:\/\/install\?[^"'<>\s]+/
+
+const mortarPathOf = (href) => {
+  try {
+    return new URL(href).pathname
+  } catch {
+    return ''
+  }
+}
 
 globalThis.mortarProjectSites = {
   curseforge: {
     source: 'curseforge',
     siteKey: 'siteCurseForge',
-    scheme: 'curseforge:',
     host: 'www.curseforge.com',
-    // A tile is keyed by its title link's text, so only a link to a mod page with words in it counts.
-    listingKey: (link) =>
-      mortarCurseForgeModPath.test(new URL(link.href).pathname)
-        ? mortarProjectName(link.textContent) || undefined
-        : undefined,
+    tileSelector: '.project-card',
+    // A tile's keys: the slug in its link, then the mod's name when the link has words (the profile may not know the
+    // slug yet).
+    listingKeys: (link) =>
+      [
+        mortarCurseForgeModPath.exec(mortarPathOf(link.href))?.[1]?.toLowerCase(),
+        mortarCurseForgeModPath.test(mortarPathOf(link.href))
+          ? mortarProjectName(link.textContent)
+          : '',
+      ].filter(Boolean),
     pageKeys: (doc, pathname) => {
-      if (!mortarCurseForgeModPath.test(pathname)) {
+      const slug = mortarCurseForgeModPath.exec(pathname)?.[1]
+      if (!slug) {
         return []
       }
-      const label = [...doc.querySelectorAll('li, div, dt, span')].find(
-        (el) => el.children.length === 0 && el.textContent.trim() === 'Project ID',
+      const label = [...doc.querySelectorAll('dt')].find(
+        (el) => el.textContent.trim() === 'Project ID',
       )
       return [
         label?.nextElementSibling?.textContent.trim(),
+        slug.toLowerCase(),
         mortarProjectName(doc.querySelector('h1')?.textContent),
       ].filter(Boolean)
     },
+    // The Install buttons are https links to a page that holds the real curseforge:// link.
+    installAnchor: (href, origin) => {
+      try {
+        const url = new URL(href)
+        return url.origin === origin && mortarCurseForgeInstallPath.test(url.pathname)
+          ? href
+          : undefined
+      } catch {
+        return
+      }
+    },
+    resolveLink: async (href, fetchText) =>
+      mortarCurseForgeInstallLink.exec(await fetchText(href))?.[0].replaceAll('&amp;', '&'),
   },
   vsmoddb: {
     source: 'vsmoddb',
     siteKey: 'siteVsModDb',
-    scheme: 'vintagestorymodinstall:',
     host: 'mods.vintagestory.at',
-    listingKey: (link) => mortarVsModPath.exec(new URL(link.href).pathname)?.[1],
-    pageKeys: (doc, pathname) => {
-      const here = mortarVsModPath.exec(pathname)?.[1]
-      const canonical = doc.querySelector('link[rel="canonical"]')?.href
-      return [here ?? (canonical && mortarVsModPath.exec(new URL(canonical).pathname)?.[1])].filter(
-        Boolean,
-      )
+    tileSelector: 'div.mod',
+    // Only some tiles link by asset id; the rest link by the mod's alias.
+    listingKeys: (link) => {
+      const path = mortarPathOf(link.href)
+      const key = mortarVsModPath.exec(path)?.[1] ?? mortarVsAliasPath.exec(path)?.[1]
+      return key ? [key.toLowerCase()] : []
     },
+    pageKeys: (doc, pathname) => {
+      const keys = (path) => {
+        const key = mortarVsModPath.exec(path)?.[1] ?? mortarVsAliasPath.exec(path)?.[1]
+        return key ? [key.toLowerCase()] : []
+      }
+      const canonical = doc.querySelector('link[rel="canonical"]')?.href
+      return [...keys(pathname), ...(canonical ? keys(mortarPathOf(canonical)) : [])]
+    },
+    installAnchor: (href) =>
+      href.toLowerCase().startsWith('vintagestorymodinstall://') ? href : undefined,
+    resolveLink: (href) => Promise.resolve(href),
   },
 }
 
-// The keys a profile's projects answer to: ids, and on CurseForge names too.
+// The keys a profile's projects answer to: ids, slugs or aliases, and on CurseForge names too.
 globalThis.mortarProjectKeys = (site, projects) =>
   new Set(
-    (Array.isArray(projects) ? projects : []).flatMap((p) => [
-      String(p?.id),
-      ...(site.source === 'curseforge' ? [mortarProjectName(p?.name)] : []),
-    ]),
+    (Array.isArray(projects) ? projects : [])
+      .flatMap((p) => [
+        String(p?.id).toLowerCase(),
+        String(p?.slug || '').toLowerCase(),
+        ...(site.source === 'curseforge' ? [mortarProjectName(p?.name)] : []),
+      ])
+      .filter(Boolean),
   )
 
 // The Mortar game keys a host reply names for the source.
@@ -65,17 +107,10 @@ globalThis.mortarProjectGameKeys = (reply, source) =>
     .map((g) => g?.sources?.[source])
     .filter((key) => typeof key === 'string' && key !== '')
 
-// The install link under a click, when the site's own Install button wrote it.
-globalThis.mortarProjectInstallLink = (site, target) => {
+// The Install anchor under a click, when it is the site's own Install button.
+globalThis.mortarProjectInstallAnchor = (site, target, origin) => {
   const href = target?.closest?.('a[href]')?.href
-  if (typeof href !== 'string') {
-    return
-  }
-  try {
-    return new URL(href).protocol === site.scheme ? href : undefined
-  } catch {
-    return
-  }
+  return typeof href === 'string' ? site.installAnchor(href, origin) : undefined
 }
 
 // What the page overlay says: a connection problem, or In Mortar profile; nothing when the page is not in the profile
@@ -133,7 +168,7 @@ if (
         tiles: new Map(),
         ...globalThis.mortarSimpleListingClasses,
       })
-    const tileFor = (link) => link.closest('article, li, tr') || link
+    const tileFor = (link) => link.closest(site.tileSelector)
     const paint = async () => {
       const settings = await globalThis.mortarReadSettings()
       const { reply, error, managed, projects } = await profileProjects()
@@ -142,12 +177,13 @@ if (
       const ready = state === 'ready' && managed
       const mode = globalThis.mortarInstalledMode(settings)
       const classes = globalThis.mortarSimpleListingClasses
+      const wanted = globalThis.mortarProjectKeys(site, projects)
       let count = 0
       if (ready && mode !== 'off') {
         const tiles = globalThis.mortarCollectInstalledTiles({
           root: document,
-          ids: globalThis.mortarProjectKeys(site, projects),
-          modID: (_href, link) => site.listingKey(link),
+          ids: wanted,
+          modID: (_href, link) => site.listingKeys(link).find((key) => wanted.has(key)),
           tileFor,
           linkSelector: 'a[href]',
         })
@@ -179,7 +215,6 @@ if (
         ]),
       )
       const keys = site.pageKeys(document, location.pathname)
-      const wanted = globalThis.mortarProjectKeys(site, projects)
       const text =
         keys.length > 0 &&
         globalThis.mortarProjectOverlay(reply, error, ready && keys.some((key) => wanted.has(key)))
@@ -199,23 +234,30 @@ if (
       host.attachShadow({ mode: 'closed' }).append(box)
       document.body.append(host)
     }
-    // A real click on the site's Install button goes to Mortar; if Mortar does not take it the site's own handler runs
-    // as it would without the extension.
+    // A real click on the site's Install button goes to Mortar; when the link cannot be found or Mortar does not take
+    // it, the button's own navigation runs as it would without the extension.
     let siteOn = false
+    const fetchText = async (href) => {
+      const response = await fetch(href, { credentials: 'same-origin' })
+      return response.ok ? response.text() : ''
+    }
     const onClick = (event) => {
-      const link = siteOn && globalThis.mortarProjectInstallLink(site, event.target)
-      if (!(link && event.isTrusted)) {
+      const anchor =
+        siteOn && globalThis.mortarProjectInstallAnchor(site, event.target, location.origin)
+      if (!(anchor && event.isTrusted)) {
         return
       }
       event.preventDefault()
       event.stopImmediatePropagation()
-      ask({ link })
+      site
+        .resolveLink(anchor, fetchText)
+        .then((link) => (link ? ask({ link }) : { error: true }))
         .then(({ reply, error }) => {
           if (error || reply?.ok !== true) {
-            location.assign(link)
+            location.assign(anchor)
           }
         })
-        .catch(() => false)
+        .catch(() => location.assign(anchor))
     }
     document.addEventListener('click', onClick, true)
     try {
