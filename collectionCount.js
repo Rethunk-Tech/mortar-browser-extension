@@ -46,10 +46,11 @@ globalThis.mortarFillCollectionInProfile = async (
   { installedIDs, installedCache },
 ) => {
   const host = doc.querySelector('.mortar-collection-panel')
-  if (!(host?._mortarMenu && host.shadowRoot)) {
+  const shadow = globalThis.mortarMenuShadow?.(host)
+  if (!(host?._mortarMenu && shadow)) {
     return
   }
-  const menu = host.shadowRoot.querySelector('.menu')
+  const menu = shadow.querySelector('.menu')
   const footer = menu?.querySelector('.footer')
   if (!footer) {
     return

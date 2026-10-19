@@ -19,6 +19,14 @@ test('installed reply status follows the host state', () => {
   expect(status({ protocol: 2, connected: true }, false)).toBe('Mortar could not read this profile')
 })
 
+test('only a trusted user gesture runs Mortar UI actions', () => {
+  const ran = []
+  globalThis.mortarIfTrusted({ isTrusted: false }, () => ran.push('no'))
+  globalThis.mortarIfTrusted({}, () => ran.push('no'))
+  globalThis.mortarIfTrusted({ isTrusted: true }, () => ran.push('yes'))
+  expect(ran).toEqual(['yes'])
+})
+
 test('a failed nxm send can be retried', () => {
   expect(globalThis.mortarNxmKeepSent({ ok: true })).toBe(true)
   expect(globalThis.mortarNxmKeepSent({ nativeMessagingError: true })).toBe(false)

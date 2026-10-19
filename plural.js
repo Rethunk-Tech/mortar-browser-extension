@@ -164,3 +164,10 @@ globalThis.mortarLinkResultText = (reply, lastError) =>
 // A failed native send must not stay in the "already sent" set: Mortar coming back later still gets that nxm URL.
 globalThis.mortarNxmKeepSent = (reply, lastError) =>
   !lastError && reply?.nativeMessagingError !== true
+
+// Page script can dispatch click on Mortar's UI; only a real user gesture is trusted.
+globalThis.mortarIfTrusted = (event, run) => {
+  if (event?.isTrusted === true) {
+    run(event)
+  }
+}

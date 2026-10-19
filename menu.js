@@ -346,9 +346,11 @@ const mortarBindMenu = (host, shadow, btn, menu) => {
     }
   }
   btn.addEventListener('click', (event) => {
-    event.preventDefault()
-    event.stopPropagation()
-    setOpen(!open)
+    globalThis.mortarIfTrusted(event, () => {
+      event.preventDefault()
+      event.stopPropagation()
+      setOpen(!open)
+    })
   })
   menu.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
@@ -389,7 +391,10 @@ const mortarBindMenu = (host, shadow, btn, menu) => {
 // Mortar's accent colour, from the latest native-host reply; every menu on the page follows it.
 let mortarAccent = ''
 const mortarMenuHosts = new Set()
+const mortarMenuShadows = new WeakMap()
 const mortarAccentHex = /^#[0-9a-f]{6}$/i
+
+globalThis.mortarMenuShadow = (host) => mortarMenuShadows.get(host)
 
 globalThis.mortarSetAccent = (hex) => {
   if (typeof hex !== 'string' || !mortarAccentHex.test(hex) || hex === mortarAccent) {
@@ -411,7 +416,11 @@ globalThis.mortarAttachMenu = (host, data, options = {}) => {
   if (mortarAccent) {
     host.style.setProperty('--mortar-accent', mortarAccent)
   }
-  const shadow = host.shadowRoot || host.attachShadow({ mode: 'open' })
+  let shadow = mortarMenuShadows.get(host)
+  if (!shadow) {
+    shadow = host.attachShadow({ mode: 'closed' })
+    mortarMenuShadows.set(host, shadow)
+  }
   shadow.replaceChildren()
   shadow.append(mortarMenuEl('style', { text: mortarMenuStyle }))
 
@@ -489,11 +498,13 @@ globalThis.mortarAttachMenu = (host, data, options = {}) => {
 
   const bound = mortarBindMenu(host, shadow, btn, menu)
   openBtn.addEventListener('click', (event) => {
-    event.preventDefault()
-    event.stopPropagation()
-    if (typeof options.onOpen === 'function') {
-      options.onOpen()
-    }
+    globalThis.mortarIfTrusted(event, () => {
+      event.preventDefault()
+      event.stopPropagation()
+      if (typeof options.onOpen === 'function') {
+        options.onOpen()
+      }
+    })
   })
 
   const api = {

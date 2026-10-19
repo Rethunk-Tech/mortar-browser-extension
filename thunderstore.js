@@ -169,8 +169,10 @@ if (
       }
     })
   const show = (text, button) => {
+    const host = document.createElement('div')
+    host.id = 'mortar-thunderstore'
+    const root = host.attachShadow({ mode: 'closed' })
     const box = document.createElement('div')
-    box.id = 'mortar-thunderstore'
     box.style.cssText =
       'position:fixed;right:16px;bottom:16px;z-index:2147483647;display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:8px;background:#1b1a17;color:#f2efe8;font:14px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.4)'
     const label = document.createElement('span')
@@ -181,18 +183,21 @@ if (
       b.type = 'button'
       b.textContent = 'Install in Mortar'
       b.style.cssText = 'padding:4px 10px;border-radius:6px;border:0;cursor:pointer'
-      b.addEventListener('click', async () => {
-        b.disabled = true
-        const { reply, error } = await ask(
-          globalThis.mortarThunderstoreRequest('installPackage', page),
-        )
-        label.textContent = globalThis.mortarThunderstoreResultText(reply, error)
-        b.disabled = false
+      b.addEventListener('click', (event) => {
+        globalThis.mortarIfTrusted(event, async () => {
+          b.disabled = true
+          const { reply, error } = await ask(
+            globalThis.mortarThunderstoreRequest('installPackage', page),
+          )
+          label.textContent = globalThis.mortarThunderstoreResultText(reply, error)
+          b.disabled = false
+        })
       })
       box.append(b)
     }
+    root.append(box)
     document.getElementById('mortar-thunderstore')?.remove()
-    document.body.append(box)
+    document.body.append(host)
   }
   const runPackage = async () => {
     if (!page) {
