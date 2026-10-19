@@ -4,9 +4,11 @@ import './updates.js'
 
 const ports = []
 const injected = []
+const removed = []
 let onMessage
 let postHook
 let queryTabs = []
+const nexusSender = { tab: { id: 1, url: 'https://www.nexusmods.com/game/mods/1' } }
 
 const listeners = () => {
   const fns = []
@@ -53,7 +55,7 @@ globalThis.chrome = {
         }
         return tab.url.includes('thunderstore.io/c/')
       }),
-    remove: () => undefined,
+    remove: (id) => removed.push(id),
   },
   action: { setBadgeText: () => undefined, setBadgeBackgroundColor: () => undefined },
   storage: { session: { set: async () => undefined } },
@@ -63,7 +65,7 @@ globalThis.chrome = {
 await import('./background.js')
 
 // Runs the router the way the browser does and resolves with what the page would be answered.
-const route = (msg, sender = {}) =>
+const route = (msg, sender = nexusSender) =>
   new Promise((resolve) => {
     const handled = onMessage(msg, sender, resolve)
     if (handled !== true) {
@@ -77,6 +79,7 @@ beforeEach(() => {
   postHook = undefined
   queryTabs = []
   injected.length = 0
+  removed.length = 0
   for (const port of ports.splice(0)) {
     for (const fn of port.onDisconnect.fns) {
       fn()
@@ -148,6 +151,57 @@ test('links that are neither nxm:// nor https:// are dropped', async () => {
     expect(await route({ link })).toBe('dropped')
   }
   expect(ports).toHaveLength(0)
+})
+
+test('link messages are dropped unless the tab and URL are ours', async () => {
+  const nxm = 'nxm://game/mods/1/files/2'
+  const nexusHttps = 'https://www.nexusmods.com/game/mods/1'
+  const cases = [
+    [{ link: nxm }, { tab: { url: 'https://evil.test/game/mods/1' } }],
+    [{ link: nxm }, {}],
+    [{ link: 'https://evil.test/x' }, nexusSender],
+    [{ link: 'https://nexusmods.com/x' }, nexusSender],
+    [{ link: 'https://www.nexusmods.com.evil.test/x' }, nexusSender],
+  ]
+  for (const [msg, sender] of cases) {
+    expect(await route(msg, sender)).toBe('dropped')
+  }
+  expect(ports).toHaveLength(0)
+
+  const fromThunderstore = route(
+    { link: nxm },
+    { tab: { url: 'https://thunderstore.io/c/lethal-company/p/A/B/' } },
+  )
+  const fromNexusHttps = route({ link: nexusHttps }, nexusSender)
+  await settle()
+  expect(ports[0].sent.map((m) => m.link)).toEqual([nxm, nexusHttps])
+  for (const fn of ports[0].onMessage.fns) {
+    fn({ ok: true })
+    fn({ ok: true })
+  }
+  expect([(await fromThunderstore).ok, (await fromNexusHttps).ok]).toEqual([true, true])
+})
+
+test('close is ignored unless the sender tab is the same Nexus mod', async () => {
+  const link = 'nxm://game/mods/1/files/2'
+  const otherMod = route(
+    { link, close: true },
+    { tab: { id: 4, url: 'https://www.nexusmods.com/other/mods/9' } },
+  )
+  await settle()
+  for (const fn of ports[0].onMessage.fns) {
+    fn({ ok: true })
+  }
+  await otherMod
+  expect(removed).toEqual([])
+
+  const sameMod = route({ link, close: true }, nexusSender)
+  await settle()
+  for (const fn of ports[0].onMessage.fns) {
+    fn({ ok: true })
+  }
+  await sameMod
+  expect(removed).toEqual([1])
 })
 
 test('messages with a wrong source or missing fields are dropped', async () => {

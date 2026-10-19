@@ -105,13 +105,60 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     refreshUpdates()
   }
 })
-const isNexusPage = (url) => {
+const pageHost = (url, names) => {
   if (typeof url !== 'string') {
     return false
   }
   try {
     const { hostname } = new URL(url)
-    return hostname === 'nexusmods.com' || hostname.endsWith('.nexusmods.com')
+    return names.some((name) => hostname === name || hostname.endsWith(`.${name}`))
+  } catch {
+    return false
+  }
+}
+const isNexusPage = (url) => pageHost(url, ['nexusmods.com'])
+const isThunderstorePage = (url) => pageHost(url, ['thunderstore.io'])
+const isLinkSender = (sender) =>
+  isNexusPage(sender?.tab?.url) || isThunderstorePage(sender?.tab?.url)
+
+const isNexusHttpsLink = (link) => {
+  try {
+    const parsed = new URL(link)
+    return parsed.protocol === 'https:' && parsed.hostname === 'www.nexusmods.com'
+  } catch {
+    return false
+  }
+}
+
+const isAllowedLink = (link) =>
+  typeof link === 'string' && (link.startsWith('nxm://') || isNexusHttpsLink(link))
+
+const nxmModPath = /^\/mods\/(\d+)(?:\/|$)/
+
+const nxmMod = (link) => {
+  try {
+    const parsed = new URL(link)
+    const match = parsed.pathname.match(nxmModPath)
+    if (parsed.protocol !== 'nxm:' || !match) {
+      return
+    }
+    return { game: parsed.hostname, modId: match[1] }
+  } catch {
+    return
+  }
+}
+
+const sameModDownloadTab = (sender, link) => {
+  const tabUrl = sender?.tab?.url
+  const parsed = nxmMod(link)
+  if (!(parsed && isNexusPage(tabUrl))) {
+    return false
+  }
+  try {
+    const parts = new URL(tabUrl).pathname.split('/').filter(Boolean)
+    const game = parts[0] === 'games' ? parts[1] : parts[0]
+    const modsAt = parts[0] === 'games' ? 2 : 1
+    return parts[modsAt] === 'mods' && parts[modsAt + 1] === parsed.modId && game === parsed.game
   } catch {
     return false
   }
@@ -136,7 +183,12 @@ chrome.runtime.onStartup.addListener(startUpdates)
 const relayLink = (msg, sender, sendResponse) => {
   send({ link: msg.link }).then(
     (reply) => {
-      if (msg.close === true && reply?.ok === true && sender.tab?.id !== undefined) {
+      if (
+        msg.close === true &&
+        reply?.ok === true &&
+        sender.tab?.id !== undefined &&
+        sameModDownloadTab(sender, msg.link)
+      ) {
         chrome.tabs.remove(sender.tab.id)
       }
       sendResponse(reply)
@@ -147,7 +199,7 @@ const relayLink = (msg, sender, sendResponse) => {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (typeof msg?.link === 'string') {
-    if (!(msg.link.startsWith('nxm://') || msg.link.startsWith('https://'))) {
+    if (!(isLinkSender(sender) && isAllowedLink(msg.link))) {
       return
     }
     relayLink(msg, sender, sendResponse)
