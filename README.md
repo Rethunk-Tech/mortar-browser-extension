@@ -13,7 +13,7 @@ Chrome, Edge and Firefox companion for [Mortar](https://github.com/Rethunk-Tech/
 
 <p align="center"><img src="media/readme/popup.png" alt="The toolbar popup connected to Mortar: 660 Nexus mods in the Main profile and the updates available for them" width="380"></p>
 
-Install, protocol and the dev loop: [HUMANS.md](HUMANS.md). Layout and release: [AGENTS.md](AGENTS.md). Store listing copy: [docs/store/](docs/store/). Security: [SECURITY.md](SECURITY.md). Licence: AGPL-3.0, [LICENSE](LICENSE).
+Install, protocol and the dev loop: [HUMANS.md](HUMANS.md). Layout and release: [AGENTS.md](AGENTS.md). Store listing copy: [docs/store/](docs/store/). Security: [SECURITY.md](SECURITY.md). Licence: AGPL-3.0, [LICENSE](LICENSE). The popup and options use Atkinson Hyperlegible Next (SIL Open Font License, [fonts/OFL.txt](fonts/OFL.txt)).
 
 ```sh
 bun install && bun run gate

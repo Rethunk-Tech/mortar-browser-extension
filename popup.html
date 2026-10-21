@@ -4,90 +4,102 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Mortar</title>
+    <link rel="stylesheet" href="ui.css" />
     <style>
-      :root {
-        color-scheme: dark;
-        font: 14px sans-serif;
-      }
-
       body {
-        background: rgb(36 35 31);
-        color: rgb(244 240 232);
-        margin: 0;
-        min-width: 190px;
+        width: 340px;
         padding: 14px;
       }
 
-      #popup-actions {
-        display: flex;
-        gap: 8px;
-        margin: 10px 0 0;
+      h1 {
+        font-size: 17px;
       }
-      #popup-actions button {
-        background: rgb(52 50 45);
-        border: 1px solid rgb(113 106 91);
-        border-radius: 4px;
-        color: inherit;
-        cursor: pointer;
-        flex: 1;
-        padding: 5px;
-      }
-      #popup-actions button:disabled {
-        cursor: default;
-        opacity: 0.6;
-      }
-      #popup-actions button.primary {
-        background: var(--accent, rgb(214 177 122));
-        border-color: transparent;
-        color: rgb(27 26 23);
-        font-weight: 600;
-      }
+
       #status {
-        color: rgb(196 188 172);
-        font-size: 12px;
-        line-height: 1.35;
         margin: 10px 0 0;
+        color: var(--dim);
+        font-size: 13px;
+      }
+
+      #popup-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+        margin: 12px 0 0;
+      }
+
+      #popup-actions button {
+        white-space: nowrap;
       }
 
       #updates-heading {
-        border-bottom: 1px solid var(--accent, rgb(214 177 122));
-        font-size: 14px;
-        font-weight: 600;
         margin: 16px 0 8px;
-        padding-bottom: 6px;
       }
 
       #updates {
         list-style: none;
         margin: 0;
         padding: 0;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
       }
 
-      #updates li {
-        margin: 0 0 8px;
+      #updates:empty {
+        display: none;
+      }
+
+      #updates li + li {
+        border-top: 1px solid var(--line);
       }
 
       #updates a {
-        color: inherit;
-        text-decoration: underline;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 10px;
+        color: var(--ink);
+        text-decoration: none;
+      }
+
+      #updates .source {
+        flex: none;
+        color: var(--faint);
+        font-size: 12px;
+      }
+
+      #updates a:hover {
+        background: var(--raised);
+        color: var(--accent);
       }
 
       #updates-empty {
-        color: rgb(196 188 172);
-        font-size: 12px;
-        line-height: 1.35;
         margin: 0;
+        color: var(--dim);
+        font-size: 13px;
       }
     </style>
   </head>
   <body>
+    <h1 class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <rect x="6" y="12" width="24" height="11" rx="2" />
+        <rect x="34" y="12" width="24" height="11" rx="2" />
+        <rect x="6" y="27" width="10" height="11" rx="2" />
+        <rect x="20" y="27" width="24" height="11" rx="2" />
+        <rect x="48" y="27" width="10" height="11" rx="2" />
+        <rect x="6" y="42" width="24" height="11" rx="2" />
+        <rect x="34" y="42" width="24" height="11" rx="2" />
+      </svg>
+      Mortar
+    </h1>
     <p id="status" role="status"></p>
     <p id="popup-actions">
       <button type="button" id="mortar-open-app">Open Mortar</button>
       <button type="button" id="mortar-check-now">Check now</button>
       <button type="button" id="mortar-options">Options</button>
     </p>
-    <h2 id="updates-heading">Updates</h2>
+    <h2 id="updates-heading" class="kicker">Updates</h2>
     <ul id="updates"></ul>
     <p id="updates-empty"></p>
     <script defer src="plural.js"></script>

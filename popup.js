@@ -67,6 +67,12 @@ const paintPopupUpdates = (stored) => {
     link.href = row.href
     link.target = '_blank'
     link.textContent = row.text
+    if (row.source) {
+      const site = document.createElement('span')
+      site.className = 'source'
+      site.textContent = globalThis.mortarSkipSourceLabel(row.source)
+      link.append(site)
+    }
     item.append(link)
     updatesList.append(item)
   }

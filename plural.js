@@ -1,18 +1,17 @@
 globalThis.mortarPlural = (n, singular, plural) => (n === 1 ? `1 ${singular}` : `${n} ${plural}`)
 
-globalThis.mortarSkipSourceLabel = (source) => {
-  const key = String(source || '').toLowerCase()
-  if (key === 'github') {
-    return 'GitHub'
-  }
-  if (key === 'nexus') {
-    return 'Nexus Mods'
-  }
-  if (key === 'thunderstore') {
-    return 'Thunderstore'
-  }
-  return String(source || '')
+const mortarSourceNames = {
+  github: 'GitHub',
+  nexus: 'Nexus Mods',
+  thunderstore: 'Thunderstore',
+  curseforge: 'CurseForge',
+  vsmoddb: 'Mod DB',
+  paradox: 'Paradox Mods',
+  modrinth: 'Modrinth',
 }
+
+globalThis.mortarSkipSourceLabel = (source) =>
+  mortarSourceNames[String(source || '').toLowerCase()] ?? String(source || '')
 
 // The native-messaging protocol this extension speaks, sent with every message, and the range of Mortar protocols
 // it understands. A reply that names none counts as protocol 0.

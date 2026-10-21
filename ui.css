@@ -1,0 +1,213 @@
+/* The popup's and options page's look: the website's colours and type, so the extension reads as Mortar. */
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/atkinson-hyperlegible-next-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/atkinson-hyperlegible-next-latin-700-normal.woff2") format("woff2");
+}
+
+:root {
+  --bg: rgb(17, 17, 20);
+  --raised: rgb(27, 27, 33);
+  --raised2: rgb(36, 36, 44);
+  --accent: rgb(214, 177, 122);
+  --accent-ink: rgb(25, 25, 30);
+  --ink: rgba(255, 255, 255, 0.93);
+  --dim: rgba(210, 210, 215, 0.82);
+  --faint: rgba(210, 210, 215, 0.62);
+  --line: rgba(255, 255, 255, 0.09);
+  --good: rgb(147, 184, 106);
+  --warn: rgb(240, 180, 60);
+  --error: rgb(220, 60, 60);
+  color-scheme: dark;
+  font:
+    14px / 1.45 "Atkinson Hyperlegible Next",
+    system-ui,
+    sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+h1,
+h2 {
+  margin: 0;
+  line-height: 1.2;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.brand svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  color: var(--accent);
+}
+
+.brand svg rect {
+  fill: currentColor;
+}
+
+.panel {
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.kicker {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hint {
+  margin: 2px 0 8px;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+button,
+a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised2);
+  color: var(--ink);
+  font:
+    700 13px "Atkinson Hyperlegible Next",
+    system-ui,
+    sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button:hover,
+a.button:hover {
+  border-color: rgba(214, 177, 122, 0.5);
+}
+
+button.primary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+/* A checkbox drawn as a switch. */
+input.switch {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 38px;
+  height: 22px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--raised2);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+input.switch::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--dim);
+  transition: transform 0.15s;
+}
+
+input.switch:checked {
+  border-color: transparent;
+  background: var(--accent);
+}
+
+input.switch:checked::before {
+  background: var(--accent-ink);
+  transform: translateX(16px);
+}
+
+/* Radio choices drawn as one segmented control. */
+.choices {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.choices label {
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dim);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.choices label + label {
+  border-left: 1px solid var(--line);
+}
+
+.choices input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choices label:has(input:checked) {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.choices label:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}

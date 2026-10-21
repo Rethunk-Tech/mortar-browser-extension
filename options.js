@@ -63,7 +63,7 @@ const buildMarkRows = (settings) => {
       input.value = value
       input.checked = settings[row.key] === value
       input.addEventListener('change', () => save(row.key, value))
-      label.append(input, ` ${text}`)
+      label.append(input, text)
       choices.append(label)
     }
     set.append(legend, hint, choices)
@@ -81,7 +81,9 @@ const bindSites = (settings) => {
 const paintConnection = (reply, lastError) => {
   const state = globalThis.mortarConnectionState(reply, lastError)
   const text = globalThis.mortarStateText(state)
-  document.getElementById('connection-status').textContent = state === 'ready' ? 'Connected' : text
+  const status = document.getElementById('connection-status')
+  status.textContent = state === 'ready' ? 'Connected' : text
+  status.dataset.state = state
   const mortar = document.getElementById('connection-mortar')
   if (state === 'missing') {
     mortar.textContent = globalThis.mortarInstallHint

@@ -4,127 +4,195 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Mortar options</title>
+    <link rel="stylesheet" href="ui.css" />
     <style>
-      :root {
-        color-scheme: dark;
-        font: 15px sans-serif;
-      }
-
       body {
-        background: rgb(36 35 31);
-        color: rgb(244 240 232);
-        margin: 0;
-        padding: 24px 16px 48px;
+        padding: 40px 16px 64px;
       }
 
       main {
+        display: grid;
+        gap: 18px;
         margin: 0 auto;
-        max-width: 640px;
+        max-width: 680px;
+      }
+
+      header {
+        margin-bottom: 6px;
       }
 
       h1 {
-        font-size: 22px;
-        margin: 0 0 20px;
+        font-size: 26px;
       }
 
-      section {
-        background: rgb(46 44 39);
-        border-radius: 8px;
-        margin: 0 0 16px;
-        padding: 14px 16px 16px;
+      header p {
+        margin: 6px 0 0;
+        color: var(--dim);
       }
 
-      h2 {
-        border-bottom: 1px solid var(--accent, rgb(214 177 122));
-        font-size: 16px;
-        margin: 0 0 12px;
-        padding-bottom: 6px;
+      .panel > .hint:first-of-type {
+        margin-top: -2px;
       }
 
-      fieldset {
-        border: 0;
-        margin: 0 0 12px;
-        padding: 0;
+      .rows {
+        display: grid;
+        margin: 4px -16px -14px;
       }
 
-      legend {
-        font-weight: 600;
-        padding: 0;
-      }
-
-      .hint,
-      #connection dd {
-        color: rgb(196 188 172);
-        font-size: 13px;
-        line-height: 1.4;
-        margin: 2px 0 6px;
-      }
-
-      .choices {
-        display: flex;
+      .row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
         gap: 16px;
+        padding: 12px 16px;
+        border-top: 1px solid var(--line);
       }
 
-      label {
+      label.row {
         cursor: pointer;
+      }
+
+      .row b {
+        display: block;
+        font-size: 15px;
+      }
+
+      .row .hint {
+        margin: 2px 0 0;
+      }
+
+      #mark-rows fieldset {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 4px 16px;
+        margin: 0;
+        padding: 12px 16px;
+        border: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      #mark-rows legend {
+        float: left;
+        padding: 0;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      #mark-rows .hint {
+        grid-column: 1;
+        margin: 0;
+      }
+
+      #mark-rows .choices {
+        grid-column: 2;
+        grid-row: 1 / span 2;
       }
 
       #connection dl {
-        margin: 0 0 10px;
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 8px 18px;
+        margin: 4px 0 14px;
       }
 
       #connection dt {
-        font-weight: 600;
+        color: var(--dim);
       }
 
       #connection dd {
-        margin: 0 0 8px;
+        margin: 0;
       }
 
-      button,
-      a.button {
-        background: rgb(52 50 45);
-        border: 1px solid rgb(113 106 91);
-        border-radius: 4px;
-        color: inherit;
-        cursor: pointer;
-        font: inherit;
+      #connection-status::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
         margin-right: 8px;
-        padding: 5px 12px;
-        text-decoration: none;
+        border-radius: 50%;
+        background: var(--faint);
       }
 
-      a {
-        color: inherit;
+      #connection-status[data-state="ready"]::before {
+        background: var(--good);
+      }
+
+      #connection-status[data-state="missing"]::before,
+      #connection-status[data-state="mortarOld"]::before,
+      #connection-status[data-state="extensionOld"]::before {
+        background: var(--error);
+      }
+
+      #connection-status[data-state="notRunning"]::before,
+      #connection-status[data-state="noProfile"]::before,
+      #connection-status[data-state="off"]::before {
+        background: var(--warn);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
       }
     </style>
   </head>
   <body>
     <main>
-      <h1>Mortar options</h1>
-      <section id="sites">
-        <h2>Sites</h2>
-        <fieldset>
-          <label><input type="checkbox" data-setting="siteNexus" /> Nexus Mods</label>
-          <p class="hint">Marks mods, hands downloads to Mortar and adds its panels on nexusmods.com.</p>
-          <label><input type="checkbox" data-setting="siteThunderstore" /> Thunderstore</label>
-          <p class="hint">Marks a package already in your profile and adds Install in Mortar.</p>
-          <label><input type="checkbox" data-setting="siteCurseForge" /> CurseForge</label>
-          <p class="hint">Marks mods already in your profile and hands the Install button to Mortar.</p>
-          <label><input type="checkbox" data-setting="siteVsModDb" /> Vintage Story Mod DB</label>
-          <p class="hint">Marks mods already in your profile and hands 1-click installs to Mortar.</p>
-        </fieldset>
+      <header>
+        <h1 class="brand">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <rect x="6" y="12" width="24" height="11" rx="2" />
+            <rect x="34" y="12" width="24" height="11" rx="2" />
+            <rect x="6" y="27" width="10" height="11" rx="2" />
+            <rect x="20" y="27" width="24" height="11" rx="2" />
+            <rect x="48" y="27" width="10" height="11" rx="2" />
+            <rect x="6" y="42" width="24" height="11" rx="2" />
+            <rect x="34" y="42" width="24" height="11" rx="2" />
+          </svg>
+          Mortar options
+        </h1>
+        <p>For the Mortar browser extension. Changes save as you make them.</p>
+      </header>
+      <section id="sites" class="panel">
+        <h2 class="kicker">Sites</h2>
+        <div class="rows">
+          <label class="row">
+            <span><b>Nexus Mods</b><span class="hint">Marks mods, hands downloads to Mortar and adds its panels on nexusmods.com.</span></span>
+            <input type="checkbox" class="switch" data-setting="siteNexus" />
+          </label>
+          <label class="row">
+            <span><b>Thunderstore</b><span class="hint">Marks packages already in your profile and adds Install in Mortar.</span></span>
+            <input type="checkbox" class="switch" data-setting="siteThunderstore" />
+          </label>
+          <label class="row">
+            <span><b>CurseForge</b><span class="hint">Marks mods already in your profile and hands the Install button to Mortar.</span></span>
+            <input type="checkbox" class="switch" data-setting="siteCurseForge" />
+          </label>
+          <label class="row">
+            <span><b>Vintage Story Mod DB</b><span class="hint">Marks mods already in your profile and hands 1-click installs to Mortar.</span></span>
+            <input type="checkbox" class="switch" data-setting="siteVsModDb" />
+          </label>
+          <label class="row">
+            <span><b>Paradox Mods</b><span class="hint">Marks Cities: Skylines II mods already in your profile and adds Install in Mortar.</span></span>
+            <input type="checkbox" class="switch" data-setting="siteParadox" />
+          </label>
+          <label class="row">
+            <span><b>Modrinth</b><span class="hint">Marks projects already in your profile and adds Install in Mortar.</span></span>
+            <input type="checkbox" class="switch" data-setting="siteModrinth" />
+          </label>
+        </div>
       </section>
-      <section id="marks">
-        <h2>Markings on mod lists</h2>
+      <section id="marks" class="panel">
+        <h2 class="kicker">Markings on mod lists</h2>
         <p class="hint">
-          What lists on Nexus do with mods in your open Mortar profile. Gray out and Hide match
-          Mortar's Browse filters.
+          What mod lists do with mods in your open Mortar profile. Gray out and Hide match Mortar's
+          Browse filters.
         </p>
-        <div id="mark-rows"></div>
+        <div id="mark-rows" class="rows"></div>
       </section>
-      <section id="connection">
-        <h2>Connection to Mortar</h2>
+      <section id="connection" class="panel">
+        <h2 class="kicker">Connection to Mortar</h2>
         <dl>
           <dt>Status</dt>
           <dd id="connection-status" role="status">Checking…</dd>
@@ -133,8 +201,10 @@
           <dt>This extension</dt>
           <dd id="connection-extension"></dd>
         </dl>
-        <button type="button" id="recheck">Check again</button>
-        <a class="button" id="open-mortar" href="mortar://">Open Mortar</a>
+        <div class="actions">
+          <button type="button" id="recheck">Check again</button>
+          <a class="button" id="open-mortar" href="mortar://">Open Mortar</a>
+        </div>
         <p class="hint">
           Mortar has no way to open its own settings from the browser.
           <a
