@@ -384,6 +384,32 @@ test('installProject is forwarded for Paradox and Modrinth only, with a string p
   expect(await projects).toEqual({ projects: [] })
 })
 
+// Last: the session then stays on the lower protocol, as it does in the browser.
+test('an older Mortar that refuses this protocol is asked again at the one it names', async () => {
+  postHook = (port) => {
+    const sent = port.sent.at(-1)
+    const reply =
+      sent.protocol > 3
+        ? {
+            protocol: 3,
+            protocolError: 'extensionTooNew',
+            error: 'Mortar does not speak this protocol',
+          }
+        : { protocol: 3, ok: true }
+    queueMicrotask(() => {
+      for (const fn of port.onMessage.fns) {
+        fn(reply)
+      }
+    })
+  }
+  const reply = await route({ link: 'nxm://game/mods/1/files/2' })
+  expect(reply).toEqual({ protocol: 3, ok: true })
+  expect(ports.flatMap((p) => p.sent.map((m) => m.protocol))).toEqual([
+    globalThis.mortarProtocol,
+    3,
+  ])
+})
+
 // Other test files run in this process and treat a global `chrome` as "inside the extension".
 afterAll(() => {
   globalThis.chrome = undefined

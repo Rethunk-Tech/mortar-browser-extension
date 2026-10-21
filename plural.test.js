@@ -141,3 +141,12 @@ test('a protocol mismatch names the side to update', () => {
   )
   expect(globalThis.mortarUpdatesBadge({ protocol: 5, updates: [] }).state).toBe('extensionOld')
 })
+
+test('an older Mortar that names a protocol this extension speaks is retried at it', () => {
+  const lower = globalThis.mortarFallbackProtocol
+  expect(lower({ protocolError: 'extensionTooNew', protocol: 3 }, 4)).toBe(3)
+  expect(lower({ protocolError: 'extensionTooNew', protocol: 2 }, 4)).toBe(0)
+  expect(lower({ protocolError: 'extensionTooNew', protocol: 3 }, 3)).toBe(0)
+  expect(lower({ protocolError: 'extensionTooOld', protocol: 3 }, 4)).toBe(0)
+  expect(lower({ protocol: 4, ok: true }, 4)).toBe(0)
+})

@@ -19,6 +19,18 @@ const mortarProtocolMin = 3
 const mortarProtocolMax = 4
 globalThis.mortarProtocol = mortarProtocolMax
 
+// The lower protocol to retry with when Mortar answers that this extension is too new and names one the extension
+// still speaks (an older Mortar), else 0.
+globalThis.mortarFallbackProtocol = (reply, sent) => {
+  const offered = reply?.protocol
+  return reply?.protocolError === 'extensionTooNew' &&
+    Number.isInteger(offered) &&
+    offered >= mortarProtocolMin &&
+    offered < sent
+    ? offered
+    : 0
+}
+
 // 'mortarOld' or 'extensionOld' when the two sides do not speak a common protocol, else ''. Mortar's own verdict on
 // this extension's protocol wins; otherwise Mortar's protocol is checked against this extension's range.
 globalThis.mortarProtocolMismatch = (reply) => {

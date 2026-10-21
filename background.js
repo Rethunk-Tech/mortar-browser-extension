@@ -43,20 +43,33 @@ const connect = () => {
   port = next
 }
 
-const send = (message) =>
+// The protocol this browser session speaks: the newest, until an older Mortar asks for less.
+let spoken = globalThis.mortarProtocol
+
+const post = (message, protocol) =>
   new Promise((resolve, reject) => {
     try {
       if (!port) {
         connect()
       }
       pending.push({ resolve, reject })
-      port.postMessage({ ...message, protocol: globalThis.mortarProtocol })
+      port.postMessage({ ...message, protocol })
       armIdle()
     } catch (error) {
       pending.pop()
       reject(error)
     }
   })
+
+const send = async (message) => {
+  const reply = await post(message, spoken)
+  const lower = globalThis.mortarFallbackProtocol(reply, spoken)
+  if (lower === 0) {
+    return reply
+  }
+  spoken = lower
+  return post(message, spoken)
+}
 
 const failure = (error) => ({
   nativeMessagingError: true,
