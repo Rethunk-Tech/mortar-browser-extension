@@ -58,6 +58,10 @@ globalThis.mortarThunderstoreRequest = (type, page) => ({
 globalThis.mortarThunderstoreResultText = (reply, lastError) =>
   globalThis.mortarHostResultText(reply, lastError, "Mortar couldn't install this package")
 
+// The site's own install buttons (Thunderstore draws one per layout), which Mortar takes over while it is ready.
+globalThis.mortarThunderstoreInstallSelector =
+  'a.package-listing-sidebar__install[href^="ror2mm://"]'
+
 // What the package page overlay shows: a connection problem, In Mortar profile, or the install button.
 // An unmanaged community stays untouched, the same as a page that is not a package page.
 globalThis.mortarThunderstoreOverlay = (reply, lastError, page) => {
@@ -244,6 +248,23 @@ if (
     const deprecated =
       settings.markObsolete !== 'off' &&
       (await globalThis.mortarThunderstoreDeprecated(globalThis.mortarThunderstoreFetchJson, page))
+    const siteButtons = [...document.querySelectorAll(globalThis.mortarThunderstoreInstallSelector)]
+    if (globalThis.mortarConnectionState(reply, error) === 'ready' && siteButtons.length > 0) {
+      document.getElementById('mortar-thunderstore')?.remove()
+      const installed = !overlay.button
+      for (const link of siteButtons) {
+        globalThis.mortarClaimSiteButton(link, {
+          label: installed ? 'In your Mortar profile' : 'Install with Mortar',
+          installed,
+          onInstall: async (setLabel) => {
+            setLabel('Sending to Mortar…')
+            const sent = await ask(globalThis.mortarThunderstoreRequest('installPackage', page))
+            setLabel(globalThis.mortarThunderstoreResultText(sent.reply, sent.error))
+          },
+        })
+      }
+      return
+    }
     show(deprecated ? `${overlay.text} · Deprecated` : overlay.text, overlay.button)
   }
   const runListing = async () => {
@@ -310,6 +331,7 @@ if (
     () => {
       siteOn = false
       document.getElementById('mortar-thunderstore')?.remove()
+      globalThis.mortarReleaseSiteButtons()
       globalThis.mortarRemoveFilterBox(document)
       globalThis.mortarClearThunderstoreListingMarks(document)
     },

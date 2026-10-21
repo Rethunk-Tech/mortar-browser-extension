@@ -145,3 +145,67 @@ globalThis.mortarUiDimCss = (classes) => {
   ${hover} { opacity: 0.85; filter: grayscale(0.4); }
 `
 }
+
+// Takes over a site's own install button while Mortar can install the mod: it shows the Mortar mark and `label` in
+// Mortar's colours, and a real click runs `onInstall(setLabel)` instead of the site's link. `installed` shows the
+// button as done. mortarReleaseSiteButtons puts every claimed button back as the site drew it.
+const mortarUiClaimed = new Map()
+
+globalThis.mortarClaimSiteButton = (link, { label, installed = false, onInstall }) => {
+  if (!mortarUiClaimed.has(link)) {
+    const onClick = (event) => {
+      const claim = mortarUiClaimed.get(link)
+      if (!claim) {
+        return
+      }
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      if (claim.installed || !event.isTrusted) {
+        return
+      }
+      claim.onInstall((said) => {
+        link.querySelector('.mortar-claim-label').textContent = said
+      })
+    }
+    mortarUiClaimed.set(link, {
+      html: link.innerHTML,
+      style: link.getAttribute('style'),
+      title: link.getAttribute('title'),
+      onClick,
+    })
+    link.addEventListener('click', onClick, true)
+  }
+  const claim = mortarUiClaimed.get(link)
+  Object.assign(claim, { installed, onInstall })
+  const mark = globalThis.mortarUiMark(link.ownerDocument)
+  mark.setAttribute('fill', 'currentColor')
+  mark.setAttribute('width', '1.15em')
+  mark.setAttribute('height', '1.15em')
+  mark.style.cssText = 'flex:none;margin-right:0.45em'
+  const text = link.ownerDocument.createElement('span')
+  text.className = 'mortar-claim-label'
+  text.textContent = label
+  link.replaceChildren(mark, text)
+  link.title = installed ? 'This mod is in your open Mortar profile' : 'Install with Mortar'
+  link.style.cssText = installed
+    ? 'background:rgb(36,36,44)!important;color:rgba(255,255,255,0.93)!important;border-color:rgba(255,255,255,0.12)!important;box-shadow:none!important;cursor:default;display:inline-flex;align-items:center;justify-content:center'
+    : `background:${mortarUiAccent || mortarUiAccentDefault}!important;color:rgb(25,25,30)!important;border-color:transparent!important;box-shadow:none!important;display:inline-flex;align-items:center;justify-content:center`
+}
+
+globalThis.mortarReleaseSiteButtons = () => {
+  for (const [link, claim] of mortarUiClaimed) {
+    link.removeEventListener('click', claim.onClick, true)
+    link.innerHTML = claim.html
+    for (const [name, value] of [
+      ['style', claim.style],
+      ['title', claim.title],
+    ]) {
+      if (value === null) {
+        link.removeAttribute(name)
+      } else {
+        link.setAttribute(name, value)
+      }
+    }
+  }
+  mortarUiClaimed.clear()
+}
