@@ -20,7 +20,8 @@ globalThis.mortarMarketSites = {
     siteKey: 'siteParadox',
     host: 'mods.paradoxplaza.com',
     linkSelector: 'a[href*="/mods/"]',
-    tileSelector: 'li, article',
+    // A listing card's root holds its link; the site's class names carry a literal [fullhash], not a build hash.
+    tileSelector: '[class*="Mods-Card-styles__root"]',
     slugOf: (pathname) => mortarMarketParadoxPath.exec(pathname)?.[1],
     // The id the host's installProject takes and the keys the open profile answers to.
     projectOf: (pathname) => mortarMarketParadoxPath.exec(pathname)?.[1],
