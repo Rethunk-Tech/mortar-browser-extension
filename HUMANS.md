@@ -8,7 +8,7 @@ Mortar on the same computer, opened once (registers `tech.rethunk.mortar`). Fire
 
 <https://github.com/Rethunk-Tech/mortar-browser-extension/releases/latest>
 
-- `mortar-browser-extension.xpi` — open in Firefox. Not on AMO; updates from the latest release's `updates.json`.
+- `mortar-browser-extension.xpi`: open in Firefox, or install from the public AMO listing. The self-distributed `.xpi` updates from the latest release's `updates.json`.
 - `mortar-browser-extension.zip` — Chromium Load unpacked (Developer mode).
 - `mortar-browser-extension-chrome-web-store.zip` — no manifest `key`, for the Web Store.
 
