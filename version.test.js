@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import './mortarUi.js'
 import './modPanel.js'
 
 test('versions order like Mortar: releases above their prereleases, build metadata ignored', () => {

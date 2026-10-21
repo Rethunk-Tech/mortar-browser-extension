@@ -135,30 +135,15 @@ globalThis.mortarEnsureInstalledModStyle = (
   }
   const style = doc.createElement('style')
   style.id = 'mortar-installed-mod-style'
-  style.textContent = `
-      .${markerClass} { outline: 2px solid #0CDF64 !important; outline-offset: -2px; }
-      .${markerClass} { position: relative; }
-      .${badgeClass} {
-        background: #0CDF64;
-        border-radius: 3px;
-        color: #1b1a17;
-        display: inline-block;
-        font: 600 11px/1.4 sans-serif;
-        margin: 4px;
-        padding: 2px 5px;
-        position: relative;
-        z-index: 1;
-      }
-      .${badgeClass}-update { background: #F3B416; }
+  style.textContent = `${globalThis.mortarUiListingCss({ marker: markerClass, badge: badgeClass })}
       .${fileBadgeClass} .mortar-file-active {
-        background: #1b1a17;
-        border-radius: 2px;
-        color: #D6B17A;
-        padding: 0 3px;
+        background: rgb(25, 25, 30);
+        border-radius: 3px;
+        color: rgb(214, 177, 122);
+        padding: 0 4px;
       }
-      .${hiddenClass}, .${obsoleteClass}, .${brokenClass} { opacity: 0.35; filter: grayscale(1); transition: opacity 120ms, filter 120ms; }
+      ${globalThis.mortarUiDimCss([hiddenClass, obsoleteClass, brokenClass])}
       .${removedClass} { display: none !important; }
-      .${hiddenClass}:hover, .${obsoleteClass}:hover, .${brokenClass}:hover { opacity: 0.85; filter: grayscale(0.4); }
       .${panelClass} { display: inline-block; margin: 8px 0; vertical-align: middle; }
     `
   doc.documentElement.append(style)

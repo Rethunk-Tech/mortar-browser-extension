@@ -202,16 +202,10 @@ globalThis.mortarEnsureSimpleListingStyle = (doc) => {
     globalThis.mortarSimpleListingClasses
   const style = doc.createElement('style')
   style.id = 'mortar-installed-mod-style'
-  style.textContent = `
-      .${markerClass} { outline: 2px solid #0CDF64 !important; outline-offset: -2px; position: relative; }
-      .${badgeClass} {
-        background: #0CDF64; border-radius: 3px; color: #1b1a17; display: inline-block;
-        font: 600 11px/1.4 sans-serif; margin: 4px; padding: 2px 5px; position: relative; z-index: 1;
-      }
-      .${hiddenClass} { opacity: 0.35; filter: grayscale(1); transition: opacity 120ms, filter 120ms; }
-      .${removedClass}, .${globalThis.mortarDeprecatedClasses.removed} { display: none !important; }
-      .${hiddenClass}:hover, .${globalThis.mortarDeprecatedClasses.dim}:hover { opacity: 0.85; filter: grayscale(0.4); }
-      .${globalThis.mortarDeprecatedClasses.dim} { opacity: 0.35; filter: grayscale(1); transition: opacity 120ms, filter 120ms; }
+  const deprecated = globalThis.mortarDeprecatedClasses
+  style.textContent = `${globalThis.mortarUiListingCss({ marker: markerClass, badge: badgeClass })}
+      ${globalThis.mortarUiDimCss([hiddenClass, deprecated.dim])}
+      .${removedClass}, .${deprecated.removed} { display: none !important; }
     `
   doc.documentElement.append(style)
 }

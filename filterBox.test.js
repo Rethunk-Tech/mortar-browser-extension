@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import './mortarUi.js'
 import './plural.js'
 import './filterBox.js'
 

@@ -26,6 +26,7 @@
       "js": [
         "plural.js",
         "settings.js",
+        "mortarUi.js",
         "fileLabels.js",
         "modPanel.js",
         "collectionCount.js",
@@ -40,17 +41,38 @@
     },
     {
       "matches": ["https://thunderstore.io/c/*/p/*", "https://thunderstore.io/c/*"],
-      "js": ["plural.js", "settings.js", "filterBox.js", "listingMarks.js", "thunderstore.js"],
+      "js": [
+        "plural.js",
+        "settings.js",
+        "mortarUi.js",
+        "filterBox.js",
+        "listingMarks.js",
+        "thunderstore.js"
+      ],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://www.curseforge.com/*"],
-      "js": ["plural.js", "settings.js", "filterBox.js", "listingMarks.js", "projectSites.js"],
+      "js": [
+        "plural.js",
+        "settings.js",
+        "mortarUi.js",
+        "filterBox.js",
+        "listingMarks.js",
+        "projectSites.js"
+      ],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://mods.vintagestory.at/*"],
-      "js": ["plural.js", "settings.js", "filterBox.js", "listingMarks.js", "projectSites.js"],
+      "js": [
+        "plural.js",
+        "settings.js",
+        "mortarUi.js",
+        "filterBox.js",
+        "listingMarks.js",
+        "projectSites.js"
+      ],
       "run_at": "document_idle"
     }
   ],

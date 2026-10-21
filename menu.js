@@ -1,20 +1,17 @@
-// The logo's bricks, parsed on first use; each mark is a copy.
-const mortarMarkSvgText =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="20" height="20" aria-hidden="true"><rect x="6" y="12" width="24" height="11" rx="2"/><rect x="34" y="12" width="24" height="11" rx="2"/><rect x="6" y="27" width="10" height="11" rx="2"/><rect x="20" y="27" width="24" height="11" rx="2"/><rect x="48" y="27" width="10" height="11" rx="2"/><rect x="6" y="42" width="24" height="11" rx="2"/><rect x="34" y="42" width="24" height="11" rx="2"/></svg>'
-let mortarMarkSvg
-
 const mortarMenuMaxProblems = 5
 
 const mortarMenuStyle = `
-:host { all: initial; --mortar-accent: #D6B17A; }
+:host { all: initial; ${globalThis.mortarUiTokens} }
 .wrap { position: relative; display: inline-block; font: 13px system-ui, sans-serif; }
 .btn {
   width: 32px; height: 32px; padding: 0; margin: 0;
-  border-radius: 6px; background: rgb(40,40,48);
-  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 7px; background: var(--mortar-raised);
+  border: 1px solid var(--mortar-line);
   display: inline-flex; align-items: center; justify-content: center;
   cursor: pointer; position: relative; color: var(--mortar-accent);
 }
+.btn:hover { background: var(--mortar-raised2); }
+.btn:focus-visible, .open-btn:focus-visible, a:focus-visible { outline: 2px solid var(--mortar-accent); outline-offset: 2px; }
 .btn svg { display: block; }
 svg rect { fill: var(--mortar-accent); }
 .btn.dim { opacity: 0.45; }
@@ -23,52 +20,49 @@ svg rect { fill: var(--mortar-accent); }
   width: 7px; height: 7px; border-radius: 50%;
   pointer-events: none;
 }
-.dot.green { background: #0CDF64; }
-.dot.amber { background: #F3B416; }
-.dot.red { background: #E5484D; }
+.dot.green { background: var(--mortar-good); }
+.dot.amber { background: var(--mortar-warn); }
+.dot.red { background: var(--mortar-error); }
 .menu {
   display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 2147483647;
   width: min(320px, calc(100vw - 16px)); box-sizing: border-box;
-  background: rgb(40,40,48);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  background: var(--mortar-raised);
+  border: 1px solid var(--mortar-line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   padding: 12px;
-  color: rgba(255,255,255,0.9);
+  color: var(--mortar-ink);
 }
 .menu.open { display: block; }
 .menu.right { left: auto; right: 0; }
-.header {
-  display: flex; align-items: center; gap: 8px;
-  color: rgba(255,255,255,0.9);
-}
-.header .title { font-weight: 600; }
+.header { display: flex; align-items: center; gap: 8px; color: var(--mortar-ink); }
+.header .title { font-weight: 700; }
 .header .profile {
   margin-left: auto; max-width: 140px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  color: rgba(225,225,230,0.7); font-size: 13px;
+  color: var(--mortar-dim); font-size: 13px;
 }
-.section { border-top: 1px solid rgba(255,255,255,0.08); margin-top: 10px; padding-top: 10px; }
+.section { border-top: 1px solid var(--mortar-line); margin-top: 10px; padding-top: 10px; }
 .label {
-  font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
-  color: rgba(225,225,230,0.7); margin: 0 0 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--mortar-accent); margin: 0 0 6px;
 }
-.body { margin: 0 0 4px; color: rgba(255,255,255,0.9); }
+.body { margin: 0 0 4px; color: var(--mortar-ink); }
 .body:last-child { margin-bottom: 0; }
 .body.problem::before {
   content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 6px;
-  border-radius: 50%; background: #E5484D; vertical-align: middle;
+  border-radius: 50%; background: var(--mortar-error); vertical-align: middle;
 }
 .body a { color: inherit; }
 .footer { margin-top: 12px; }
 .open-btn {
-  width: 100%; height: 32px; border: 0; border-radius: 6px;
-  background: var(--mortar-accent); color: #1b1a17;
-  font: 13px system-ui, sans-serif; font-weight: 600; cursor: pointer;
+  width: 100%; height: 32px; border: 0; border-radius: 7px;
+  background: var(--mortar-accent); color: var(--mortar-accent-ink);
+  font: 700 13px system-ui, sans-serif; cursor: pointer;
 }
 .open-btn:disabled { cursor: default; opacity: 0.6; }
-.status { margin-top: 8px; color: rgba(225,225,230,0.7); }
-.disconnected { margin: 8px 0 0; color: rgba(225,225,230,0.7); }
+.status { margin-top: 8px; color: var(--mortar-dim); }
+.disconnected { margin: 8px 0 0; color: var(--mortar-dim); }
 .intro { margin-top: 8px; }
 `
 
@@ -296,12 +290,7 @@ const mortarMenuFocusables = (root) =>
 
 const mortarMarkNode = () => {
   const wrap = mortarMenuEl('span', { 'aria-hidden': 'true' })
-  mortarMarkSvg ??= new DOMParser().parseFromString(
-    mortarMarkSvgText,
-    'image/svg+xml',
-  ).documentElement
-  const svg = document.importNode(mortarMarkSvg, true)
-  wrap.append(svg)
+  wrap.append(globalThis.mortarUiMark(document))
   return wrap
 }
 
@@ -388,34 +377,13 @@ const mortarBindMenu = (host, shadow, btn, menu) => {
   return { close, onDocPointer }
 }
 
-// Mortar's accent colour, from the latest native-host reply; every menu on the page follows it.
-let mortarAccent = ''
-const mortarMenuHosts = new Set()
 const mortarMenuShadows = new WeakMap()
-const mortarAccentHex = /^#[0-9a-f]{6}$/i
 
 globalThis.mortarMenuShadow = (host) => mortarMenuShadows.get(host)
 
-globalThis.mortarSetAccent = (hex) => {
-  if (typeof hex !== 'string' || !mortarAccentHex.test(hex) || hex === mortarAccent) {
-    return
-  }
-  mortarAccent = hex
-  for (const host of mortarMenuHosts) {
-    if (host.isConnected) {
-      host.style.setProperty('--mortar-accent', hex)
-    } else {
-      mortarMenuHosts.delete(host)
-    }
-  }
-}
-
 globalThis.mortarAttachMenu = (host, data, options = {}) => {
   host._mortarMenu?.disconnect?.()
-  mortarMenuHosts.add(host)
-  if (mortarAccent) {
-    host.style.setProperty('--mortar-accent', mortarAccent)
-  }
+  globalThis.mortarUiFollowAccent(host)
   let shadow = mortarMenuShadows.get(host)
   if (!shadow) {
     shadow = host.attachShadow({ mode: 'closed' })

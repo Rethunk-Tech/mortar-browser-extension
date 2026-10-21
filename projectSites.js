@@ -221,18 +221,20 @@ if (
       showOverlay(text || '')
     }
     const showOverlay = (text) => {
-      document.getElementById('mortar-project')?.remove()
       if (!text) {
+        document.getElementById('mortar-project')?.remove()
         return
       }
-      const host = document.createElement('div')
-      host.id = 'mortar-project'
-      const box = document.createElement('div')
-      box.style.cssText =
-        'position:fixed;right:16px;bottom:16px;z-index:2147483647;padding:8px 12px;border-radius:8px;background:#1b1a17;color:#f2efe8;font:14px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.4)'
-      box.textContent = text
-      host.attachShadow({ mode: 'closed' }).append(box)
-      document.body.append(host)
+      globalThis.mortarCornerCard(
+        document,
+        { id: 'mortar-project', corner: 'bottom-right' },
+        (card) => {
+          const label = document.createElement('span')
+          label.className = 'text'
+          label.textContent = text
+          card.append(label)
+        },
+      )
     }
     // A real click on the site's Install button goes to Mortar; when the link cannot be found or Mortar does not take
     // it, the button's own navigation runs as it would without the extension.
