@@ -99,25 +99,10 @@ globalThis.mortarPopupStatusInput = (replies, primary, lastError) => {
   }
 }
 
-// Ready-profile toolbar line: Nexus-only wording stays when there are no Thunderstore packages.
-globalThis.mortarPopupReadyStatus = (reply) => {
-  const profile = reply?.profile || 'the open profile'
-  const nexus = Array.isArray(reply?.modIds) ? reply.modIds.length : 0
-  const thunderstore = Array.isArray(reply?.packages) ? reply.packages.length : 0
-  if (nexus === 0 && thunderstore === 0) {
-    return `Connected to Mortar · ${profile} has no mods`
-  }
-  const parts = []
-  if (nexus > 0) {
-    parts.push(globalThis.mortarPlural(nexus, 'Nexus mod', 'Nexus mods'))
-  }
-  if (thunderstore > 0) {
-    parts.push(
-      globalThis.mortarPlural(thunderstore, 'Thunderstore package', 'Thunderstore packages'),
-    )
-  }
-  return `Connected to Mortar · ${parts.join(' and ')} in ${profile}`
-}
+// Ready-profile toolbar line. It names no count: this reply carries only Nexus and Thunderstore mods, so a count would
+// leave out the CurseForge, Mod DB, Paradox Mods and Modrinth ones.
+globalThis.mortarPopupReadyStatus = (reply) =>
+  reply?.profile ? `Connected to Mortar · ${reply.profile} is open` : 'Connected to Mortar'
 
 globalThis.mortarInstallHint =
   "Mortar isn't installed. Install Mortar and open it once to connect this browser."

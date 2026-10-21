@@ -82,23 +82,12 @@ test('AskEachGame picks the first ready game reply, else the first, else the pro
   }
 })
 
-test('popup ready copy names Nexus and Thunderstore counts separately', () => {
+test('popup ready copy names the open profile and no partial count', () => {
   const line = globalThis.mortarPopupReadyStatus
-  expect(line({ modIds: [1, 2], profile: 'Main' })).toBe(
-    'Connected to Mortar · 2 Nexus mods in Main',
+  expect(line({ modIds: [], packages: [], profile: 'Main' })).toBe(
+    'Connected to Mortar · Main is open',
   )
-  expect(line({ modIds: [1], profile: 'Main', packages: [] })).toBe(
-    'Connected to Mortar · 1 Nexus mod in Main',
-  )
-  expect(line({ modIds: [], profile: 'Main', packages: ['A-B'] })).toBe(
-    'Connected to Mortar · 1 Thunderstore package in Main',
-  )
-  expect(line({ modIds: [1], profile: 'Main', packages: ['A-B', 'C-D'] })).toBe(
-    'Connected to Mortar · 1 Nexus mod and 2 Thunderstore packages in Main',
-  )
-  expect(line({ modIds: [], packages: [] })).toBe(
-    'Connected to Mortar · the open profile has no mods',
-  )
+  expect(line({ modIds: [1, 2] })).toBe('Connected to Mortar')
 })
 
 test('Thunderstore communities come from sources.thunderstore, not Nexus domains', () => {
