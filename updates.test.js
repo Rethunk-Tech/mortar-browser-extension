@@ -96,3 +96,38 @@ test('update rows print only the versions that are known', () => {
     .rows.map((row) => row.text)
   expect(rows).toEqual(['A → 2.0', 'B (newer file)'])
 })
+
+test('protocol 4 rows link to the mod page; protocol 3 Nexus rows keep the files-tab link', () => {
+  const view = globalThis.mortarUpdatesBadge(
+    {
+      protocol: 4,
+      state: 'ready',
+      profile: 'City',
+      updates: [
+        {
+          game: 'cities-skylines-ii',
+          name: 'Sodium',
+          installed: '1',
+          latest: '2',
+          source: 'modrinth',
+          id: 'AANobbMI',
+          url: 'https://modrinth.com/project/sodium',
+        },
+        {
+          game: 'cities-skylines-ii',
+          modId: 7,
+          name: 'Zed',
+          installed: '1',
+          latest: '2',
+          url: 'javascript:alert(1)',
+        },
+      ],
+    },
+    false,
+  )
+  expect(view.rows.map((r) => r.href)).toEqual([
+    'https://modrinth.com/project/sodium',
+    'https://www.nexusmods.com/cities-skylines-ii/mods/7?tab=files',
+  ])
+  expect(view.rows[0]).toMatchObject({ source: 'modrinth', id: 'AANobbMI', text: 'Sodium 1 → 2' })
+})

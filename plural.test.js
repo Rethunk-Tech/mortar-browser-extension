@@ -140,14 +140,15 @@ test('a protocol mismatch names the side to update', () => {
   expect(state({ protocol: 3, state: 'ready', connected: true })).toBe('ready')
   expect(state({ state: 'ready', connected: true })).toBe('mortarOld')
   expect(state({ protocol: 2, state: 'ready', connected: true })).toBe('mortarOld')
-  expect(state({ protocol: 4, state: 'ready', connected: true })).toBe('extensionOld')
+  expect(state({ protocol: 4, state: 'ready', connected: true })).toBe('ready')
+  expect(state({ protocol: 5, state: 'ready', connected: true })).toBe('extensionOld')
   expect(state({ protocol: 2, protocolError: 'extensionTooOld' })).toBe('extensionOld')
   expect(state({ protocol: 2, protocolError: 'extensionTooNew' })).toBe('mortarOld')
   expect(globalThis.mortarInstalledReplyStatus({ protocol: 2, modIds: [] })).toBe(
     'Update Mortar: it is too old for this browser extension',
   )
-  expect(globalThis.mortarLinkResultText({ protocol: 4, ok: true })).toBe(
+  expect(globalThis.mortarLinkResultText({ protocol: 5, ok: true })).toBe(
     'Update the browser extension: it is too old for this Mortar',
   )
-  expect(globalThis.mortarUpdatesBadge({ protocol: 4, updates: [] }).state).toBe('extensionOld')
+  expect(globalThis.mortarUpdatesBadge({ protocol: 5, updates: [] }).state).toBe('extensionOld')
 })

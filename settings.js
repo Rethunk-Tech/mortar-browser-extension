@@ -5,6 +5,8 @@ globalThis.mortarSettingDefaults = {
   siteThunderstore: true,
   siteCurseForge: true,
   siteVsModDb: true,
+  siteParadox: true,
+  siteModrinth: true,
   // What a listing does with mods in the open profile, marked obsolete or marked broken: Off, Gray out or Hide, the
   // same three states as Mortar's Browse filters.
   markInstalled: 'gray',

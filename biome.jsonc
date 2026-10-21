@@ -16,6 +16,7 @@
       "!**/design/support.js",
       "!**/generated",
       "!**/vendor",
+      "!testdata",
       "!.claude"
     ]
   },

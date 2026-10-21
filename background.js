@@ -239,13 +239,27 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   if (
     msg?.type === 'installedProjects' &&
-    (msg.source === 'curseforge' || msg.source === 'vsmoddb') &&
+    ['curseforge', 'vsmoddb', 'paradox', 'modrinth'].includes(msg.source) &&
     typeof msg.sourceGameKey === 'string'
   ) {
     send({ type: msg.type, source: msg.source, sourceGameKey: msg.sourceGameKey }).then(
       sendResponse,
       (error) => sendResponse(failure(error)),
     )
+    return true
+  }
+  if (
+    msg?.type === 'installProject' &&
+    (msg.source === 'paradox' || msg.source === 'modrinth') &&
+    typeof msg.sourceGameKey === 'string' &&
+    typeof msg.project === 'string'
+  ) {
+    send({
+      type: msg.type,
+      source: msg.source,
+      sourceGameKey: msg.sourceGameKey,
+      project: msg.project,
+    }).then(sendResponse, (error) => sendResponse(failure(error)))
     return true
   }
   if (
@@ -284,4 +298,6 @@ chrome.runtime.onInstalled.addListener(async () => {
   await injectOpenTabs('https://thunderstore.io/c/*', scripts[1].js)
   await injectOpenTabs('https://www.curseforge.com/*', scripts[2].js)
   await injectOpenTabs('https://mods.vintagestory.at/*', scripts[3].js)
+  await injectOpenTabs('https://mods.paradoxplaza.com/*', scripts[4].js)
+  await injectOpenTabs('https://modrinth.com/*', scripts[5].js)
 })

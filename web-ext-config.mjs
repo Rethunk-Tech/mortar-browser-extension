@@ -2,6 +2,7 @@
 export const ignoreFiles = [
   '**/*.test.js',
   'docs',
+  'testdata',
   'media',
   'package.json',
   'bun.lock',

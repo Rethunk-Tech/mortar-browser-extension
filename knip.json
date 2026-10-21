@@ -9,6 +9,7 @@
     "popupActions.js",
     "thunderstore.js",
     "projectSites.js",
+    "projectPages.js",
     "web-ext-config.mjs",
     "*.test.js",
     "scripts/**/*.mjs",

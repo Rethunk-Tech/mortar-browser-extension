@@ -44,6 +44,8 @@ globalThis.chrome = {
         { js: ['thunderstore.js'] },
         { js: ['curseforge.js'] },
         { js: ['vsmoddb.js'] },
+        { js: ['paradox.js'] },
+        { js: ['modrinth.js'] },
       ],
     }),
   },
@@ -55,7 +57,13 @@ globalThis.chrome = {
         if (!tab.url) {
           return false
         }
-        for (const host of ['nexusmods.com', 'curseforge.com', 'mods.vintagestory.at']) {
+        for (const host of [
+          'nexusmods.com',
+          'curseforge.com',
+          'mods.vintagestory.at',
+          'mods.paradoxplaza.com',
+          'modrinth.com',
+        ]) {
           if (url.includes(host)) {
             return tab.url.includes(host)
           }
@@ -244,7 +252,7 @@ test('an installed request does not forward a spoofed modId', async () => {
     type: 'installed',
     source: 'nexus',
     sourceGameKey: 'g',
-    protocol: 3,
+    protocol: 4,
   })
   for (const fn of ports[0].onMessage.fns) {
     fn({ ok: true })
@@ -286,7 +294,7 @@ test('an installPackage with a string package is forwarded as sent', async () =>
     source: 'thunderstore',
     sourceGameKey: 'g',
     package: 'Owner-Pkg',
-    protocol: 3,
+    protocol: 4,
   })
   for (const fn of ports[0].onMessage.fns) {
     fn({ ok: true })
@@ -339,6 +347,41 @@ test('an installedProjects request forwards source and key only', async () => {
     fn({ projects: [] })
   }
   expect(await reply).toEqual({ projects: [] })
+})
+
+test('installProject is forwarded for Paradox and Modrinth only, with a string project', async () => {
+  for (const msg of [
+    { type: 'installProject', source: 'curseforge', sourceGameKey: 'g', project: '1' },
+    { type: 'installProject', source: 'paradox', sourceGameKey: 'g', project: 1 },
+  ]) {
+    expect(await route(msg)).toBe('dropped')
+  }
+  const reply = route({
+    type: 'installProject',
+    source: 'modrinth',
+    sourceGameKey: 'k',
+    project: 'sodium',
+    extra: 1,
+  })
+  await settle()
+  expect(ports[0].sent[0]).toEqual({
+    type: 'installProject',
+    source: 'modrinth',
+    sourceGameKey: 'k',
+    project: 'sodium',
+    protocol: 4,
+  })
+  for (const fn of ports[0].onMessage.fns) {
+    fn({ ok: true })
+  }
+  expect(await reply).toEqual({ ok: true })
+  const projects = route({ type: 'installedProjects', source: 'paradox', sourceGameKey: '' })
+  await settle()
+  expect(ports[0].sent.at(-1).source).toBe('paradox')
+  for (const fn of ports[0].onMessage.fns) {
+    fn({ projects: [] })
+  }
+  expect(await projects).toEqual({ projects: [] })
 })
 
 // Other test files run in this process and treat a global `chrome` as "inside the extension".
