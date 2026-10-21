@@ -131,3 +131,39 @@ test('protocol 4 rows link to the mod page; protocol 3 Nexus rows keep the files
   ])
   expect(view.rows[0]).toMatchObject({ source: 'modrinth', id: 'AANobbMI', text: 'Sodium 1 → 2' })
 })
+
+test('the update poll asks every game by a source it lists at protocol 4, Nexus games only at 3', async () => {
+  const games = [
+    { id: 'stardew', sources: { thunderstore: 't', nexus: 'stardewvalley' } },
+    { id: 'cities', sources: { thunderstore: 'cities-skylines-ii', paradox: 'cities_skylines_2' } },
+  ]
+  const v3 = 3
+  const v4 = 4
+  const run = async (protocol) => {
+    const asked = []
+    const reply = await globalThis.mortarAskUpdates((request) => {
+      asked.push(request)
+      return Promise.resolve({
+        protocol,
+        state: 'ready',
+        connected: true,
+        games,
+        updates: request.sourceGameKey ? [{ name: request.sourceGameKey }] : [],
+      })
+    })
+    return { asked, reply }
+  }
+  const at4 = await run(v4)
+  expect(at4.asked.slice(1)).toEqual([
+    { type: 'updates', source: 'nexus', sourceGameKey: 'stardewvalley' },
+    { type: 'updates', source: 'thunderstore', sourceGameKey: 'cities-skylines-ii' },
+  ])
+  expect(at4.reply.updates).toEqual([
+    { name: 'stardewvalley', game: 'stardewvalley' },
+    { name: 'cities-skylines-ii', game: '' },
+  ])
+  const at3 = await run(v3)
+  expect(at3.asked.slice(1)).toEqual([
+    { type: 'updates', source: 'nexus', sourceGameKey: 'stardewvalley' },
+  ])
+})

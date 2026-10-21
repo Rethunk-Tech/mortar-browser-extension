@@ -78,15 +78,7 @@ const checkUpdates = async () => {
   let reply
   let error
   try {
-    const { games, replies, primary } = await globalThis.mortarAskEachGame((game) =>
-      send(globalThis.mortarGameRequest('updates', game)),
-    )
-    reply = {
-      ...primary,
-      updates: replies.flatMap((r, i) =>
-        (Array.isArray(r?.updates) ? r.updates : []).map((u) => ({ ...u, game: games[i] })),
-      ),
-    }
+    reply = await globalThis.mortarAskUpdates(send)
   } catch (caught) {
     error = caught
   }
