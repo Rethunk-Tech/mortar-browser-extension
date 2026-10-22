@@ -1,5 +1,6 @@
 #!/bin/sh
-# Builds dist/mortar-browser-extension.zip for Chromium browsers and dist/firefox, the source web-ext lints and signs.
+# Builds dist/mortar-browser-extension.zip for Chromium browsers loaded unpacked, dist/mortar-browser-extension-chrome-web-store.zip
+# for the Chrome Web Store and Edge Add-ons, and dist/firefox, the source web-ext lints and signs.
 set -eu
 cd "$(dirname "$0")/.."
 bunx web-ext@10.8.0 build --artifacts-dir dist --filename mortar-browser-extension.zip
@@ -14,3 +15,11 @@ mkdir -p dist/firefox
 unzip -q dist/mortar-browser-extension.zip -d dist/firefox
 # Firefox runs background.scripts and warns about service_worker, which Chrome requires.
 jq 'del(.background.service_worker)' manifest.json >dist/firefox/manifest.json
+# The Chrome Web Store assigns its own id and rejects an upload that carries the manifest key, which only pins the
+# unpacked build's id.
+store=$(mktemp -d)
+trap 'rm -rf "$store"' EXIT
+unzip -q dist/mortar-browser-extension.zip -d "$store"
+jq 'del(.key)' manifest.json >"$store/manifest.json"
+rm -f dist/mortar-browser-extension-chrome-web-store.zip
+(cd "$store" && zip -q -r "$OLDPWD/dist/mortar-browser-extension-chrome-web-store.zip" .)

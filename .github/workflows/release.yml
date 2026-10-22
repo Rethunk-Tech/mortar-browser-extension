@@ -50,18 +50,8 @@ jobs:
             exit 1
           fi
 
-      # The Chrome Web Store assigns its own id and rejects an upload that carries the manifest key, which only pins
-      # the unpacked build's id.
       - name: Zips
-        run: |
-          set -euo pipefail
-          bun run build
-          store="$RUNNER_TEMP/store"
-          mkdir -p "$store"
-          unzip -q dist/mortar-browser-extension.zip -d "$store"
-          jq 'del(.key)' "$store/manifest.json" >"$store/manifest.tmp"
-          mv "$store/manifest.tmp" "$store/manifest.json"
-          (cd "$store" && zip -q -r "$GITHUB_WORKSPACE/dist/mortar-browser-extension-chrome-web-store.zip" .)
+        run: bun run build
 
       # AMO signs each extension version once, so a rerun reuses the signed copy from the release or, when the release
       # never got it, from AMO itself. This job cannot create a release; it only reads an existing one.
