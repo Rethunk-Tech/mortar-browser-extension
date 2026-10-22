@@ -25,7 +25,7 @@ Upload `mortar-browser-extension-chrome-web-store.zip` from the release (the sam
 ## Store listing (en-US)
 
 - Extension name: Mortar (from the manifest).
-- Short description (from the manifest `description`; the docs state no limit, and Chrome caps it at 132 characters, which `scripts.test.js` checks): Sends installs from Nexus, Thunderstore, CurseForge, Mod DB, Paradox Mods and Modrinth to Mortar and marks mods you already have.
+- Short description (from the manifest `description`; the docs state no limit, and Chrome caps it at 132 characters, which `scripts.test.js` checks): Sends installs from Nexus, Thunderstore, CurseForge, Modrinth and more to Mortar and marks mods you already have.
 - Description (250 to 10,000 characters): paste the "Long description" from `chrome-web-store.md`.
 - Extension logo: 1:1, 300x300 recommended, 128x128 minimum; export the Mortar mark on the sand-on-dark background.
 - Small promotional tile (optional): 440x280.

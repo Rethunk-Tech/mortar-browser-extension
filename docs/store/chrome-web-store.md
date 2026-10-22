@@ -11,7 +11,7 @@
 
 ## Short description (132 characters max)
 
-Sends installs from Nexus, Thunderstore, CurseForge, Mod DB, Paradox Mods and Modrinth to Mortar and marks mods you already have.
+Sends installs from Nexus, Thunderstore, CurseForge, Modrinth and more to Mortar and marks mods you already have.
 
 ## Long description
 
