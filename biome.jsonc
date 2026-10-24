@@ -147,7 +147,7 @@
         "noReactSpecificProps": "off",
         "useBaseline": "off",
         "noLoopFunc": "off",
-        "noUnnecessaryConditions": "off"
+        "noUnnecessaryConditions": "error"
       },
 
       // canon ts-biome-00013 — an unhandled promise is a silent failure, not a style issue.
