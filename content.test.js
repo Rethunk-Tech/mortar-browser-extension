@@ -225,7 +225,7 @@ test('listing marks: Hide removes tiles, gray dims them, Off clears everything',
   apply({ remove: true })
   expect([...tile.names]).toEqual(['gone'])
   apply({ gray: true })
-  expect([...tile.names].sort()).toEqual(['gray', 'in'])
+  expect([...tile.names].sort((a, b) => Number(a > b) - Number(a < b))).toEqual(['gray', 'in'])
   apply({})
   expect([...tile.names]).toEqual(['in'])
   expect(tile.children[0].textContent).toBe('In profile')

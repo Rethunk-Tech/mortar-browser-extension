@@ -141,7 +141,10 @@ test('a managed listing marks installed packages; unmanaged and Off do not', () 
       settings,
     })
   paint({ markInstalled: 'gray' })
-  expect([...names].sort()).toEqual(['mortar-hidden-mod', 'mortar-installed-mod'])
+  expect([...names].sort((a, b) => Number(a > b) - Number(a < b))).toEqual([
+    'mortar-hidden-mod',
+    'mortar-installed-mod',
+  ])
   paint({ markInstalled: 'hide' })
   expect([...names]).toEqual(['mortar-removed-mod'])
   paint({ markInstalled: 'off' })
