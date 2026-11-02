@@ -2,6 +2,16 @@
 // and badge. Each element lives in a closed shadow root, so the site's styles cannot reach it; the listing marks sit
 // in the site's own markup and take the same colours as plain values.
 
+// Sends one message to the background and settles to { reply } or { error } (a rejection covers a missing receiver and
+// a disconnected native host), never throwing.
+globalThis.mortarAsk = async (message) => {
+  try {
+    return { reply: await chrome.runtime.sendMessage(message) }
+  } catch (error) {
+    return { error }
+  }
+}
+
 const mortarUiAccentDefault = 'rgb(214, 177, 122)'
 
 globalThis.mortarUiTokens = `

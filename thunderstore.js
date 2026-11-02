@@ -196,16 +196,7 @@ if (
   globalThis.mortarThunderstoreWatch = true
   const page = globalThis.mortarThunderstorePage(location.pathname)
   const listing = globalThis.mortarThunderstoreListing(location.pathname)
-  const ask = (message) =>
-    new Promise((resolve) => {
-      try {
-        chrome.runtime.sendMessage(message, (reply) =>
-          resolve({ reply, error: chrome.runtime.lastError }),
-        )
-      } catch (error) {
-        resolve({ error })
-      }
-    })
+  const ask = globalThis.mortarAsk
   const show = (text, button) => {
     globalThis.mortarCornerCard(
       document,
