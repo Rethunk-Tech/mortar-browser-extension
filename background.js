@@ -137,12 +137,8 @@ const isSiteInstallLink = (sender, link) =>
   siteInstallLinks.some(([onSite, prefix]) => onSite(sender?.tab?.url) && link.startsWith(prefix))
 
 const isNexusHttpsLink = (link) => {
-  try {
-    const parsed = new URL(link)
-    return parsed.protocol === 'https:' && parsed.hostname === 'www.nexusmods.com'
-  } catch {
-    return false
-  }
+  const parsed = URL.parse(link)
+  return parsed?.protocol === 'https:' && parsed.hostname === 'www.nexusmods.com'
 }
 
 const isAllowedLink = (link) =>
@@ -151,16 +147,12 @@ const isAllowedLink = (link) =>
 const nxmModPath = /^\/mods\/(\d+)(?:\/|$)/
 
 const nxmMod = (link) => {
-  try {
-    const parsed = new URL(link)
-    const match = parsed.pathname.match(nxmModPath)
-    if (parsed.protocol !== 'nxm:' || !match) {
-      return
-    }
-    return { game: parsed.hostname, modId: match[1] }
-  } catch {
+  const parsed = URL.parse(link)
+  const match = parsed?.pathname.match(nxmModPath)
+  if (parsed?.protocol !== 'nxm:' || !match) {
     return
   }
+  return { game: parsed.hostname, modId: match[1] }
 }
 
 const sameModDownloadTab = (sender, link) => {

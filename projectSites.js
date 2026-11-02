@@ -52,14 +52,10 @@ globalThis.mortarProjectSites = {
     },
     // The Install buttons are https links to a page that holds the real curseforge:// link.
     installAnchor: (href, origin) => {
-      try {
-        const url = new URL(href)
-        return url.origin === origin && mortarCurseForgeInstallPath.test(url.pathname)
-          ? href
-          : undefined
-      } catch {
-        return
-      }
+      const url = URL.parse(href)
+      return url?.origin === origin && mortarCurseForgeInstallPath.test(url.pathname)
+        ? href
+        : undefined
     },
     resolveLink: async (href, fetchText) =>
       mortarCurseForgeInstallLink.exec(await fetchText(href))?.[0].replaceAll('&amp;', '&'),
@@ -131,16 +127,7 @@ if (
   const site = Object.values(globalThis.mortarProjectSites).find((s) => s.host === location.host)
   globalThis.mortarProjectWatch = Boolean(site)
   if (site) {
-    const ask = (message) =>
-      new Promise((resolve) => {
-        try {
-          chrome.runtime.sendMessage(message, (reply) =>
-            resolve({ reply, error: chrome.runtime.lastError }),
-          )
-        } catch (error) {
-          resolve({ error })
-        }
-      })
+    const ask = globalThis.mortarAsk
     const request = (key) => ({
       type: 'installedProjects',
       source: site.source,
