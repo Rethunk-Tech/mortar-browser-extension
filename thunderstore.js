@@ -55,8 +55,8 @@ globalThis.mortarThunderstoreRequest = (type, page) => ({
 })
 
 // What the page shows after a click on the button.
-globalThis.mortarThunderstoreResultText = (reply, lastError) =>
-  globalThis.mortarHostResultText(reply, lastError, "Mortar couldn't install this package")
+globalThis.mortarThunderstoreResultText = (reply, error) =>
+  globalThis.mortarHostResultText(reply, error, "Mortar couldn't install this package")
 
 // The site's own install buttons (Thunderstore draws one per layout), which Mortar takes over while it is ready.
 globalThis.mortarThunderstoreInstallSelector =
@@ -64,13 +64,13 @@ globalThis.mortarThunderstoreInstallSelector =
 
 // What the package page overlay shows: a connection problem, In Mortar profile, or the install button.
 // An unmanaged community stays untouched, the same as a page that is not a package page.
-globalThis.mortarThunderstoreOverlay = (reply, lastError, page) => {
+globalThis.mortarThunderstoreOverlay = (reply, error, page) => {
   if (!page) {
     return
   }
-  const state = globalThis.mortarConnectionState(reply, lastError)
+  const state = globalThis.mortarConnectionState(reply, error)
   if (state !== 'ready') {
-    return { text: globalThis.mortarThunderstoreResultText(reply, lastError), button: false }
+    return { text: globalThis.mortarThunderstoreResultText(reply, error), button: false }
   }
   if (!globalThis.mortarThunderstoreManaged(reply, page.key)) {
     return
@@ -153,13 +153,13 @@ globalThis.mortarPaintThunderstoreListingMarks = ({
   document,
   listing,
   reply,
-  lastError,
+  error,
   settings,
 }) => {
   const classes = globalThis.mortarSimpleListingClasses
   const mode = globalThis.mortarInstalledMode(settings)
   const managed =
-    globalThis.mortarConnectionState(reply, lastError) === 'ready' &&
+    globalThis.mortarConnectionState(reply, error) === 'ready' &&
     globalThis.mortarThunderstoreManaged(reply, listing.key)
   if (mode === 'off' || !managed) {
     globalThis.mortarClearThunderstoreListingMarks(document)
@@ -271,7 +271,7 @@ if (
       document,
       listing,
       reply,
-      lastError: error,
+      error,
       settings,
     })
     const deprecated = await globalThis.mortarPaintThunderstoreDeprecated({

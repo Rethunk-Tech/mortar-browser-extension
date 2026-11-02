@@ -56,10 +56,10 @@ globalThis.mortarMarketPage = (site, pathname, canonicalHref = '') => {
 
 // What the page card says: a connection problem, In Mortar profile, or the install button. A game Mortar does not
 // manage for the site, like any other page, stays untouched.
-globalThis.mortarMarketOverlay = (reply, lastError, { managed, inProfile }) => {
-  const state = globalThis.mortarConnectionState(reply, lastError)
+globalThis.mortarMarketOverlay = (reply, error, { managed, inProfile }) => {
+  const state = globalThis.mortarConnectionState(reply, error)
   if (state !== 'ready') {
-    return { text: globalThis.mortarHostResultText(reply, lastError, ''), button: false }
+    return { text: globalThis.mortarHostResultText(reply, error, ''), button: false }
   }
   if (!managed) {
     return
@@ -74,8 +74,8 @@ globalThis.mortarMarketInstallRequest = (site, key, project) => ({
   project,
 })
 
-globalThis.mortarMarketResultText = (reply, lastError) =>
-  globalThis.mortarHostResultText(reply, lastError, "Mortar couldn't install this mod")
+globalThis.mortarMarketResultText = (reply, error) =>
+  globalThis.mortarHostResultText(reply, error, "Mortar couldn't install this mod")
 
 if (
   !globalThis.mortarMarketWatch &&

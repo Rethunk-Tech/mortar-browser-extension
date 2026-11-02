@@ -34,16 +34,15 @@ globalThis.mortarNormalizeSettings = (raw) => {
   return out
 }
 
-globalThis.mortarReadSettings = () =>
-  new Promise((resolve) => {
-    try {
-      chrome.storage.sync.get(globalThis.mortarSettingDefaults, (result) => {
-        resolve(globalThis.mortarNormalizeSettings(chrome.runtime.lastError ? undefined : result))
-      })
-    } catch {
-      resolve(globalThis.mortarNormalizeSettings(undefined))
-    }
-  })
+globalThis.mortarReadSettings = async () => {
+  try {
+    return globalThis.mortarNormalizeSettings(
+      await chrome.storage.sync.get(globalThis.mortarSettingDefaults),
+    )
+  } catch {
+    return globalThis.mortarNormalizeSettings(undefined)
+  }
+}
 
 // The listing's installed-mark mode from the installed row: Gray out keeps the in-profile outline and dims, which is
 // the content script's "highlight" mode with the gray filter on.

@@ -78,8 +78,8 @@ const bindSites = (settings) => {
   }
 }
 
-const paintConnection = (reply, lastError) => {
-  const state = globalThis.mortarConnectionState(reply, lastError)
+const paintConnection = (reply, error) => {
+  const state = globalThis.mortarConnectionState(reply, error)
   const text = globalThis.mortarStateText(state)
   const status = document.getElementById('connection-status')
   status.textContent = state === 'ready' ? 'Connected' : text
@@ -96,9 +96,9 @@ const paintConnection = (reply, lastError) => {
 
 const checkConnection = () => {
   document.getElementById('connection-status').textContent = 'Checking…'
-  chrome.runtime.sendMessage(globalThis.mortarGameRequest('installed', ''), (reply) => {
-    paintConnection(reply, chrome.runtime.lastError)
-  })
+  globalThis
+    .mortarAsk(globalThis.mortarGameRequest('installed', ''))
+    .then(({ reply, error }) => paintConnection(reply, error))
 }
 
 document.getElementById('connection-extension').textContent =

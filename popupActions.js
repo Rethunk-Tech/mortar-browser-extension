@@ -10,10 +10,10 @@ mortarCheckNow?.addEventListener('click', (event) => {
   event.preventDefault()
   mortarCheckNow.disabled = true
   mortarCheckNow.textContent = 'Checking…'
-  chrome.runtime.sendMessage({ type: 'checkNow' }, (stored) => {
+  globalThis.mortarAsk({ type: 'checkNow' }).then(({ reply }) => {
     mortarCheckNow.disabled = false
     mortarCheckNow.textContent = 'Check now'
-    globalThis.mortarPaintPopupUpdates?.(chrome.runtime.lastError ? undefined : stored)
+    globalThis.mortarPaintPopupUpdates?.(reply)
     globalThis.mortarRefreshPopupStatus?.()
   })
 })

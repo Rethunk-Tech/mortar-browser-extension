@@ -50,8 +50,8 @@ globalThis.mortarProtocolMismatch = (reply) => {
 // How far the extension is from Mortar's data: 'missing' (no native host), a protocol mismatch ('mortarOld',
 // 'extensionOld'), then the host's own state ('off', 'notRunning', 'noProfile', 'ready'). A reply without a state
 // counts as ready only when it says connected.
-globalThis.mortarConnectionState = (reply, lastError) => {
-  if (lastError || !reply || reply.nativeMessagingError === true) {
+globalThis.mortarConnectionState = (reply, error) => {
+  if (error || !reply || reply.nativeMessagingError === true) {
     return 'missing'
   }
   const mismatch = globalThis.mortarProtocolMismatch(reply)
@@ -102,12 +102,12 @@ globalThis.mortarAskEachGame = async (ask) => {
   return { games, replies, primary }
 }
 
-globalThis.mortarPopupStatusInput = (replies, primary, lastError) => {
+globalThis.mortarPopupStatusInput = (replies, primary, error) => {
   const modIds = replies.flatMap((r) => (Array.isArray(r?.modIds) ? r.modIds : []))
   const reply = Array.isArray(primary?.modIds) ? { ...primary, modIds } : primary
   return {
     reply,
-    lastError: globalThis.mortarConnectionState(reply) === 'ready' ? undefined : lastError,
+    error: globalThis.mortarConnectionState(reply) === 'ready' ? undefined : error,
   }
 }
 
@@ -130,16 +130,16 @@ const mortarStateCopy = {
 
 globalThis.mortarStateText = (state) => mortarStateCopy[state] ?? ''
 
-globalThis.mortarInstalledReplyStatus = (reply, lastError) => {
-  const state = globalThis.mortarConnectionState(reply, lastError)
+globalThis.mortarInstalledReplyStatus = (reply, error) => {
+  const state = globalThis.mortarConnectionState(reply, error)
   if (state !== 'ready') {
     return globalThis.mortarStateText(state)
   }
   return Array.isArray(reply?.modIds) ? '' : 'Mortar could not read this profile'
 }
 
-globalThis.mortarHostResultText = (reply, lastError, fail) => {
-  const state = globalThis.mortarConnectionState(reply, lastError)
+globalThis.mortarHostResultText = (reply, error, fail) => {
+  const state = globalThis.mortarConnectionState(reply, error)
   if (state === 'missing') {
     return globalThis.mortarInstallHint
   }
@@ -154,12 +154,11 @@ globalThis.mortarHostResultText = (reply, lastError, fail) => {
 }
 
 // What the collection panel says after handing the collection link to Mortar.
-globalThis.mortarLinkResultText = (reply, lastError) =>
-  globalThis.mortarHostResultText(reply, lastError, "Mortar couldn't open this collection")
+globalThis.mortarLinkResultText = (reply, error) =>
+  globalThis.mortarHostResultText(reply, error, "Mortar couldn't open this collection")
 
 // A failed native send must not stay in the "already sent" set: Mortar coming back later still gets that nxm URL.
-globalThis.mortarNxmKeepSent = (reply, lastError) =>
-  !lastError && reply?.nativeMessagingError !== true
+globalThis.mortarNxmKeepSent = (reply, error) => !error && reply?.nativeMessagingError !== true
 
 // Page script can dispatch click on Mortar's UI; only a real user gesture is trusted.
 globalThis.mortarIfTrusted = (event, run) => {

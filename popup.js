@@ -1,8 +1,8 @@
 const status = document.querySelector('#status')
 
-const paintStatus = (reply, lastError) => {
-  const state = globalThis.mortarConnectionState(reply, lastError)
-  const problem = globalThis.mortarInstalledReplyStatus(reply, lastError)
+const paintStatus = (reply, error) => {
+  const state = globalThis.mortarConnectionState(reply, error)
+  const problem = globalThis.mortarInstalledReplyStatus(reply, error)
   const open = document.querySelector('#mortar-open-app')
   open.hidden = state === 'missing'
   open.classList.toggle('primary', state === 'notRunning')
@@ -14,29 +14,20 @@ const paintStatus = (reply, lastError) => {
 }
 
 const refreshStatus = () => {
-  let lastError
-  const ask = (game) =>
-    new Promise((resolve) => {
-      chrome.runtime.sendMessage(globalThis.mortarGameRequest('installed', game), (reply) => {
-        lastError ??= chrome.runtime.lastError
-        resolve(reply)
-      })
-    })
+  let sendError
+  const send = async (message) => {
+    const { reply, error } = await globalThis.mortarAsk(message)
+    sendError ??= error
+    return reply
+  }
+  const ask = (game) => send(globalThis.mortarGameRequest('installed', game))
   const askPackages = (key) =>
-    new Promise((resolve) => {
-      chrome.runtime.sendMessage(
-        { type: 'installedPackages', source: 'thunderstore', sourceGameKey: key },
-        (reply) => {
-          lastError ??= chrome.runtime.lastError
-          resolve(reply)
-        },
-      )
-    })
+    send({ type: 'installedPackages', source: 'thunderstore', sourceGameKey: key })
   globalThis.mortarAskEachGame(ask).then(async ({ replies, primary }) => {
-    const { reply, lastError: paintError } = globalThis.mortarPopupStatusInput(
+    const { reply, error: paintError } = globalThis.mortarPopupStatusInput(
       replies,
       primary,
-      lastError,
+      sendError,
     )
     const keys = globalThis.mortarThunderstoreCommunities(reply)
     const packageReplies = await Promise.all(keys.map(askPackages))
@@ -79,4 +70,4 @@ const paintPopupUpdates = (stored) => {
 }
 globalThis.mortarPaintPopupUpdates = paintPopupUpdates
 
-chrome.storage.session.get(['updatesReply', 'updatesError'], paintPopupUpdates)
+chrome.storage.session.get(['updatesReply', 'updatesError']).then(paintPopupUpdates)

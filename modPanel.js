@@ -177,15 +177,10 @@ globalThis.mortarSyncCollectionPanel = (
       onOpen: () => {
         menu.setStatus('')
         menu.setBusy(true)
-        try {
-          sendLink(collectionURL, (reply, lastError) => {
-            menu.setBusy(false)
-            menu.setStatus(globalThis.mortarLinkResultText(reply, lastError))
-          })
-        } catch (error) {
+        sendLink(collectionURL).then(({ reply, error }) => {
           menu.setBusy(false)
-          menu.setStatus(globalThis.mortarLinkResultText(undefined, String(error)))
-        }
+          menu.setStatus(globalThis.mortarLinkResultText(reply, error))
+        })
       },
     },
   )
@@ -205,15 +200,7 @@ globalThis.mortarRenderCollectionPanel = async (
     collectionURL,
     modeOff: selectedMode === 'off' || (collectionURL !== undefined && (await unavailable())),
     ensureStyle: ensureMarkerStyle,
-    sendLink: (link, done) => {
-      try {
-        chrome.runtime.sendMessage({ link }, (reply) => {
-          done(reply, chrome.runtime.lastError?.message)
-        })
-      } catch (error) {
-        done(undefined, error instanceof Error ? error.message : String(error))
-      }
-    },
+    sendLink: (link) => globalThis.mortarAsk({ link }),
   })
   await globalThis.mortarFillCollectionInProfile?.(doc, doc?.location?.origin || '', opts)
 }

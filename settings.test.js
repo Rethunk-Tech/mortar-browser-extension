@@ -28,7 +28,7 @@ test('a site checkbox starts work on enable and stops it on disable', async () =
     storage: {
       onChanged: { addListener: (fn) => listeners.push(fn) },
       sync: {
-        get: (_defaults, cb) => cb({ ...globalThis.mortarSettingDefaults, siteNexus: false }),
+        get: async () => ({ ...globalThis.mortarSettingDefaults, siteNexus: false }),
       },
     },
   }
@@ -38,7 +38,7 @@ test('a site checkbox starts work on enable and stops it on disable', async () =
       () => events.push('start'),
       () => events.push('stop'),
     )
-    await Promise.resolve()
+    await new Promise((resolve) => setTimeout(resolve))
     expect(events).toEqual([])
     for (const fn of listeners) {
       fn({ siteNexus: { newValue: true } }, 'sync')

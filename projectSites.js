@@ -111,10 +111,10 @@ globalThis.mortarProjectInstallAnchor = (site, target, origin) => {
 
 // What the page overlay says: a connection problem, or In Mortar profile; nothing when the page is not in the profile
 // or the host manages no game of the source.
-globalThis.mortarProjectOverlay = (reply, lastError, inProfile) => {
-  const state = globalThis.mortarConnectionState(reply, lastError)
+globalThis.mortarProjectOverlay = (reply, error, inProfile) => {
+  const state = globalThis.mortarConnectionState(reply, error)
   if (state !== 'ready') {
-    return globalThis.mortarHostResultText(reply, lastError, '')
+    return globalThis.mortarHostResultText(reply, error, '')
   }
   return inProfile ? 'In Mortar profile' : undefined
 }

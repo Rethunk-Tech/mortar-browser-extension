@@ -94,26 +94,20 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       return installedRequest
     }
     const game = pageGame()
-    installedRequest = new Promise((resolve) => {
-      const settle = (reply, lastError) => {
-        const usable = globalThis.mortarInstalledReplyStatus(reply, lastError) === ''
+    installedRequest = globalThis
+      .mortarAsk(globalThis.mortarGameRequest('installed', game))
+      .then(({ reply, error }) => {
+        globalThis.mortarSetAccent(reply?.accent)
+        const usable = globalThis.mortarInstalledReplyStatus(reply, error) === ''
         const ids = usable
           ? new Set(reply.modIds.filter((id) => Number.isInteger(id) && id > 0))
           : undefined
-        installedCache = { ...globalThis.mortarInstalledListingState(reply, lastError, ids), game }
-        resolve(installedCache.ids)
-      }
-      try {
-        chrome.runtime.sendMessage(globalThis.mortarGameRequest('installed', game), (reply) => {
-          globalThis.mortarSetAccent(reply?.accent)
-          settle(reply, chrome.runtime.lastError)
-        })
-      } catch {
-        settle(undefined, true)
-      }
-    }).finally(() => {
-      installedRequest = undefined
-    })
+        installedCache = { ...globalThis.mortarInstalledListingState(reply, error, ids), game }
+        return installedCache.ids
+      })
+      .finally(() => {
+        installedRequest = undefined
+      })
     return installedRequest
   }
 
@@ -230,16 +224,9 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
       removePanels()
       return
     }
-    const reply = await new Promise((resolve) => {
-      try {
-        chrome.runtime.sendMessage(
-          globalThis.mortarGameRequest('mod', pageGame(), { modId: id }),
-          (response) => resolve(chrome.runtime.lastError ? undefined : response),
-        )
-      } catch {
-        resolve(undefined)
-      }
-    })
+    const { reply } = await globalThis.mortarAsk(
+      globalThis.mortarGameRequest('mod', pageGame(), { modId: id }),
+    )
     globalThis.mortarSetAccent(reply?.accent)
     const state = globalThis.mortarConnectionState(reply)
     const game = pageGame()
@@ -411,15 +398,12 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     for (const a of root.querySelectorAll('a[href^="nxm://"]')) {
       if (!sent.has(a.href)) {
         sent.add(a.href)
-        try {
-          chrome.runtime.sendMessage({ link: a.href, close: throwaway() }, (reply) => {
-            if (!globalThis.mortarNxmKeepSent(reply, chrome.runtime.lastError)) {
-              sent.delete(a.href)
-            }
-          })
-        } catch {
-          sent.delete(a.href)
-        }
+        const href = a.href
+        globalThis.mortarAsk({ link: href, close: throwaway() }).then(({ reply, error }) => {
+          if (!globalThis.mortarNxmKeepSent(reply, error)) {
+            sent.delete(href)
+          }
+        })
         installedCache = emptyInstalledCache()
         installedRequest = undefined
       }

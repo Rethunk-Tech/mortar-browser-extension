@@ -104,7 +104,7 @@ test('Thunderstore communities come from sources.thunderstore, not Nexus domains
   ).toEqual(['stardewvalley', 'lethal-company'])
 })
 
-test('popup status uses lastError only when the painted reply is not ready', () => {
+test('popup status uses the send error only when the painted reply is not ready', () => {
   const sendFail = { message: 'Could not establish connection' }
   const ready = {
     protocol: 3,
@@ -114,12 +114,12 @@ test('popup status uses lastError only when the painted reply is not ready', () 
     modIds: [1],
   }
   const mixed = globalThis.mortarPopupStatusInput([ready], ready, sendFail)
-  expect(mixed.lastError).toBeUndefined()
-  expect(globalThis.mortarInstalledReplyStatus(mixed.reply, mixed.lastError)).toBe('')
+  expect(mixed.error).toBeUndefined()
+  expect(globalThis.mortarInstalledReplyStatus(mixed.reply, mixed.error)).toBe('')
   expect(mixed.reply.modIds).toEqual([1])
   const missing = globalThis.mortarPopupStatusInput([], undefined, sendFail)
-  expect(missing.lastError).toBe(sendFail)
-  expect(globalThis.mortarInstalledReplyStatus(missing.reply, missing.lastError)).toBe(
+  expect(missing.error).toBe(sendFail)
+  expect(globalThis.mortarInstalledReplyStatus(missing.reply, missing.error)).toBe(
     "Mortar isn't installed",
   )
 })
