@@ -36,7 +36,7 @@ test('a file URL off addons.mozilla.org is refused and not fetched', async () =>
       urls.push(url)
       return Response.json({ file: { status: 'public', url: 'https://evil.example/x.xpi' } })
     }),
-  ).rejects.toThrow(/addons\.mozilla\.org/)
+  ).rejects.toThrow('AMO file URL is not on addons.mozilla.org')
   expect(urls).toEqual(['https://addons.mozilla.org/api/v5/addons/addon/id%40x/versions/v1.0.0/'])
 })
 
@@ -53,7 +53,7 @@ test('a download that redirects off addons.mozilla.org is not written', async ()
       }
       return { ok: true, status: 200, url: 'https://evil.example/x.xpi' }
     }),
-  ).rejects.toThrow(/addons\.mozilla\.org/)
+  ).rejects.toThrow('AMO file URL is not on addons.mozilla.org')
 })
 
 test('an AMO error response does not include the body', async () => {
