@@ -2,6 +2,7 @@ import { afterAll, beforeEach, expect, test } from 'bun:test'
 import './plural.js'
 import './updates.js'
 
+const olderProtocol = 3
 const ports = []
 const injected = []
 const removed = []
@@ -389,13 +390,13 @@ test('an older Mortar that refuses this protocol is asked again at the one it na
   postHook = (port) => {
     const sent = port.sent.at(-1)
     const reply =
-      sent.protocol > 3
+      sent.protocol > olderProtocol
         ? {
-            protocol: 3,
+            protocol: olderProtocol,
             protocolError: 'extensionTooNew',
             error: 'Mortar does not speak this protocol',
           }
-        : { protocol: 3, ok: true }
+        : { protocol: olderProtocol, ok: true }
     queueMicrotask(() => {
       for (const fn of port.onMessage.fns) {
         fn(reply)
@@ -403,10 +404,10 @@ test('an older Mortar that refuses this protocol is asked again at the one it na
     })
   }
   const reply = await route({ link: 'nxm://game/mods/1/files/2' })
-  expect(reply).toEqual({ protocol: 3, ok: true })
+  expect(reply).toEqual({ protocol: olderProtocol, ok: true })
   expect(ports.flatMap((p) => p.sent.map((m) => m.protocol))).toEqual([
     globalThis.mortarProtocol,
-    3,
+    olderProtocol,
   ])
 })
 
