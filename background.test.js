@@ -137,6 +137,47 @@ test('a disconnect during postMessage still settles the waiter', async () => {
   expect(reply).not.toBe('hung')
 })
 
+test('a slower update check does not overwrite a newer badge', async () => {
+  const badges = []
+  const stored = []
+  const waiters = []
+  const previousAsk = globalThis.mortarAskUpdates
+  const previousBadge = chrome.action.setBadgeText
+  const previousSet = chrome.storage.session.set
+  globalThis.mortarAskUpdates = () => new Promise((resolve) => waiters.push(resolve))
+  chrome.action.setBadgeText = ({ text }) => badges.push(text)
+  chrome.storage.session.set = async (value) => {
+    stored.push(value)
+  }
+  try {
+    const first = route({ type: 'checkNow' })
+    const second = route({ type: 'checkNow' })
+    await settle()
+    const two = [{ name: 'a' }, { name: 'b' }]
+    const three = [...two, { name: 'c' }]
+    waiters[1]({
+      protocol: globalThis.mortarProtocol,
+      state: 'ready',
+      connected: true,
+      updates: two,
+    })
+    await second
+    waiters[0]({
+      protocol: globalThis.mortarProtocol,
+      state: 'ready',
+      connected: true,
+      updates: three,
+    })
+    await first
+    expect(badges.at(-1)).toBe('2')
+    expect(stored.at(-1).updatesReply.updates).toHaveLength(2)
+  } finally {
+    globalThis.mortarAskUpdates = previousAsk
+    chrome.action.setBadgeText = previousBadge
+    chrome.storage.session.set = previousSet
+  }
+})
+
 test('a rejected update check still answers the popup', async () => {
   const previous = chrome.storage.session.set
   chrome.storage.session.set = () => Promise.reject(new Error('session closed'))

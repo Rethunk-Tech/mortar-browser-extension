@@ -86,14 +86,19 @@ const applyUpdatesBadge = (reply, error) => {
 }
 
 // The stored reply is what the popup paints; it is written before the caller is answered so a repaint never reads
-// the previous check.
+// the previous check. A newer check's badge and session write win if two overlap.
+let updatesGeneration = 0
 const checkUpdates = async () => {
+  const generation = ++updatesGeneration
   let reply
   let error
   try {
     reply = await globalThis.mortarAskUpdates(send)
   } catch (caught) {
     error = caught
+  }
+  if (generation !== updatesGeneration) {
+    return
   }
   applyUpdatesBadge(reply, error)
   const stored = { updatesReply: error ? null : reply, updatesError: Boolean(error) }
