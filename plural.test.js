@@ -163,14 +163,17 @@ const sourceNames = {
 }
 const sourceKeys = Object.keys(sourceNames)
 const mismatchVerdicts = new Set(['', 'mortarOld', 'extensionOld'])
+const mortarProtocolMin = 3
 
 test('mortarSkipSourceLabel never throws and always returns a string', () => {
-  fc.assert(
-    fc.property(fc.anything(), (source) => {
-      const label = globalThis.mortarSkipSourceLabel(source)
-      return typeof label === 'string'
-    }),
-  )
+  expect(() => {
+    fc.assert(
+      fc.property(fc.anything(), (source) => {
+        const label = globalThis.mortarSkipSourceLabel(source)
+        return typeof label === 'string'
+      }),
+    )
+  }).not.toThrow()
 })
 
 test('mortarSkipSourceLabel does not throw when toString is not callable', () => {
@@ -178,68 +181,91 @@ test('mortarSkipSourceLabel does not throw when toString is not callable', () =>
 })
 
 test('mortarSkipSourceLabel maps known sources case-insensitively', () => {
-  fc.assert(
-    fc.property(
-      fc.constantFrom(...sourceKeys),
-      fc.array(fc.constantFrom('upper', 'lower'), { minLength: 1, maxLength: 12 }),
-      (key, cases) => {
-        const input = [...key]
-          .map((ch, i) => (cases[i % cases.length] === 'upper' ? ch.toUpperCase() : ch.toLowerCase()))
-          .join('')
-        return globalThis.mortarSkipSourceLabel(input) === sourceNames[key]
-      },
-    ),
-  )
+  expect(() => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom(...sourceKeys),
+        fc.array(fc.constantFrom('upper', 'lower'), { minLength: 1, maxLength: 12 }),
+        (key, cases) => {
+          const input = [...key]
+            .map((ch, i) =>
+              cases[i % cases.length] === 'upper' ? ch.toUpperCase() : ch.toLowerCase(),
+            )
+            .join('')
+          return globalThis.mortarSkipSourceLabel(input) === sourceNames[key]
+        },
+      ),
+    )
+  }).not.toThrow()
 })
 
 test('mortarSkipSourceLabel returns an unknown source string unchanged', () => {
-  fc.assert(
-    fc.property(fc.string(), (s) => {
-      const source = `not-a-source:${s}`
-      return globalThis.mortarSkipSourceLabel(source) === source
-    }),
-  )
+  expect(() => {
+    fc.assert(
+      fc.property(fc.string(), (s) => {
+        const source = `not-a-source:${s}`
+        return globalThis.mortarSkipSourceLabel(source) === source
+      }),
+    )
+  }).not.toThrow()
 })
 
 test('mortarProtocolMismatch never throws and returns a known verdict', () => {
-  fc.assert(
-    fc.property(fc.anything(), (reply) =>
-      mismatchVerdicts.has(globalThis.mortarProtocolMismatch(reply)),
-    ),
-  )
+  expect(() => {
+    fc.assert(
+      fc.property(fc.anything(), (reply) =>
+        mismatchVerdicts.has(globalThis.mortarProtocolMismatch(reply)),
+      ),
+    )
+  }).not.toThrow()
 })
 
 test('mortarProtocolMismatch prefers Mortar protocolError over the numeric protocol', () => {
-  fc.assert(
-    fc.property(fc.anything(), (protocol) => {
-      const tooOld = globalThis.mortarProtocolMismatch({ protocol, protocolError: 'extensionTooOld' })
-      const tooNew = globalThis.mortarProtocolMismatch({ protocol, protocolError: 'extensionTooNew' })
-      return tooOld === 'extensionOld' && tooNew === 'mortarOld'
-    }),
-  )
+  expect(() => {
+    fc.assert(
+      fc.property(fc.anything(), (protocol) => {
+        const tooOld = globalThis.mortarProtocolMismatch({
+          protocol,
+          protocolError: 'extensionTooOld',
+        })
+        const tooNew = globalThis.mortarProtocolMismatch({
+          protocol,
+          protocolError: 'extensionTooNew',
+        })
+        return tooOld === 'extensionOld' && tooNew === 'mortarOld'
+      }),
+    )
+  }).not.toThrow()
 })
 
 test('mortarFallbackProtocol never throws and stays in range or zero', () => {
-  fc.assert(
-    fc.property(fc.anything(), fc.integer(), (reply, sent) => {
-      const offered = globalThis.mortarFallbackProtocol(reply, sent)
-      return offered === 0 || (Number.isInteger(offered) && offered >= 3 && offered < sent)
-    }),
-  )
+  expect(() => {
+    fc.assert(
+      fc.property(fc.anything(), fc.integer(), (reply, sent) => {
+        const offered = globalThis.mortarFallbackProtocol(reply, sent)
+        return (
+          offered === 0 ||
+          (Number.isInteger(offered) && offered >= mortarProtocolMin && offered < sent)
+        )
+      }),
+    )
+  }).not.toThrow()
 })
 
 test('mortarFallbackProtocol is zero unless Mortar offers a still-spoken older protocol', () => {
-  fc.assert(
-    fc.property(fc.anything(), fc.integer(), (reply, sent) => {
-      const offered = globalThis.mortarFallbackProtocol(reply, sent)
-      if (offered === 0) {
-        return true
-      }
-      return (
-        reply?.protocolError === 'extensionTooNew' &&
-        reply?.protocol === offered &&
-        Number.isInteger(offered)
-      )
-    }),
-  )
+  expect(() => {
+    fc.assert(
+      fc.property(fc.anything(), fc.integer(), (reply, sent) => {
+        const offered = globalThis.mortarFallbackProtocol(reply, sent)
+        if (offered === 0) {
+          return true
+        }
+        return (
+          reply?.protocolError === 'extensionTooNew' &&
+          reply?.protocol === offered &&
+          Number.isInteger(offered)
+        )
+      }),
+    )
+  }).not.toThrow()
 })
