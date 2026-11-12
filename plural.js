@@ -151,11 +151,7 @@ globalThis.mortarHostResultText = (reply, error, fail) => {
   if (state === 'missing') {
     return globalThis.mortarInstallHint
   }
-  if (
-    state === 'mortarOld' ||
-    state === 'extensionOld' ||
-    ['off', 'notRunning', 'noProfile'].includes(reply?.state)
-  ) {
+  if (state !== 'ready') {
     return globalThis.mortarStateText(state)
   }
   return reply.ok === true ? 'Sent to Mortar' : fail

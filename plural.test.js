@@ -34,10 +34,20 @@ test('a failed nxm send can be retried', () => {
   expect(globalThis.mortarNxmKeepSent({ ok: true }, { message: 'disconnected' })).toBe(false)
 })
 
+test('install result copy names a missing profile when the reply has no state', () => {
+  expect(
+    globalThis.mortarHostResultText(
+      { protocol: 3, modIds: [] },
+      undefined,
+      "Mortar couldn't install this mod",
+    ),
+  ).toBe('Open a profile in Mortar')
+})
+
 test('collection link result never shows a raw host error', () => {
   const text = globalThis.mortarLinkResultText
-  expect(text({ protocol: 3, ok: true })).toBe('Sent to Mortar')
-  expect(text({ protocol: 3, error: 'not an nxm or collection link: "x"' })).toBe(
+  expect(text({ protocol: 3, state: 'ready', ok: true })).toBe('Sent to Mortar')
+  expect(text({ protocol: 3, state: 'ready', error: 'not an nxm or collection link: "x"' })).toBe(
     "Mortar couldn't open this collection",
   )
   expect(text(undefined, 'Specified native messaging host not found.')).toBe(
