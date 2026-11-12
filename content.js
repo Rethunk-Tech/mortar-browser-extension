@@ -162,7 +162,9 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
           : undefined
       if (!matchedRow && group.version) {
         matchedRow = rows.find(
-          (candidate) => !used.has(candidate) && candidate.textContent?.includes(group.version),
+          (candidate) =>
+            !used.has(candidate) &&
+            globalThis.mortarFileRowMatchesVersion(candidate.textContent, group.version),
         )
       }
       if (matchedRow && !matchedRow.querySelector(`.${fileBadgeClass}`)) {

@@ -19,6 +19,34 @@ test('profiles without a file id share a group keyed by version', () => {
   ])
 })
 
+test('a 1.2 files-tab group badges the 1.2 row, not 11.2', () => {
+  const group = { fileId: 0, version: '1.2', names: [{ name: 'Main', active: true }] }
+  const row = (textContent) => {
+    const children = []
+    return {
+      textContent,
+      querySelector: () => children[0],
+      prepend: (node) => children.unshift(node),
+      children,
+    }
+  }
+  const rows = [row('11.2'), row('1.2')]
+  const matched = rows.find((candidate) =>
+    globalThis.mortarFileRowMatchesVersion(candidate.textContent, group.version),
+  )
+  expect(matched).toBe(rows[1])
+  const doc = {
+    createElement: () => ({
+      className: '',
+      textContent: '',
+      append() {},
+    }),
+  }
+  matched.prepend(globalThis.mortarFileBadge(doc, group, 'badge'))
+  expect(rows[0].children).toHaveLength(0)
+  expect(rows[1].children).toHaveLength(1)
+})
+
 test('file labels list every profile on a file with the open profile first', () => {
   const groups = globalThis.mortarFileLabelGroups({
     open: { profile: 'Default', fileId: 111, version: '2.0.0' },

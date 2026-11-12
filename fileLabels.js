@@ -37,6 +37,9 @@ globalThis.mortarFileLabelGroups = (reply) => {
   return groups
 }
 
+globalThis.mortarFileRowMatchesVersion = (text, version) =>
+  Boolean(version) && (text?.match(/\d+(?:\.\d+)*/g) ?? []).includes(version)
+
 globalThis.mortarFileBadge = (doc, group, className) => {
   const badge = doc.createElement('span')
   badge.className = className
