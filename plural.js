@@ -17,7 +17,8 @@ globalThis.mortarSkipSourceLabel = (source) => {
   } catch {
     // JSON can carry {toString: 0}; String() then throws.
   }
-  return mortarSourceNames[text.toLowerCase()] ?? text
+  const key = text.toLowerCase()
+  return Object.hasOwn(mortarSourceNames, key) ? mortarSourceNames[key] : text
 }
 
 // The native-messaging protocol this extension speaks, sent with every message, and the range of Mortar protocols
