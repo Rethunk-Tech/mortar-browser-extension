@@ -12,7 +12,7 @@ permissions:
 # A release run is never cancelled part-way; a second tag push queues behind it.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
   build:
