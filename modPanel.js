@@ -1,4 +1,4 @@
-const mortarNexusModPath = /^\/[^/]+\/mods\/(\d+)(?:\/|$)/
+const mortarNexusModPath = /^(?:\/games)?\/[^/]+\/mods\/(\d+)(?:\/|$)/
 const mortarNexusNumericMod = /^\d+$/
 globalThis.mortarNexusModID = (pathname) => {
   const match = String(pathname || '').match(mortarNexusModPath)

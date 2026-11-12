@@ -42,7 +42,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   // Navigation API lists entries with their addresses, and only same-origin ones, so a history longer than its
   // list came from elsewhere; without the API nothing is closed.
   const trailingSlash = /\/$/
-  const modPath = location.pathname.match(/^\/[^/]+\/mods\/\d+/)?.[0]
+  const modPath = location.pathname.match(/^(?:\/games)?\/[^/]+\/mods\/\d+/)?.[0]
   const throwaway = () => {
     const entries = globalThis.navigation?.entries?.()
     if (!(modPath && entries) || entries.length !== history.length) {
@@ -291,7 +291,9 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
   const modID = (href) => {
     try {
       const url = new URL(href, location.href)
-      if (url.origin !== location.origin || url.pathname.split('/')[1] !== pageGame()) {
+      const parts = url.pathname.split('/').filter(Boolean)
+      const game = parts[0] === 'games' ? parts[1] : parts[0]
+      if (url.origin !== location.origin || game !== pageGame()) {
         return
       }
       return globalThis.mortarNexusModID(url.pathname)

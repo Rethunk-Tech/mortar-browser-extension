@@ -16,7 +16,35 @@ test('collection tiles use the same /game/mods/id links as listings', () => {
   expect(globalThis.mortarNexusModID(`/stardewvalley/mods/${contentPatcher}/files`)).toBe(
     contentPatcher,
   )
+  expect(globalThis.mortarNexusModID(`/games/stardewvalley/mods/${contentPatcher}`)).toBe(
+    contentPatcher,
+  )
   expect(globalThis.mortarNexusModID('/games/stardewvalley/collections/vanilla')).toBeUndefined()
+})
+
+test('a /games/ listing tile on a /games/ mods page is a mod', () => {
+  const pagePath = '/games/stardewvalley/mods'
+  const href = `/games/stardewvalley/mods/${contentPatcher}`
+  const parts = (pathname) => pathname.split('/').filter(Boolean)
+  const gameOf = (pathname) =>
+    parts(pathname)[0] === 'games' ? parts(pathname)[1] : parts(pathname)[0]
+  const pageGame = gameOf(pagePath)
+  const tile = { id: 'tile' }
+  const link = { href: `https://www.nexusmods.com${href}` }
+  const origin = 'https://www.nexusmods.com'
+  const tiles = globalThis.mortarCollectInstalledTiles({
+    root: { querySelectorAll: () => [link] },
+    ids: new Set([contentPatcher]),
+    modID: (h) => {
+      const url = new URL(h)
+      if (url.origin !== origin || gameOf(url.pathname) !== pageGame) {
+        return
+      }
+      return globalThis.mortarNexusModID(url.pathname)
+    },
+    tileFor: () => tile,
+  })
+  expect([...tiles.entries()]).toEqual([[tile, contentPatcher]])
 })
 
 test('collection pages are listings for installed-mod markers', () => {
