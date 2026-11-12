@@ -146,8 +146,9 @@ test('a slower update check does not overwrite a newer badge', async () => {
   const previousSet = chrome.storage.session.set
   globalThis.mortarAskUpdates = () => new Promise((resolve) => waiters.push(resolve))
   chrome.action.setBadgeText = ({ text }) => badges.push(text)
-  chrome.storage.session.set = async (value) => {
+  chrome.storage.session.set = (value) => {
     stored.push(value)
+    return Promise.resolve()
   }
   try {
     const first = route({ type: 'checkNow' })

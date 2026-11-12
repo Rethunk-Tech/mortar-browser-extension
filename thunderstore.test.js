@@ -38,8 +38,8 @@ test('listing package ids match installedPackages case-insensitively', () => {
 
 test('install result never shows a raw host error', () => {
   const text = globalThis.mortarThunderstoreResultText
-  expect(text({ protocol: 3, ok: true })).toBe('Sent to Mortar')
-  expect(text({ protocol: 3, error: 'package not in catalog: "x"' })).toBe(
+  expect(text({ protocol: 3, state: 'ready', ok: true })).toBe('Sent to Mortar')
+  expect(text({ protocol: 3, state: 'ready', error: 'package not in catalog: "x"' })).toBe(
     "Mortar couldn't install this package",
   )
   expect(text(undefined, 'Specified native messaging host not found.')).toBe(

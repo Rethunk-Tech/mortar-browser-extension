@@ -27,7 +27,7 @@ test('detached card hosts are dropped before a new one is tracked', () => {
   const make = () => {
     let connected = true
     const host = {
-      style: { setProperty() {} },
+      style: { setProperty: () => undefined },
       detach() {
         connected = false
       },

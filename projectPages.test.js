@@ -117,7 +117,7 @@ test('a Modrinth mod page draws an install card that asks installProject', async
     const listeners = {}
     const childs = []
     const n = {
-      style: { cssText: '', setProperty() {} },
+      style: { cssText: '', setProperty: () => undefined },
       classList: { contains: () => false },
       className: '',
       textContent: '',
@@ -125,12 +125,13 @@ test('a Modrinth mod page draws an install card that asks installProject', async
       isConnected: false,
       append: (...x) => childs.push(...x),
       addEventListener: (t, fn) => {
-        ;(listeners[t] ??= []).push(fn)
+        if (!listeners[t]) {
+          listeners[t] = []
+        }
+        listeners[t].push(fn)
       },
-      setAttribute() {},
-      attachShadow() {
-        return { append: (...x) => childs.push(...x) }
-      },
+      setAttribute: () => undefined,
+      attachShadow: () => ({ append: (...x) => childs.push(...x) }),
       querySelector: () => childs[0],
       querySelectorAll: () => [],
       closest: () => null,
@@ -180,33 +181,35 @@ test('a Modrinth mod page draws an install card that asks installProject', async
     pathname: '/mod/sodium',
     href: 'https://modrinth.com/mod/sodium',
   }
-  globalThis.MutationObserver = class {
-    observe() {}
-    disconnect() {}
+  const mutationObserver = function mutationObserver() {
+    // constructable stub
   }
-  globalThis.DOMParser = class {
-    parseFromString() {
-      return { documentElement: node() }
-    }
+  mutationObserver.prototype.observe = () => undefined
+  mutationObserver.prototype.disconnect = () => undefined
+  globalThis.MutationObserver = mutationObserver
+  const parseDocument = function parseDocument() {
+    // constructable stub
   }
+  parseDocument.prototype.parseFromString = () => ({ documentElement: node() })
+  globalThis.DOMParser = parseDocument
   const previousChrome = globalThis.chrome
   globalThis.chrome = {
     runtime: {
-      sendMessage: async (msg) => {
+      sendMessage: (msg) => {
         asked.push(msg)
-        return {
+        return Promise.resolve({
           protocol: 4,
           state: 'ready',
           connected: true,
           games: [{ sources: { modrinth: 'minecraft' } }],
           projects: [],
           ok: true,
-        }
+        })
       },
     },
     storage: {
-      sync: { get: async (defaults) => defaults },
-      onChanged: { addListener() {} },
+      sync: { get: (defaults) => Promise.resolve(defaults) },
+      onChanged: { addListener: () => undefined },
     },
   }
   try {

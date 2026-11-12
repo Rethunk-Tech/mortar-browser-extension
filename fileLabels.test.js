@@ -39,7 +39,7 @@ test('a 1.2 files-tab group badges the 1.2 row, not 11.2', () => {
     createElement: () => ({
       className: '',
       textContent: '',
-      append() {},
+      append: () => undefined,
     }),
   }
   matched.prepend(globalThis.mortarFileBadge(doc, group, 'badge'))

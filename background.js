@@ -89,7 +89,8 @@ const applyUpdatesBadge = (reply, error) => {
 // the previous check. A newer check's badge and session write win if two overlap.
 let updatesGeneration = 0
 const checkUpdates = async () => {
-  const generation = ++updatesGeneration
+  updatesGeneration += 1
+  const generation = updatesGeneration
   let reply
   let error
   try {
