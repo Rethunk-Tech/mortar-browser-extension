@@ -5,4 +5,5 @@ pre-commit:
 pre-push:
   jobs:
     - name: gate
-      run: bun run gate
+      # A push from a worktree hands hooks GIT_DIR; a test running git in a temp repo would then rewrite this clone.
+      run: env -u GIT_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE -u GIT_COMMON_DIR bun run gate
