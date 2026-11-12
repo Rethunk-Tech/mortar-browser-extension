@@ -21,3 +21,32 @@ test('a checkbox writes Gray out or Off', () => {
   expect(globalThis.mortarFilterValue(true)).toBe('gray')
   expect(globalThis.mortarFilterValue(false)).toBe('off')
 })
+
+test('detached card hosts are dropped before a new one is tracked', () => {
+  const checks = []
+  const make = () => {
+    let connected = true
+    const host = {
+      style: { setProperty() {} },
+      detach() {
+        connected = false
+      },
+    }
+    Object.defineProperty(host, 'isConnected', {
+      get() {
+        checks.push(connected)
+        return connected
+      },
+    })
+    globalThis.mortarUiFollowAccent(host)
+    return host
+  }
+  const extras = 8
+  for (let i = 0; i < extras; i++) {
+    make().detach()
+  }
+  make()
+  checks.length = 0
+  globalThis.mortarSetAccent('#abcdef')
+  expect(checks.length).toBeLessThanOrEqual(1)
+})

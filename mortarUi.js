@@ -75,6 +75,11 @@ const mortarUiHosts = new Set()
 const mortarUiAccentHex = /^#[0-9a-f]{6}$/i
 
 globalThis.mortarUiFollowAccent = (host) => {
+  for (const existing of mortarUiHosts) {
+    if (!existing.isConnected) {
+      mortarUiHosts.delete(existing)
+    }
+  }
   mortarUiHosts.add(host)
   if (mortarUiAccent) {
     host.style.setProperty('--mortar-accent', mortarUiAccent)
