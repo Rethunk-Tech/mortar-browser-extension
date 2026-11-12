@@ -1,8 +1,10 @@
 import { expect, test } from 'bun:test'
 import { file } from 'bun'
+import './mortarUi.js'
 import './plural.js'
 import './settings.js'
 import './listingMarks.js'
+import './filterBox.js'
 import './projectSites.js'
 import './projectPages.js'
 
@@ -105,4 +107,119 @@ test('installProject asks for the page project and reports Sent to Mortar', () =
   expect(globalThis.mortarMarketResultText({ protocol: 4, state: 'ready', error: 'x' })).toBe(
     "Mortar couldn't install this mod",
   )
+})
+
+test('a Modrinth mod page draws an install card that asks installProject', async () => {
+  const byId = new Map()
+  const asked = []
+  const buttons = []
+  const node = () => {
+    const listeners = {}
+    const childs = []
+    const n = {
+      style: { cssText: '', setProperty() {} },
+      classList: { contains: () => false },
+      className: '',
+      textContent: '',
+      children: childs,
+      isConnected: false,
+      append: (...x) => childs.push(...x),
+      addEventListener: (t, fn) => {
+        ;(listeners[t] ??= []).push(fn)
+      },
+      setAttribute() {},
+      attachShadow() {
+        return { append: (...x) => childs.push(...x) }
+      },
+      querySelector: () => childs[0],
+      querySelectorAll: () => [],
+      closest: () => null,
+      remove() {
+        byId.delete(n.id)
+      },
+      click() {
+        for (const fn of listeners.click ?? []) {
+          fn({ isTrusted: true })
+        }
+      },
+    }
+    Object.defineProperty(n, 'id', {
+      get() {
+        return n._id
+      },
+      set(v) {
+        n._id = v
+        byId.set(v, n)
+      },
+    })
+    return n
+  }
+  const body = node()
+  const document = {
+    body,
+    documentElement: node(),
+    getElementById: (id) => byId.get(id),
+    createElement: (tag) => {
+      const n = node()
+      if (tag === 'button') {
+        buttons.push(n)
+      }
+      return n
+    },
+    importNode: (x) => x,
+    querySelector: () => null,
+    querySelectorAll: () => [],
+  }
+  body.append = (el) => {
+    el.isConnected = true
+    byId.set(el.id, el)
+  }
+  globalThis.document = document
+  globalThis.location = {
+    host: 'modrinth.com',
+    pathname: '/mod/sodium',
+    href: 'https://modrinth.com/mod/sodium',
+  }
+  globalThis.MutationObserver = class {
+    observe() {}
+    disconnect() {}
+  }
+  globalThis.DOMParser = class {
+    parseFromString() {
+      return { documentElement: node() }
+    }
+  }
+  const previousChrome = globalThis.chrome
+  globalThis.chrome = {
+    runtime: {
+      sendMessage: async (msg) => {
+        asked.push(msg)
+        return {
+          protocol: 4,
+          state: 'ready',
+          connected: true,
+          games: [{ sources: { modrinth: 'minecraft' } }],
+          projects: [],
+          ok: true,
+        }
+      },
+    },
+    storage: {
+      sync: { get: async (defaults) => defaults },
+      onChanged: { addListener() {} },
+    },
+  }
+  try {
+    globalThis.mortarMarketWatch = false
+    await import('./projectPages.js?card')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(document.getElementById('mortar-market')).toBeDefined()
+    expect(buttons.length).toBeGreaterThan(0)
+    buttons[0].click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(asked.some((m) => m.type === 'installProject' && m.project === 'sodium')).toBe(true)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
 })

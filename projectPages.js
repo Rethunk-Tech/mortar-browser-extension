@@ -126,7 +126,7 @@ if (
         return
       }
       shownCard = signature
-      globalThis.mortarCornerCard(document, cardId, 'bottom-right', (card) => {
+      globalThis.mortarCornerCard(document, { id: cardId, corner: 'bottom-right' }, (card) => {
         const label = document.createElement('span')
         label.className = 'text'
         label.textContent = overlay.text
