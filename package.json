@@ -12,6 +12,7 @@
     "build": "sh scripts/build.sh"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.7"
+    "@biomejs/biome": "2.6.7",
+    "fast-check": "^4.10.2"
   }
 }

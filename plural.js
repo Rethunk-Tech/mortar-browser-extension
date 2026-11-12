@@ -10,8 +10,15 @@ const mortarSourceNames = {
   modrinth: 'Modrinth',
 }
 
-globalThis.mortarSkipSourceLabel = (source) =>
-  mortarSourceNames[String(source || '').toLowerCase()] ?? String(source || '')
+globalThis.mortarSkipSourceLabel = (source) => {
+  let text = ''
+  try {
+    text = String(source || '')
+  } catch {
+    // JSON can carry {toString: 0}; String() then throws.
+  }
+  return mortarSourceNames[text.toLowerCase()] ?? text
+}
 
 // The native-messaging protocol this extension speaks, sent with every message, and the range of Mortar protocols
 // it understands. A reply that names none counts as protocol 0.
