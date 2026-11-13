@@ -11,6 +11,8 @@ import './projectPages.js'
 const { paradox, modrinth } = globalThis.mortarMarketSites
 const canonicalLink = /<link rel="canonical" href="([^"]+)"/
 const listingCount = 3
+// Longer than projectPages.js's repaint debounce, so an in-place navigation has repainted.
+const afterRepaintMs = 400
 const fixture = (name) => file(new URL(`./testdata/${name}`, import.meta.url)).text()
 
 test('Modrinth listing cards are keyed by the slug in their /mod/ link', async () => {
@@ -109,7 +111,7 @@ test('installProject asks for the page project and reports Sent to Mortar', () =
   )
 })
 
-test('a Modrinth mod page draws an install card that asks installProject', async () => {
+test('a Modrinth mod page draws an install card that asks installProject for the page shown now', async () => {
   const byId = new Map()
   const asked = []
   const buttons = []
@@ -181,8 +183,9 @@ test('a Modrinth mod page draws an install card that asks installProject', async
     pathname: '/mod/sodium',
     href: 'https://modrinth.com/mod/sodium',
   }
-  const mutationObserver = function mutationObserver() {
-    // constructable stub
+  let observed
+  const mutationObserver = function mutationObserver(callback) {
+    observed = callback
   }
   mutationObserver.prototype.observe = () => undefined
   mutationObserver.prototype.disconnect = () => undefined
@@ -222,6 +225,14 @@ test('a Modrinth mod page draws an install card that asks installProject', async
     buttons[0].click()
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(asked.some((m) => m.type === 'installProject' && m.project === 'sodium')).toBe(true)
+    // Modrinth navigates in place: the next mod's card must not keep the previous mod's button.
+    globalThis.location.pathname = '/mod/iris'
+    observed([{ addedNodes: [node()], removedNodes: [] }])
+    await new Promise((resolve) => setTimeout(resolve, afterRepaintMs))
+    asked.length = 0
+    buttons.at(-1).click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(asked.filter((m) => m.type === 'installProject').map((m) => m.project)).toEqual(['iris'])
   } finally {
     globalThis.chrome = previousChrome
   }

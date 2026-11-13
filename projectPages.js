@@ -121,7 +121,7 @@ if (
     const clearMarks = () =>
       globalThis.mortarClearUnlistedMarks({ root: document, tiles: new Map(), ...classes })
     const showCard = (overlay, project) => {
-      const signature = `${overlay.text}|${overlay.button}`
+      const signature = `${overlay.text}|${overlay.button}|${project}`
       if (signature === shownCard && document.getElementById(cardId)) {
         return
       }
