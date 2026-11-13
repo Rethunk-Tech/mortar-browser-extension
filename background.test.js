@@ -229,18 +229,21 @@ test('link messages are dropped unless the tab and URL are ours', async () => {
   }
   expect(ports).toHaveLength(0)
 
-  const fromThunderstore = route(
-    { link: nxm },
-    { tab: { url: 'https://thunderstore.io/c/lethal-company/p/A/B/' } },
-  )
   const fromNexusHttps = route({ link: nexusHttps }, nexusSender)
   await settle()
-  expect(ports[0].sent.map((m) => m.link)).toEqual([nxm, nexusHttps])
+  expect(ports[0].sent.map((m) => m.link)).toEqual([nexusHttps])
   for (const fn of ports[0].onMessage.fns) {
     fn({ ok: true })
-    fn({ ok: true })
   }
-  expect([(await fromThunderstore).ok, (await fromNexusHttps).ok]).toEqual([true, true])
+  expect((await fromNexusHttps).ok).toBe(true)
+})
+
+test('links from Thunderstore tabs are dropped', async () => {
+  const tsTab = { tab: { url: 'https://thunderstore.io/c/lethal-company/p/A/B/' } }
+  for (const link of ['nxm://game/mods/1/files/2', 'https://www.nexusmods.com/game/mods/1']) {
+    expect(await route({ link }, tsTab)).toBe('dropped')
+  }
+  expect(ports).toHaveLength(0)
 })
 
 test('close is ignored unless the sender tab is the same Nexus mod', async () => {

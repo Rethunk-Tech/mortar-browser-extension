@@ -128,11 +128,9 @@ const pageHost = (url, names) => {
   }
 }
 const isNexusPage = (url) => pageHost(url, ['nexusmods.com'])
-const isThunderstorePage = (url) => pageHost(url, ['thunderstore.io'])
 const isCurseForgePage = (url) => pageHost(url, ['curseforge.com'])
 const isVsModDbPage = (url) => pageHost(url, ['mods.vintagestory.at'])
-const isLinkSender = (sender) =>
-  isNexusPage(sender?.tab?.url) || isThunderstorePage(sender?.tab?.url)
+const isLinkSender = (sender) => isNexusPage(sender?.tab?.url)
 
 // Each site's own Install button link goes to Mortar from that site's tabs only.
 const siteInstallLinks = [
