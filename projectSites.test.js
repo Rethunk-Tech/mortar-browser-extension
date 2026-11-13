@@ -52,6 +52,16 @@ test('CurseForge Install is the /install/ page, whose HTML holds the curseforge 
   ).toBeUndefined()
 })
 
+test('CurseForge Install picks the curseforge link for this file, not an earlier one', async () => {
+  const install = 'https://www.curseforge.com/sims4/create-a-sim/aurum-heels/install/9132615'
+  const html =
+    '<a href="curseforge://install?addonId=9&amp;fileId=1">other</a>' +
+    '<a href="curseforge://install?addonId=1&amp;fileId=9132615">go</a>'
+  expect(await curseforge.resolveLink(install, () => Promise.resolve(html))).toBe(
+    'curseforge://install?addonId=1&fileId=9132615',
+  )
+})
+
 test('Mod DB tiles and pages are keyed by asset id or alias', () => {
   expect(vsmoddb.listingKeys(link('https://mods.vintagestory.at/show/mod/42'))).toEqual(['42'])
   expect(vsmoddb.listingKeys(link('https://mods.vintagestory.at/HorseCartCompat'))).toEqual([

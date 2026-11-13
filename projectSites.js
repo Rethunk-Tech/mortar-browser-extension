@@ -10,8 +10,8 @@ const mortarProjectName = (text) =>
 const mortarCurseForgeModPath = /^\/[^/]+\/[^/]+\/([^/]+)\/?$/
 const mortarVsModPath = /^\/show\/mod\/(\d+)/
 const mortarVsAliasPath = /^\/([A-Za-z0-9_-]+)\/?$/
-const mortarCurseForgeInstallPath = /\/install\/\d+/
-const mortarCurseForgeInstallLink = /curseforge:\/\/install\?[^"'<>\s]+/
+const mortarCurseForgeInstallPath = /\/install\/(\d+)/
+const mortarCurseForgeInstallLink = /curseforge:\/\/install\?[^"'<>\s]+/g
 
 const mortarPathOf = (href) => {
   try {
@@ -57,8 +57,18 @@ globalThis.mortarProjectSites = {
         ? href
         : undefined
     },
-    resolveLink: async (href, fetchText) =>
-      mortarCurseForgeInstallLink.exec(await fetchText(href))?.[0].replaceAll('&amp;', '&'),
+    resolveLink: async (href, fetchText) => {
+      const fileId = mortarCurseForgeInstallPath.exec(URL.parse(href)?.pathname)?.[1]
+      if (!fileId) {
+        return
+      }
+      for (const raw of (await fetchText(href)).match(mortarCurseForgeInstallLink) ?? []) {
+        const link = raw.replaceAll('&amp;', '&')
+        if (URL.parse(link)?.searchParams.get('fileId') === fileId) {
+          return link
+        }
+      }
+    },
   },
   vsmoddb: {
     source: 'vsmoddb',
