@@ -400,7 +400,7 @@ if (!globalThis.mortarNxmWatch && typeof chrome !== 'undefined') {
     // resolves those itself, so the dialog's own Download link is followed straight away, once per dialog.
     advanceDialogs(root).catch(() => false)
     for (const a of root.querySelectorAll('a[href^="nxm://"]')) {
-      if (!sent.has(a.href)) {
+      if (!sent.has(a.href) && globalThis.mortarNxmNamesPage(a.href, location.pathname)) {
         sent.add(a.href)
         const href = a.href
         globalThis.mortarAsk({ link: href, close: throwaway() }).then(({ reply, error }) => {

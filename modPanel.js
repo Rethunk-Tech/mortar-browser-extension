@@ -10,6 +10,21 @@ const mortarFileDownloadPath = /^\/api\/files\/\d+\/download$/
 globalThis.mortarIsOwnDialogDownload = (url, pageMod) =>
   globalThis.mortarNexusModID(url.pathname) === pageMod || mortarFileDownloadPath.test(url.pathname)
 
+// An nxm:// anchor the page offers for itself: a file of this page's mod, or this page's collection. Anchors in
+// user-written text (descriptions, comments) for any other mod or collection are not sent without a click.
+globalThis.mortarNxmNamesPage = (link, pathname) => {
+  const nxm = URL.parse(link)
+  const page = String(pathname || '')
+    .split('/')
+    .filter(Boolean)
+  const at = page[0] === 'games' ? 1 : 0
+  if (nxm?.protocol !== 'nxm:' || nxm.hostname.toLowerCase() !== page[at]?.toLowerCase()) {
+    return false
+  }
+  const [kind, id] = nxm.pathname.split('/').filter(Boolean)
+  return (kind === 'mods' || kind === 'collections') && kind === page[at + 1] && id === page[at + 2]
+}
+
 // The tiles Nexus draws for a mod on listings and collection pages; marks and counts look only inside these.
 globalThis.mortarTileSelector =
   '[data-e2eid="mod-tile"], [data-testid*="mod-tile"], [data-testid*="mod-card"], .mod-tile'

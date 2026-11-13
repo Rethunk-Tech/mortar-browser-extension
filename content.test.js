@@ -367,3 +367,31 @@ test('supported games come from the host reply, none until one arrives', () => {
 test('obsolete words match Mortar', () => {
   expect(globalThis.mortarObsoleteWord.source).toBe('\\b(obsolete|deprecated|depreciated)\\b')
 })
+
+test('only an nxm link for the page own mod or collection is sent on sight', () => {
+  const sends = (link, path) => globalThis.mortarNxmNamesPage(link, path)
+  expect(sends('nxm://stardewvalley/mods/1915/files/2?key=k', '/stardewvalley/mods/1915')).toBe(
+    true,
+  )
+  expect(sends('nxm://stardewvalley/mods/1915/files/2', '/games/stardewvalley/mods/1915/')).toBe(
+    true,
+  )
+  expect(
+    sends(
+      'nxm://stardewvalley/collections/vanilla/revisions/3',
+      '/games/stardewvalley/collections/vanilla',
+    ),
+  ).toBe(true)
+  expect(sends('nxm://stardewvalley/mods/9/files/2', '/stardewvalley/mods/1915')).toBe(false)
+  expect(sends('nxm://skyrim/mods/1915/files/2', '/stardewvalley/mods/1915')).toBe(false)
+  expect(sends('nxm://stardewvalley/mods/1915/files/2', '/stardewvalley/mods')).toBe(false)
+  expect(
+    sends(
+      'nxm://stardewvalley/collections/other/revisions/1',
+      '/games/stardewvalley/collections/vanilla',
+    ),
+  ).toBe(false)
+  expect(
+    sends('https://www.nexusmods.com/stardewvalley/mods/1915', '/stardewvalley/mods/1915'),
+  ).toBe(false)
+})
