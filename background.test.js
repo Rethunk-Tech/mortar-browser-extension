@@ -247,7 +247,8 @@ test('links from Thunderstore tabs are dropped', async () => {
 })
 
 test('links over the length cap are dropped before reaching the host', async () => {
-  const long = `nxm://game/mods/1/files/2?${'a'.repeat(8192)}`
+  const overCap = 8192
+  const long = `nxm://game/mods/1/files/2?${'a'.repeat(overCap)}`
   expect(await route({ link: long }, nexusSender)).toBe('dropped')
   expect(ports).toHaveLength(0)
 })

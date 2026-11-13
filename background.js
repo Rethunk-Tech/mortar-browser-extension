@@ -149,7 +149,9 @@ const isNexusHttpsLink = (link) => {
 const maxLinkLength = 8192
 
 const isAllowedLink = (link) =>
-  typeof link === 'string' && (link.startsWith('nxm://') || isNexusHttpsLink(link))
+  typeof link === 'string' &&
+  link.length <= maxLinkLength &&
+  (link.startsWith('nxm://') || isNexusHttpsLink(link))
 
 const nxmModPath = /^\/mods\/(\d+)(?:\/|$)/
 
@@ -213,11 +215,11 @@ const relayLink = (msg, sender, sendResponse) => {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (typeof msg?.link === 'string') {
-    if (msg.link.length > maxLinkLength) {
-      return
-    }
     if (
-      !((isLinkSender(sender) && isAllowedLink(msg.link)) || isSiteInstallLink(sender, msg.link))
+      !(
+        (isLinkSender(sender) && isAllowedLink(msg.link)) ||
+        (isSiteInstallLink(sender, msg.link) && msg.link.length <= maxLinkLength)
+      )
     ) {
       return
     }
