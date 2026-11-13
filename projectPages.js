@@ -112,6 +112,7 @@ if (
     }
     let loaded
     let loadedPath = ''
+    let canonicalAt = { href: '', path: '' }
     let siteOn = false
     let shownCard = ''
     const removeCard = () => {
@@ -195,10 +196,14 @@ if (
           },
         ]),
       )
+      const canonicalHref = document.querySelector('link[rel="canonical"]')?.href || ''
+      if (canonicalHref !== canonicalAt.href) {
+        canonicalAt = { href: canonicalHref, path: location.pathname }
+      }
       const page = globalThis.mortarMarketPage(
         site,
         location.pathname,
-        document.querySelector('link[rel="canonical"]')?.href,
+        canonicalAt.path === location.pathname ? canonicalHref : '',
       )
       const overlay =
         page &&

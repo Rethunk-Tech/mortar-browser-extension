@@ -170,7 +170,8 @@ test('a Modrinth mod page draws an install card that asks installProject for the
       return n
     },
     importNode: (x) => x,
-    querySelector: () => null,
+    querySelector: (sel) =>
+      sel === 'link[rel="canonical"]' ? { href: 'https://modrinth.com/project/AANobbMI' } : null,
     querySelectorAll: () => [],
   }
   body.append = (el) => {
@@ -224,8 +225,8 @@ test('a Modrinth mod page draws an install card that asks installProject for the
     expect(buttons.length).toBeGreaterThan(0)
     buttons[0].click()
     await new Promise((resolve) => setTimeout(resolve, 0))
-    expect(asked.some((m) => m.type === 'installProject' && m.project === 'sodium')).toBe(true)
-    // Modrinth navigates in place: the next mod's card must not keep the previous mod's button.
+    expect(asked.some((m) => m.type === 'installProject' && m.project === 'AANobbMI')).toBe(true)
+    // Modrinth navigates in place: a leftover canonical still names Sodium, but Install must send Iris.
     globalThis.location.pathname = '/mod/iris'
     observed([{ addedNodes: [node()], removedNodes: [] }])
     await new Promise((resolve) => setTimeout(resolve, afterRepaintMs))
