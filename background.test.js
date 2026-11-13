@@ -246,6 +246,12 @@ test('links from Thunderstore tabs are dropped', async () => {
   expect(ports).toHaveLength(0)
 })
 
+test('links over the length cap are dropped before reaching the host', async () => {
+  const long = `nxm://game/mods/1/files/2?${'a'.repeat(8192)}`
+  expect(await route({ link: long }, nexusSender)).toBe('dropped')
+  expect(ports).toHaveLength(0)
+})
+
 test('close is ignored unless the sender tab is the same Nexus mod', async () => {
   const link = 'nxm://game/mods/1/files/2'
   const otherMod = route(

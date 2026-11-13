@@ -145,6 +145,9 @@ const isNexusHttpsLink = (link) => {
   return parsed?.protocol === 'https:' && parsed.hostname === 'www.nexusmods.com'
 }
 
+// The host exits on messages over 64 KiB, failing every in-flight request; real links are far shorter.
+const maxLinkLength = 8192
+
 const isAllowedLink = (link) =>
   typeof link === 'string' && (link.startsWith('nxm://') || isNexusHttpsLink(link))
 
@@ -210,6 +213,9 @@ const relayLink = (msg, sender, sendResponse) => {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (typeof msg?.link === 'string') {
+    if (msg.link.length > maxLinkLength) {
+      return
+    }
     if (
       !((isLinkSender(sender) && isAllowedLink(msg.link)) || isSiteInstallLink(sender, msg.link))
     ) {
