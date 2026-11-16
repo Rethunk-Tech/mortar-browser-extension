@@ -10,16 +10,37 @@ globalThis.mortarDimClasses = {
 // internal/problems/author_marked.go; a Go test keeps the two lists equal).
 globalThis.mortarObsoleteWord = /\b(obsolete|deprecated|depreciated)\b/i
 const mortarSentenceEnd = /[.!?]/
+// \b treats '-' as a break, so "Non-Obsolete" would hit without this; skip a marker the same clause just negated.
+const mortarNegationBefore = /(?:\b(?:not|never|isn't|isn’t|no\s+longer)\s+|non-)$/i
+
+const mortarObsoleteNegated = (text, start, end) => {
+  if ((start > 0 && text[start - 1] === '-') || (end < text.length && text[end] === '-')) {
+    return true
+  }
+  const from = Math.max(
+    text.lastIndexOf('.', start - 1),
+    text.lastIndexOf('!', start - 1),
+    text.lastIndexOf('?', start - 1),
+    text.lastIndexOf('\n', start - 1),
+    text.lastIndexOf('\r', start - 1),
+  )
+  return mortarNegationBefore.test(text.slice(from + 1, start))
+}
 
 // Same rule as Mortar's statusMatch: the word counts anywhere in a mod's name, but in a summary only where it speaks
 // for the mod itself (at the start, "This mod/file ...", or a heading line), so "replaces the obsolete X" is not a hit.
 globalThis.mortarObsoleteText = (title, summary) => {
-  if (globalThis.mortarObsoleteWord.test(title || '')) {
+  const titleText = title || ''
+  const titleMatch = globalThis.mortarObsoleteWord.exec(titleText)
+  if (
+    titleMatch &&
+    !mortarObsoleteNegated(titleText, titleMatch.index, titleMatch.index + titleMatch[0].length)
+  ) {
     return true
   }
   const text = summary || ''
   const match = globalThis.mortarObsoleteWord.exec(text)
-  if (!match) {
+  if (!match || mortarObsoleteNegated(text, match.index, match.index + match[0].length)) {
     return false
   }
   const prefix = text.slice(0, match.index).trim().toLowerCase()

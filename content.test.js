@@ -141,6 +141,11 @@ test('obsolete listing tiles follow Mortar author-marked rule', () => {
   expect(obsolete('Some Mod', 'Intro text.\nOBSOLETE')).toBe(true)
   expect(obsolete('New Fishing', 'Replaces the obsolete Old Fishing mod.')).toBe(false)
   expect(obsolete('Normal Mod', 'A normal summary.')).toBe(false)
+  expect(obsolete('Non-Obsolete Ore Textures', '')).toBe(false)
+  expect(obsolete('Some Mod', 'This mod is not obsolete')).toBe(false)
+  expect(obsolete('Some Mod', 'This mod is no longer obsolete')).toBe(false)
+  expect(obsolete('Some Mod', "This mod isn't obsolete")).toBe(false)
+  expect(obsolete('Some Mod', 'This mod is never obsolete')).toBe(false)
 })
 
 test('a second site start does not observe the same root twice', () => {
