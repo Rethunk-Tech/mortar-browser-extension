@@ -111,11 +111,15 @@ const mortarBindFilterRow = (row, onChange) => {
       onChange(row.dataset.mortarRow, box.getAttribute('aria-checked') !== 'true')
     }
   }
-  row.addEventListener('click', toggle)
+  row.addEventListener('click', (event) => {
+    globalThis.mortarIfTrusted(event, toggle)
+  })
   box.addEventListener('keydown', (event) => {
     if (event.key === ' ' || event.key === 'Enter') {
-      event.preventDefault()
-      toggle()
+      globalThis.mortarIfTrusted(event, () => {
+        event.preventDefault()
+        toggle()
+      })
     }
   })
 }

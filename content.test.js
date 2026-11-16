@@ -326,63 +326,67 @@ test('a tile stays hidden while another enabled Hide filter still matches it', a
     return {
       names,
       classList: {
-        toggle: (name, on) => (on ? names.add(name) : names.delete(name)),
-        add: (name) => names.add(name),
-        remove: (...list) => list.forEach((name) => names.delete(name)),
+        toggle: (name, on) => {
+          if (on) {
+            names.add(name)
+          } else {
+            names.delete(name)
+          }
+        },
+        add: (name) => {
+          names.add(name)
+        },
+        remove: (...list) => {
+          for (const name of list) {
+            names.delete(name)
+          }
+        },
       },
       querySelector: (selector) => {
-        if (selector === '[data-e2eid="mod-tile-title"]') return link
-        if (selector === '[data-e2eid="mod-tile-summary"]') return { textContent: '' }
-        return undefined
+        if (selector === '[data-e2eid="mod-tile-title"]') {
+          return link
+        }
+        if (selector === '[data-e2eid="mod-tile-summary"]') {
+          return { textContent: '' }
+        }
+        return null
       },
     }
   }
   const installed = makeTile('Plain Mod')
   const obsolete = makeTile('[OBSOLETE] Old Mod')
-  const links = [
-    { href: 'https://www.nexusmods.com/stardewvalley/mods/1' },
-    { href: 'https://www.nexusmods.com/stardewvalley/mods/2' },
-  ]
-  const tileFor = new Map([
-    [links[0], installed],
-    [links[1], obsolete],
-  ])
+  const links = ['7', '8'].map((id) => ({
+    href: `https://www.nexusmods.com/stardewvalley/mods/${id}`,
+  }))
   const document = {
     getElementById: () => null,
     querySelectorAll: (selector) => {
-      if (selector.includes('a[href]')) return links
-      if (selector === globalThis.mortarTileSelector) return [installed, obsolete]
-      return []
+      if (selector.includes('a[href]')) {
+        return links
+      }
+      return selector === globalThis.mortarTileSelector ? [installed, obsolete] : []
     },
   }
-  const cache = globalThis.mortarInstalledListingState(
-    { connected: true, profile: 'Main' },
-    undefined,
-    new Set([1]),
-  )
-  cache.games = ['stardewvalley']
-  cache.state = 'ready'
   await globalThis.mortarMarkInstalledListing({
     document,
     isModListing: () => true,
     hideControlId: 'mortar-hide-in-profile',
     currentMode: async () => 'hide',
     pageGame: () => 'stardewvalley',
-    settings: async () => ({
-      markInstalled: 'hide',
-      markObsolete: 'hide',
-      markBroken: 'hide',
-      markUpdate: 'off',
-    }),
+    settings: async () => ({ markInstalled: 'hide', markObsolete: 'hide', markBroken: 'hide' }),
     applySettings: () => undefined,
     showUpdates: () => false,
     removing: { obsolete: true, broken: true },
-    installedIDs: async () => new Set([1]),
-    installedCache: () => cache,
+    installedIDs: async () => new Set([tileModID]),
+    installedCache: () => ({
+      ...globalThis.mortarInstalledListingState({ connected: true, profile: 'Main' }, undefined),
+      games: ['stardewvalley'],
+      state: 'ready',
+    }),
     mode: () => 'hide',
     filters: { installed: false, obsolete: true, broken: true },
-    modID: (href) => (href.endsWith('/1') ? 1 : 2),
-    tileFor: (link) => tileFor.get(link),
+    modID: (href) => Number(href.slice(-1)),
+    tileFor: (link) => (link === links[0] ? installed : obsolete),
     ensureMarkerStyle: () => undefined,
     markerClass: 'mortar-installed-mod',
     hiddenClass: 'mortar-hidden-mod',
@@ -393,29 +397,21 @@ test('a tile stays hidden while another enabled Hide filter still matches it', a
   expect(installed.names.has(removedClass)).toBe(true)
   expect(obsolete.names.has('mortar-obsolete-removed')).toBe(true)
 
-  const style = {}
+  let css = ''
   globalThis.mortarEnsureInstalledModStyle(
     {
       getElementById: () => null,
       createElement: () => ({
         set textContent(value) {
-          style.text = value
+          css = value
         },
       }),
       documentElement: { append: () => undefined },
     },
-    {
-      markerClass: 'mortar-installed-mod',
-      badgeClass: 'mortar-installed-mod-badge',
-      fileBadgeClass: 'mortar-installed-file-badge',
-      hiddenClass: 'mortar-hidden-mod',
-      removedClass,
-      ...globalThis.mortarDimClasses,
-      panelClass: 'mortar-mod-panel',
-    },
+    { ...globalThis.mortarSimpleListingClasses, ...globalThis.mortarDimClasses, removedClass },
   )
-  expect(style.text).toContain('.mortar-obsolete-removed')
-  expect(style.text).toContain('.mortar-broken-removed')
+  expect(css).toContain('.mortar-obsolete-removed')
+  expect(css).toContain('.mortar-broken-removed')
 })
 
 test('only mod tiles are matched for marks', () => {
