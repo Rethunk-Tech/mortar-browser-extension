@@ -318,6 +318,106 @@ test('dim marks count matching tiles and Hide removes them instead of dimming', 
   ).toBe(0)
 })
 
+test('a tile stays hidden while another enabled Hide filter still matches it', async () => {
+  const removedClass = 'mortar-removed-mod'
+  const makeTile = (title) => {
+    const names = new Set()
+    const link = { textContent: title, href: 'https://www.nexusmods.com/stardewvalley/mods/2' }
+    return {
+      names,
+      classList: {
+        toggle: (name, on) => (on ? names.add(name) : names.delete(name)),
+        add: (name) => names.add(name),
+        remove: (...list) => list.forEach((name) => names.delete(name)),
+      },
+      querySelector: (selector) => {
+        if (selector === '[data-e2eid="mod-tile-title"]') return link
+        if (selector === '[data-e2eid="mod-tile-summary"]') return { textContent: '' }
+        return undefined
+      },
+    }
+  }
+  const installed = makeTile('Plain Mod')
+  const obsolete = makeTile('[OBSOLETE] Old Mod')
+  const links = [
+    { href: 'https://www.nexusmods.com/stardewvalley/mods/1' },
+    { href: 'https://www.nexusmods.com/stardewvalley/mods/2' },
+  ]
+  const tileFor = new Map([
+    [links[0], installed],
+    [links[1], obsolete],
+  ])
+  const document = {
+    getElementById: () => null,
+    querySelectorAll: (selector) => {
+      if (selector.includes('a[href]')) return links
+      if (selector === globalThis.mortarTileSelector) return [installed, obsolete]
+      return []
+    },
+  }
+  const cache = globalThis.mortarInstalledListingState(
+    { connected: true, profile: 'Main' },
+    undefined,
+    new Set([1]),
+  )
+  cache.games = ['stardewvalley']
+  cache.state = 'ready'
+  await globalThis.mortarMarkInstalledListing({
+    document,
+    isModListing: () => true,
+    hideControlId: 'mortar-hide-in-profile',
+    currentMode: async () => 'hide',
+    pageGame: () => 'stardewvalley',
+    settings: async () => ({
+      markInstalled: 'hide',
+      markObsolete: 'hide',
+      markBroken: 'hide',
+      markUpdate: 'off',
+    }),
+    applySettings: () => undefined,
+    showUpdates: () => false,
+    removing: { obsolete: true, broken: true },
+    installedIDs: async () => new Set([1]),
+    installedCache: () => cache,
+    mode: () => 'hide',
+    filters: { installed: false, obsolete: true, broken: true },
+    modID: (href) => (href.endsWith('/1') ? 1 : 2),
+    tileFor: (link) => tileFor.get(link),
+    ensureMarkerStyle: () => undefined,
+    markerClass: 'mortar-installed-mod',
+    hiddenClass: 'mortar-hidden-mod',
+    removedClass,
+    badgeClass: 'mortar-installed-mod-badge',
+    onHideChange: () => undefined,
+  })
+  expect(installed.names.has(removedClass)).toBe(true)
+  expect(obsolete.names.has('mortar-obsolete-removed')).toBe(true)
+
+  const style = {}
+  globalThis.mortarEnsureInstalledModStyle(
+    {
+      getElementById: () => null,
+      createElement: () => ({
+        set textContent(value) {
+          style.text = value
+        },
+      }),
+      documentElement: { append: () => undefined },
+    },
+    {
+      markerClass: 'mortar-installed-mod',
+      badgeClass: 'mortar-installed-mod-badge',
+      fileBadgeClass: 'mortar-installed-file-badge',
+      hiddenClass: 'mortar-hidden-mod',
+      removedClass,
+      ...globalThis.mortarDimClasses,
+      panelClass: 'mortar-mod-panel',
+    },
+  )
+  expect(style.text).toContain('.mortar-obsolete-removed')
+  expect(style.text).toContain('.mortar-broken-removed')
+})
+
 test('only mod tiles are matched for marks', () => {
   const tile = { id: 'tile' }
   const link = { href: 'https://www.nexusmods.com/stardewvalley/mods/5' }

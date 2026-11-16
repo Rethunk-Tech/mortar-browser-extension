@@ -1,7 +1,9 @@
-// The classes that dim listing tiles for the obsolete and broken rows.
+// The classes that dim listing tiles for the obsolete and broken rows, each with the class its Hide removes.
 globalThis.mortarDimClasses = {
   obsoleteClass: 'mortar-obsolete-mod',
   brokenClass: 'mortar-broken-mod',
+  obsoleteRemovedClass: 'mortar-obsolete-removed',
+  brokenRemovedClass: 'mortar-broken-removed',
 }
 
 // The words Mortar's Problems check reads as an author marking a mod dead (authorStatusWord in
@@ -260,9 +262,7 @@ globalThis.mortarApplyDimMarks = ({
   for (const tile of root.querySelectorAll(globalThis.mortarTileSelector)) {
     const on = enabled && dim(tile)
     tile.classList.toggle(dimClass, on && !remove)
-    if (remove && removedClass) {
-      tile.classList.toggle(removedClass, on)
-    }
+    tile.classList.toggle(removedClass, remove && on)
     if (on) {
       count += 1
     }

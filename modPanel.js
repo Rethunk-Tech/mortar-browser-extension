@@ -142,6 +142,8 @@ globalThis.mortarEnsureInstalledModStyle = (
     removedClass,
     obsoleteClass,
     brokenClass,
+    obsoleteRemovedClass,
+    brokenRemovedClass,
     panelClass,
   },
 ) => {
@@ -158,7 +160,7 @@ globalThis.mortarEnsureInstalledModStyle = (
         padding: 0 4px;
       }
       ${globalThis.mortarUiDimCss([hiddenClass, obsoleteClass, brokenClass])}
-      .${removedClass} { display: none !important; }
+      .${removedClass}, .${obsoleteRemovedClass}, .${brokenRemovedClass} { display: none !important; }
       .${panelClass} { display: inline-block; margin: 8px 0; vertical-align: middle; }
     `
   doc.documentElement.append(style)

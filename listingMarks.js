@@ -1,7 +1,16 @@
 // Every mark Mortar put on listing tiles: Off draws nothing.
 globalThis.mortarClearListingMarks = (ctx) => {
-  const { obsoleteClass, brokenClass } = globalThis.mortarDimClasses
-  const classes = [ctx.markerClass, ctx.hiddenClass, ctx.removedClass, obsoleteClass, brokenClass]
+  const { obsoleteClass, brokenClass, obsoleteRemovedClass, brokenRemovedClass } =
+    globalThis.mortarDimClasses
+  const classes = [
+    ctx.markerClass,
+    ctx.hiddenClass,
+    ctx.removedClass,
+    obsoleteClass,
+    brokenClass,
+    obsoleteRemovedClass,
+    brokenRemovedClass,
+  ]
   for (const tile of ctx.document.querySelectorAll(classes.map((c) => `.${c}`).join(', '))) {
     tile.classList.remove(...classes)
     tile.querySelector(`.${ctx.badgeClass}`)?.remove()
@@ -121,7 +130,7 @@ globalThis.mortarMarkInstalledListing = async (ctx) => {
     root: ctx.document,
     enabled: ctx.filters.obsolete,
     remove: ctx.removing.obsolete,
-    removedClass: ctx.removedClass,
+    removedClass: globalThis.mortarDimClasses.obsoleteRemovedClass,
     dimClass: globalThis.mortarDimClasses.obsoleteClass,
     dim: globalThis.mortarTileObsolete,
   })
@@ -129,7 +138,7 @@ globalThis.mortarMarkInstalledListing = async (ctx) => {
     root: ctx.document,
     enabled: ctx.filters.broken && !cache.nativeFail,
     remove: ctx.removing.broken,
-    removedClass: ctx.removedClass,
+    removedClass: globalThis.mortarDimClasses.brokenRemovedClass,
     dimClass: globalThis.mortarDimClasses.brokenClass,
     dim: (tile) => {
       const link = globalThis.mortarTileTitleLink(tile)
