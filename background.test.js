@@ -254,7 +254,8 @@ test('links over the length cap are dropped before reaching the host', async () 
 })
 
 test('host strings over the length cap are dropped before reaching the host', async () => {
-  const long = 'g'.repeat(8193)
+  const overCap = 8192
+  const long = `${'g'.repeat(overCap)}x`
   for (const msg of [
     { type: 'installedPackages', source: 'thunderstore', sourceGameKey: long },
     { type: 'installPackage', source: 'thunderstore', sourceGameKey: 'g', package: long },
