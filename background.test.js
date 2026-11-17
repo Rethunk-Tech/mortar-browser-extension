@@ -253,6 +253,22 @@ test('links over the length cap are dropped before reaching the host', async () 
   expect(ports).toHaveLength(0)
 })
 
+test('host strings over the length cap are dropped before reaching the host', async () => {
+  const long = 'g'.repeat(8193)
+  for (const msg of [
+    { type: 'installedPackages', source: 'thunderstore', sourceGameKey: long },
+    { type: 'installPackage', source: 'thunderstore', sourceGameKey: 'g', package: long },
+    { type: 'installedProjects', source: 'curseforge', sourceGameKey: long },
+    { type: 'installProject', source: 'modrinth', sourceGameKey: 'g', project: long },
+    { type: 'installed', source: 'nexus', sourceGameKey: long },
+    { type: 'mod', source: 'nexus', sourceGameKey: long, modId: 1 },
+  ]) {
+    const result = await Promise.race([route(msg), settle().then(() => 'reached-host')])
+    expect(result).toBe('dropped')
+  }
+  expect(ports).toHaveLength(0)
+})
+
 test('close is ignored unless the sender tab is the same Nexus mod', async () => {
   const link = 'nxm://game/mods/1/files/2'
   const otherMod = route(

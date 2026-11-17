@@ -145,13 +145,12 @@ const isNexusHttpsLink = (link) => {
   return parsed?.protocol === 'https:' && parsed.hostname === 'www.nexusmods.com'
 }
 
-// The host exits on messages over 64 KiB, failing every in-flight request; real links are far shorter.
-const maxLinkLength = 8192
+// The host exits on messages over 64 KiB, failing every in-flight request; real links and keys are far shorter.
+const maxHostString = 8192
+const isHostString = (value) => typeof value === 'string' && value.length <= maxHostString
 
 const isAllowedLink = (link) =>
-  typeof link === 'string' &&
-  link.length <= maxLinkLength &&
-  (link.startsWith('nxm://') || isNexusHttpsLink(link))
+  isHostString(link) && (link.startsWith('nxm://') || isNexusHttpsLink(link))
 
 const nxmModPath = /^\/mods\/(\d+)(?:\/|$)/
 
@@ -218,7 +217,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (
       !(
         (isLinkSender(sender) && isAllowedLink(msg.link)) ||
-        (isSiteInstallLink(sender, msg.link) && msg.link.length <= maxLinkLength)
+        (isSiteInstallLink(sender, msg.link) && isHostString(msg.link))
       )
     ) {
       return
@@ -235,8 +234,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (
     (msg?.type === 'installedPackages' || msg?.type === 'installPackage') &&
     msg.source === 'thunderstore' &&
-    typeof msg.sourceGameKey === 'string' &&
-    (msg.type !== 'installPackage' || typeof msg.package === 'string')
+    isHostString(msg.sourceGameKey) &&
+    (msg.type !== 'installPackage' || isHostString(msg.package))
   ) {
     send({
       type: msg.type,
@@ -249,7 +248,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (
     msg?.type === 'installedProjects' &&
     ['curseforge', 'vsmoddb', 'paradox', 'modrinth'].includes(msg.source) &&
-    typeof msg.sourceGameKey === 'string'
+    isHostString(msg.sourceGameKey)
   ) {
     send({ type: msg.type, source: msg.source, sourceGameKey: msg.sourceGameKey }).then(
       sendResponse,
@@ -260,8 +259,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (
     msg?.type === 'installProject' &&
     (msg.source === 'paradox' || msg.source === 'modrinth') &&
-    typeof msg.sourceGameKey === 'string' &&
-    typeof msg.project === 'string'
+    isHostString(msg.sourceGameKey) &&
+    isHostString(msg.project)
   ) {
     send({
       type: msg.type,
@@ -274,7 +273,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (
     (msg?.type === 'installed' || msg?.type === 'mod') &&
     msg.source === 'nexus' &&
-    typeof msg.sourceGameKey === 'string' &&
+    isHostString(msg.sourceGameKey) &&
     (msg.type === 'installed' || (Number.isInteger(msg.modId) && msg.modId > 0))
   ) {
     send({
