@@ -49,7 +49,7 @@ Remote code: none.
 
 ## Store ID prerequisite
 
-Item id `hboeppdoecbglcmfojappgehkbecdfbi` is in Mortar's `storeChromeIDs` (`internal/nativehost/nativehost.go`). Upload `mortar-browser-extension-chrome-web-store.zip` from the release (built without `key`). Reviewers: install Mortar, open a listed game; the dialog Download click runs only when Mortar is installed and the connection is on.
+Item id `hboeppdoecbglcmfojappgehkbecdfbi` is in Mortar's `storeChromeIDs`. Upload `mortar-browser-extension-chrome-web-store.zip` from the release (built without `key`). Reviewers: install Mortar, open a listed game; the dialog Download click runs only when Mortar is installed and the connection is on.
 
 ## Host permission justification (one field in the dashboard)
 
