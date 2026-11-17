@@ -28,6 +28,7 @@ jobs:
         uses: Rethunk-Tech/gh-actions/setup-bun@71da648f666fb49a8e72d0576a4d8db97894ccaf # v1.29.1
         with:
           run-test: "false"
+          run-audit: "true"
 
       - name: Gate
         run: bun run gate
