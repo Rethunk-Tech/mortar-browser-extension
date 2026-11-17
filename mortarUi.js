@@ -15,7 +15,6 @@ globalThis.mortarAsk = async (message) => {
 const mortarUiAccentDefault = 'rgb(214, 177, 122)'
 
 globalThis.mortarUiTokens = `
-  --mortar-bg: rgb(17, 17, 20);
   --mortar-raised: rgb(27, 27, 33);
   --mortar-raised2: rgb(36, 36, 44);
   --mortar-accent: ${mortarUiAccentDefault};
