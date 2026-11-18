@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import { file } from 'bun'
+import { ignoreFiles } from './web-ext-config.mjs'
 
 // The browser runs every content script in one shared scope, so a top-level name declared twice stops the later
 // file from loading at all; importing each file on its own in a test never shows that.
@@ -19,4 +20,8 @@ const chromeWebStoreDescriptionMax = 132
 test('manifest description fits the Chrome Web Store limit', async () => {
   const manifest = await file(new URL('./manifest.json', import.meta.url)).json()
   expect(manifest.description.length).toBeLessThanOrEqual(chromeWebStoreDescriptionMax)
+})
+
+test('web-ext does not pack canon.toml', () => {
+  expect(ignoreFiles).toContain('canon.toml')
 })

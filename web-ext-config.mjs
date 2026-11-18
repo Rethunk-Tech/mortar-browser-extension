@@ -15,6 +15,7 @@ export const ignoreFiles = [
   '*.md',
   'web-ext-config.mjs',
   'dist',
+  'canon.toml',
 ]
 export const build = { overwriteDest: true }
 export const lint = { selfHosted: true }
