@@ -131,9 +131,10 @@ globalThis.mortarProjectOverlay = (reply, error, inProfile) => {
 
 if (
   !globalThis.mortarProjectWatch &&
-  typeof chrome !== 'undefined' &&
-  typeof document !== 'undefined'
+  typeof globalThis.chrome !== 'undefined' &&
+  typeof globalThis.document !== 'undefined'
 ) {
+  const { chrome, document, location, fetch } = globalThis
   const site = Object.values(globalThis.mortarProjectSites).find((s) => s.host === location.host)
   globalThis.mortarProjectWatch = Boolean(site)
   if (site) {
