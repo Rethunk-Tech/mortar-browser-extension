@@ -120,3 +120,15 @@ test('the overlay names a connection problem or the profile, else nothing', () =
     globalThis.mortarProjectOverlay({ protocol: 3, state: 'notRunning' }, undefined, true),
   ).toBe("Mortar isn't running")
 })
+
+test('unparseable listing hrefs are ignored and an Install URL without a file id is not resolved', async () => {
+  expect(curseforge.listingKeys(link('http://['))).toEqual([])
+  expect(vsmoddb.listingKeys(link('not a url'))).toEqual([])
+  const fetchText = () => {
+    throw new Error('HTML is not fetched when the path has no file id')
+  }
+  expect(
+    await curseforge.resolveLink('https://www.curseforge.com/sims4/create-a-sim/x', fetchText),
+  ).toBeUndefined()
+  expect(await curseforge.resolveLink('not a url', fetchText)).toBeUndefined()
+})
