@@ -64,7 +64,22 @@ Certify all three: not sold to third parties; not used or transferred for purpos
 
 ## Privacy policy text
 
-Mortar's browser extension reads Nexus Mods, Thunderstore, CurseForge, Vintage Story Mod DB, Paradox Mods and Modrinth pages to mark mods and pass their install links to the Mortar app on this computer via native messaging. The only data exchanged is Nexus mod/file ids and nxm:// links, Thunderstore package names, CurseForge project ids, mod names and curseforge:// links, Mod DB mod ids and install links, and Paradox Mods and Modrinth project ids, going to Mortar, and installed-mod and update information coming back. It runs only on <https://www.nexusmods.com>, Thunderstore community pages (`https://thunderstore.io/c/*`), <https://www.curseforge.com>, <https://mods.vintagestory.at>, <https://mods.paradoxplaza.com> and <https://modrinth.com>. No network requests of its own, no server, analytics or telemetry, nothing to the developers or any third party. Site switches, listing marks and the update-badge choice stay in the browser's synced extension storage. Uninstalling removes them.
+Mortar's browser extension reads the sites below to mark mods and pass their install links to the Mortar app on this computer via native messaging. That is the only data exchanged.
+
+| Site                 | Sent to Mortar                                 |
+| -------------------- | ---------------------------------------------- |
+| Nexus Mods           | mod/file ids and nxm:// links                  |
+| Thunderstore         | package names                                  |
+| CurseForge           | project ids, mod names and curseforge:// links |
+| Vintage Story Mod DB | mod ids and install links                      |
+| Paradox Mods         | project ids                                    |
+| Modrinth             | project ids                                    |
+
+Mortar sends back installed-mod and update information.
+
+It runs only on <https://www.nexusmods.com>, Thunderstore community pages (`https://thunderstore.io/c/*`), <https://www.curseforge.com>, <https://mods.vintagestory.at>, <https://mods.paradoxplaza.com> and <https://modrinth.com>.
+
+No network requests of its own, no server, analytics or telemetry, nothing to the developers or any third party. Site switches, listing marks and the update-badge choice stay in the browser's synced extension storage. Uninstalling removes them.
 
 ## Screenshots (1280x800 preferred, or 640x400; PNG or JPEG, no alpha, up to 5)
 
