@@ -2,3 +2,7 @@
 # Canon's generated-tree allowlist is present; the extra allowlist covers the Chromium
 # public key in manifest.json (the entry allows adding allowlists beneath it).
 "patterns-gitleaks-00001" = "allowlists add the Chromium public key in manifest.json on top of canon's generated-tree list; that field pins the unpacked extension id and is not a secret"
+# The CodeQL artifact's matrix is Go and Actions; this repository is a JavaScript
+# extension, so the matrix includes javascript-typescript (the rule: every language
+# the repository holds). all-checks is the required branch-protection aggregator.
+"patterns-repo-settings-00001" = "CodeQL matrix includes javascript-typescript (the language this repo holds) rather than Go autobuild, plus an all-checks aggregator for branch protection"
