@@ -6,6 +6,10 @@ The maintainer submits this by hand in Partner Center (<https://partner.microsof
 
 Upload `mortar-browser-extension-chrome-web-store.zip` from the release (the same zip as the Chrome Web Store; Edge installs Chromium extensions). Name and description come from `manifest.json` and are read-only in Partner Center; change them by re-uploading a package. Version 0.4.0 declares the six host permissions below.
 
+## Store ID prerequisite
+
+The zip is built without `key`, so Edge Add-ons assigns its own extension id, different from the Chrome Web Store id. Mortar only lets ids in `storeChromeIDs` (`internal/nativehost/nativehost.go` in Rethunk-Tech/mortar) reach the native host, so an Edge install shows "Mortar isn't installed" until the Edge id is there. The id exists only after the first submission: create the listing in Partner Center, copy the Extension ID from its overview, add it to `storeChromeIDs` with a `// Edge Add-ons` comment, and release Mortar before the Edge listing goes public (review takes days, so there is time).
+
 ## Availability and properties
 
 - Visibility: Public. Markets: all.
