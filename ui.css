@@ -121,6 +121,11 @@ button:disabled {
   cursor: default;
 }
 
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
 button:focus-visible,
 a:focus-visible,
 input:focus-visible {
@@ -131,11 +136,6 @@ input:focus-visible {
 input[type="checkbox"],
 input[type="radio"] {
   accent-color: var(--accent);
-}
-
-a {
-  color: var(--accent);
-  text-underline-offset: 3px;
 }
 
 /* A checkbox drawn as a switch. */
